@@ -46,6 +46,9 @@ platform :ios do
 
   desc "Build a signed App Store IPA (with embedded watchOS app) into build/ios"
   lane :build_ipa do |options|
+    # Xcode downloads cloud-managed profiles here but doesn't create the folder on fresh CI runners
+    FileUtils.mkdir_p(File.expand_path("~/Library/Developer/Xcode/UserData/Provisioning Profiles"))
+
     key_path = File.expand_path("AuthKey.p8", ENV.fetch("RUNNER_TEMP", Dir.tmpdir))
     File.binwrite(key_path, Base64.decode64(ENV.fetch("ASC_KEY_P8_BASE64")))
 

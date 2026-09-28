@@ -56,9 +56,20 @@ jobs:
         if: needs.version.outputs.has_keystore == 'true'
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+          # Fail early with a diagnosis (never the secret itself) if the secrets don't match the keystore.
+          # Compare the checksum with: shasum -a 256 upload.jks
+          echo "Keystore sha256: $(sha256sum "$RUNNER_TEMP/upload.jks" | cut -d' ' -f1)"
+          if ! keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass:env ANDROID_KEYSTORE_PASSWORD \
+                -alias "$ANDROID_KEY_ALIAS" > /dev/null; then
+            trailing=no; [[ "$ANDROID_KEYSTORE_PASSWORD" =~ [[:space:]]$ ]] && trailing=yes
+            echo "::error::Keystore check failed. Password length: ${#ANDROID_KEYSTORE_PASSWORD}, trailing whitespace: $trailing, alias length: ${#ANDROID_KEY_ALIAS}"
+            exit 1
+          fi
       - name: Build release bundles
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

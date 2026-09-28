@@ -194,6 +194,6 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
-            dist/*.aab
+            dist/**/*.aab
             dist/*.zip
             dist/*.ipa

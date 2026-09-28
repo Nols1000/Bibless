@@ -153,28 +153,11 @@ jobs:
       - run: npm run build -w webApp
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: app/webApp/dist
       - run: cd app/webApp/dist && zip -r "$GITHUB_WORKSPACE/bibless-web-${{ needs.version.outputs.name }}.zip" .
       - uses: actions/upload-artifact@v4
         with:
           name: web
           path: bibless-web-*.zip
-
-  deploy-pages:
-    name: Deploy web to GitHub Pages
-    needs: web
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
 
   github-release:
     name: GitHub Release

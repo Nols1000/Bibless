@@ -1,1 +1,1 @@
-TODO: short description (max 80 characters)
+Your parkrun barcode on your phone and Wear OS watch. No printout needed.

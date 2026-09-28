@@ -1,1 +1,1 @@
-Bug fixes and improvements.
+First release of Bibless.

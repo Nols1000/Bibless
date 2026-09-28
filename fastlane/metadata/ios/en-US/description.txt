@@ -1,1 +1,10 @@
-TODO: description
+Forgot your printed barcode again? Bibless keeps your parkrun barcode on your phone and your Apple Watch, so you can get scanned at the finish without carrying anything.
+
+• Add your athlete ID once (for example A1234567) and your barcode is ready to scan
+• Show it on your Apple Watch – leave your phone at home on run day
+• Save barcodes for the whole family and pick the right one with a tap
+• Choose between QR code and classic barcode, separately for phone and watch
+• Add barcodes on your phone or directly on your watch – they sync automatically
+• No account, no ads, no tracking: your data stays on your devices
+
+Bibless is an independent app and is not affiliated with or endorsed by parkrun.

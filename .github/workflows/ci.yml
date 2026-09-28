@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android + Wear OS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - run: >
+          ./gradlew
+          :app:sharedUI:testAndroidHostTest
+          :app:sharedLogic:testAndroidHostTest
+          :app:androidApp:assembleDebug
+          :app:wearApp:assembleDebug
+          :app:androidApp:lintDebug
+          :app:wearApp:lintDebug
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: ./gradlew :app:sharedLogic:jsTest
+      - run: npm run build:shared
+      - run: npm install
+      - run: npm run build -w webApp
+
+  apple:
+    name: iOS + watchOS
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - run: ./gradlew :app:sharedLogic:iosSimulatorArm64Test :app:sharedLogic:watchosSimulatorArm64Test
+      - name: Build iOS app (simulator, unsigned)
+        run: >
+          xcodebuild build
+          -project app/iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          CODE_SIGNING_ALLOWED=NO

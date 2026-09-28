@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Resolve version
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      code_phone: ${{ steps.version.outputs.code_phone }}
+      code_wear: ${{ steps.version.outputs.code_wear }}
+      has_keystore: ${{ steps.secrets.outputs.has_keystore }}
+      has_play: ${{ steps.secrets.outputs.has_play }}
+      has_apple: ${{ steps.secrets.outputs.has_apple }}
+    steps:
+      - id: version
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not of the form vX.Y.Z"; exit 1
+          fi
+          base=$(( BASH_REMATCH[1] * 1000000 + BASH_REMATCH[2] * 10000 + BASH_REMATCH[3] * 100 ))
+          # Phone and Wear OS share an applicationId, so each bundle needs its own versionCode
+          {
+            echo "name=${GITHUB_REF_NAME#v}"
+            echo "code_phone=$base"
+            echo "code_wear=$(( base + 1 ))"
+          } >> "$GITHUB_OUTPUT"
+      - id: secrets
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          echo "has_keystore=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_play=$([ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "has_apple=$([ -n "$ASC_KEY_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+  android:
+    name: Android + Wear OS
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - name: Decode upload keystore
+        if: needs.version.outputs.has_keystore == 'true'
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      - name: Build release bundles
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          ./gradlew :app:androidApp:bundleRelease \
+            -PappVersionName=${{ needs.version.outputs.name }} \
+            -PappVersionCode=${{ needs.version.outputs.code_phone }}
+          ./gradlew :app:wearApp:bundleRelease \
+            -PappVersionName=${{ needs.version.outputs.name }} \
+            -PappVersionCode=${{ needs.version.outputs.code_wear }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: |
+            app/androidApp/build/outputs/bundle/release/*.aab
+            app/wearApp/build/outputs/bundle/release/*.aab
+      # Store uploads are opt-in: set the repository variable STORE_UPLOAD=true to enable them.
+      # Until then, download the bundles from the GitHub Release and upload them manually.
+      - uses: ruby/setup-ruby@v1
+        if: vars.STORE_UPLOAD == 'true' && needs.version.outputs.has_play == 'true' && needs.version.outputs.has_keystore == 'true'
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Upload to Google Play (internal track)
+        if: vars.STORE_UPLOAD == 'true' && needs.version.outputs.has_play == 'true' && needs.version.outputs.has_keystore == 'true'
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: bundle exec fastlane android upload track:internal
+
+  ios:
+    name: iOS + watchOS
+    needs: version
+    if: needs.version.outputs.has_apple == 'true'
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Build signed IPA (uploads to TestFlight only if STORE_UPLOAD=true)
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: >
+          bundle exec fastlane ios ${{ vars.STORE_UPLOAD == 'true' && 'beta' || 'build_ipa' }}
+          version:${{ needs.version.outputs.name }}
+          build_number:${{ github.run_number }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: build/ios/*.ipa
+
+  web:
+    name: Web
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm run build:shared
+      - run: npm install
+      - run: npm run build -w webApp
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/webApp/dist
+      - run: cd app/webApp/dist && zip -r "$GITHUB_WORKSPACE/bibless-web-${{ needs.version.outputs.name }}.zip" .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: bibless-web-*.zip
+
+  deploy-pages:
+    name: Deploy web to GitHub Pages
+    needs: web
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  github-release:
+    name: GitHub Release
+    needs: [android, ios, web]
+    # iOS is skipped until Apple secrets exist; still release the other targets
+    if: always() && needs.android.result == 'success' && needs.web.result == 'success' && needs.ios.result != 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            dist/*.aab
+            dist/*.zip
+            dist/*.ipa

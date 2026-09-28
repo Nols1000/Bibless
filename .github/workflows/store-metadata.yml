@@ -1,0 +1,54 @@
+name: Store metadata
+
+# Syncs store listings (texts, screenshots) from fastlane/ to Google Play and App Store Connect.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fastlane/metadata/**'
+      - 'fastlane/screenshots/**'
+  workflow_dispatch:
+
+concurrency:
+  group: store-metadata
+  cancel-in-progress: false
+
+jobs:
+  play:
+    name: Google Play listing
+    runs-on: ubuntu-latest
+    env:
+      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+    steps:
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON == ''
+        run: echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set, skipping Play listing sync"
+      - uses: actions/checkout@v4
+        if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+      - uses: ruby/setup-ruby@v1
+        if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        run: bundle exec fastlane android metadata
+
+  app-store:
+    name: App Store listing
+    runs-on: ubuntu-latest
+    env:
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+    steps:
+      - if: env.ASC_KEY_ID == ''
+        run: echo "::notice::ASC_KEY_ID not set, skipping App Store listing sync"
+      - uses: actions/checkout@v4
+        if: env.ASC_KEY_ID != ''
+      - uses: ruby/setup-ruby@v1
+        if: env.ASC_KEY_ID != ''
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - if: env.ASC_KEY_ID != ''
+        run: bundle exec fastlane ios metadata

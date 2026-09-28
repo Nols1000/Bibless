@@ -34,8 +34,19 @@ android {
         applicationId = "com.github.nols1000.bibless"
         minSdk = libs.versions.android.wear.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 2
+        versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0"
+    }
+    signingConfigs {
+        // Release signing is configured via env vars in CI; without them release builds stay unsigned.
+        System.getenv("ANDROID_KEYSTORE_PATH")?.let { keystorePath ->
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
     }
     packaging {
         resources {
@@ -44,6 +55,7 @@ android {
     }
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),

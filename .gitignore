@@ -17,3 +17,9 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+fastlane/report.xml
+fastlane/README.md
+fastlane/test_output
+*.ipa
+*.dSYM.zip
+vendor/bundle

@@ -1,0 +1,7 @@
+# Android
+package_name("com.github.nols1000.bibless")
+json_key_data_raw(ENV["PLAY_SERVICE_ACCOUNT_JSON"]) if ENV["PLAY_SERVICE_ACCOUNT_JSON"]
+
+# iOS
+app_identifier("com.github.nols1000.bibless")
+team_id(ENV["APPLE_TEAM_ID"]) if ENV["APPLE_TEAM_ID"]

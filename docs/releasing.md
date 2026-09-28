@@ -50,6 +50,8 @@ Set these under *Settings → Secrets and variables → Actions*:
 | `APPLE_TEAM_ID` | Apple Developer team ID |
 | `ASC_KEY_ID`, `ASC_ISSUER_ID` | App Store Connect API key (Admin role, required for cloud-managed signing) |
 | `ASC_KEY_P8_BASE64` | `base64 -i AuthKey_XXXX.p8` |
+| `MATCH_PASSWORD` | Encrypts the iOS certificate and profiles in the match repo |
+| `MATCH_DEPLOY_KEY` | Private SSH key of the read-write deploy key on `Nols1000/bibless-certificates` |
 
 ## One-time setup
 
@@ -65,4 +67,4 @@ Set these under *Settings → Secrets and variables → Actions*:
 4. **Apple**:
    1. Create the app for bundle id `com.github.nols1000.bibless` in App Store Connect. The watch app `com.github.nols1000.bibless.watchkitapp` is embedded in the iOS app, and its identifier is registered automatically on the first cloud-signed build.
    2. Create a Team API key with the *Admin* role under *Users and Access → Integrations → App Store Connect API*. Admin is needed so Xcode can create the distribution certificate and profiles in the cloud.
-   3. CI signs with Xcode automatic, cloud-managed signing using that key, so no certificates or profiles need to be stored.
+   3. Signing uses [fastlane match](https://docs.fastlane.tools/actions/match/). The Apple Distribution certificate and the App Store profiles for the app and watch app are stored encrypted in the private repo `Nols1000/bibless-certificates`. The first CI run creates them through the API key, and later runs reuse them. To use them locally, run `bundle exec fastlane ios certificates readonly:true` (needs `MATCH_PASSWORD` and SSH access to that repo). The Xcode project keeps automatic signing for local development; CI switches the targets to manual signing only on the runner.

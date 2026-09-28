@@ -28,6 +28,12 @@ platform :android do
   end
 end
 
+IOS_APP_ID = "com.github.nols1000.bibless"
+WATCH_APP_ID = "#{IOS_APP_ID}.watchkitapp"
+XCODE_PROJECT = "app/iosApp/iosApp.xcodeproj"
+# Encrypted certificates/profiles; CI authenticates with the MATCH_DEPLOY_KEY deploy key
+MATCH_GIT_URL = "git@github.com:Nols1000/bibless-certificates.git"
+
 platform :ios do
   before_all do
     app_store_connect_api_key(
@@ -44,36 +50,45 @@ platform :ios do
     upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
+  desc "Fetch (or on first run create) the App Store certificate and profiles via match"
+  lane :certificates do |options|
+    match(
+      type: "appstore",
+      app_identifier: [IOS_APP_ID, WATCH_APP_ID],
+      git_url: MATCH_GIT_URL,
+      readonly: options.fetch(:readonly, false)
+    )
+  end
+
   desc "Build a signed App Store IPA (with embedded watchOS app) into build/ios"
   lane :build_ipa do |options|
-    # Xcode downloads cloud-managed profiles here but doesn't create the folder on fresh CI runners
-    FileUtils.mkdir_p(File.expand_path("~/Library/Developer/Xcode/UserData/Provisioning Profiles"))
+    setup_ci # temporary keychain on CI runners
+    certificates
+    profiles = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
 
-    key_path = File.expand_path("AuthKey.p8", ENV.fetch("RUNNER_TEMP", Dir.tmpdir))
-    File.binwrite(key_path, Base64.decode64(ENV.fetch("ASC_KEY_P8_BASE64")))
+    # Switch the targets to manual signing with the match profiles (runner-local change only)
+    { "iosApp" => IOS_APP_ID, "watchApp" => WATCH_APP_ID }.each do |target, bundle_id|
+      update_code_signing_settings(
+        path: XCODE_PROJECT,
+        targets: [target],
+        use_automatic_signing: false,
+        team_id: ENV.fetch("APPLE_TEAM_ID"),
+        code_sign_identity: "Apple Distribution",
+        profile_name: profiles.fetch(bundle_id),
+        bundle_identifier: bundle_id
+      )
+    end
 
     build_app(
-      project: "app/iosApp/iosApp.xcodeproj",
+      project: XCODE_PROJECT,
       scheme: "iosApp",
       configuration: "Release",
       export_method: "app-store",
-      # Cloud-managed signing: Xcode fetches certificates/profiles via the API key
-      export_options: { signingStyle: "automatic", teamID: ENV.fetch("APPLE_TEAM_ID") },
+      export_options: { signingStyle: "manual", provisioningProfiles: profiles },
       output_directory: "build/ios",
       xcargs: [
-        "TEAM_ID=#{ENV.fetch('APPLE_TEAM_ID')}",
         "MARKETING_VERSION=#{options.fetch(:version)}",
         "CURRENT_PROJECT_VERSION=#{options.fetch(:build_number)}",
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath #{key_path}",
-        "-authenticationKeyID #{ENV.fetch('ASC_KEY_ID')}",
-        "-authenticationKeyIssuerID #{ENV.fetch('ASC_ISSUER_ID')}",
-      ].join(" "),
-      export_xcargs: [
-        "-allowProvisioningUpdates",
-        "-authenticationKeyPath #{key_path}",
-        "-authenticationKeyID #{ENV.fetch('ASC_KEY_ID')}",
-        "-authenticationKeyIssuerID #{ENV.fetch('ASC_ISSUER_ID')}",
       ].join(" ")
     )
   end

@@ -50,8 +50,19 @@ platform :ios do
     upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
+  desc "Register the app and watch app bundle ids in the Developer Portal if missing"
+  lane :register_app_ids do
+    { IOS_APP_ID => "Bibless", WATCH_APP_ID => "Bibless Watch App" }.each do |identifier, name|
+      next if Spaceship::ConnectAPI::BundleId.find(identifier)
+
+      UI.message("Registering bundle id #{identifier}")
+      Spaceship::ConnectAPI::BundleId.create(name: name, platform: "IOS", identifier: identifier)
+    end
+  end
+
   desc "Fetch (or on first run create) the App Store certificate and profiles via match"
   lane :certificates do |options|
+    register_app_ids unless options[:readonly]
     match(
       type: "appstore",
       app_identifier: [IOS_APP_ID, WATCH_APP_ID],

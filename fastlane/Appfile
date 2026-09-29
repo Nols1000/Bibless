@@ -2,7 +2,7 @@
 package_name("com.github.nols1000.bibless")
 if ENV["GOOGLE_APPLICATION_CREDENTIALS"]
   # Workload Identity Federation credentials written by google-github-actions/auth on CI
-  json_key(ENV["GOOGLE_APPLICATION_CREDENTIALS"])
+  json_key_file(ENV["GOOGLE_APPLICATION_CREDENTIALS"])
 elsif ENV["PLAY_SERVICE_ACCOUNT_JSON"]
   # Service account JSON key, for local use
   json_key_data_raw(ENV["PLAY_SERVICE_ACCOUNT_JSON"])

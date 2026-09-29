@@ -36,9 +36,9 @@ MARK = "#000000"
 
 SIZE = 512.0
 SLANT_TOP_X, SLANT_BOTTOM_X = 193.453, 95.957  # the slanted edge meets y=0 and y=512 here
-R_OUTER, R_INNER = 123.636, 74.182  # bowl radii; the stroke is their difference
-TOP_BOWL = (231.127, 157.092)  # centers
-BOTTOM_BOWL = (227.637, 354.908)
+R_OUTER, R_INNER = 127.273, 63.273  # bowl radii; the stroke is their difference
+TOP_BOWL = (227.491, 160.728)  # centers
+BOTTOM_BOWL = (224.001, 351.272)
 BAR_X = 400.607  # the right bar runs from here to the right edge
 FAR = 4 * SIZE  # how far the block and the bar extend past the square
 

@@ -1,5 +1,6 @@
 package com.github.nols1000.bibless.wear
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,6 +16,7 @@ import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.wear.compose.foundation.rememberAmbientModeManager
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
@@ -35,6 +37,11 @@ fun BarcodeDetailScreen(barcode: Barcode?, format: BarcodeFormat) {
             return@ScreenScaffold
         }
         FullBrightness()
+        // Keeps the code on screen when the watch dims instead of falling back to the watch face.
+        // The ambient API comes with Wear OS 6; older watches keep their default behavior.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
+            rememberAmbientModeManager()
+        }
         val isRound = LocalConfiguration.current.isScreenRound
         BoxWithConstraints(
             // Stays on until the volunteer has scanned it; the timeout returns with the list.

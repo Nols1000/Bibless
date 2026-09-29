@@ -6,7 +6,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
+import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.github.nols1000.bibless.Bibless
 import com.github.nols1000.bibless.DemoData
@@ -43,7 +46,24 @@ class ScreenshotTest {
             device.wait(Until.gone(By.text("Sam")), TIMEOUT)
             device.waitForIdle()
             Screengrab.screenshot("02-barcode")
+
+            device.pressBack()
+            scrollTo(By.text("Settings")).click()
+            // The list shows "Me" too, so let it leave first
+            check(device.wait(Until.gone(By.text("Add")), TIMEOUT)) { "Settings did not open" }
+            // Mark the barcode to open on launch; radio rows are checkable, unlike the list rows
+            val row = scrollTo(By.checkable(true).hasDescendant(By.text("Me")))
+            row.click()
+            check(row.wait(Until.checked(true), TIMEOUT)) { "Default not selected" }
+            device.waitForIdle()
+            Screengrab.screenshot("03-settings")
         }
+    }
+
+    /** Scrolls the screen's list down until an object matching [selector] shows up. */
+    private fun scrollTo(selector: BySelector): UiObject2 {
+        val list = checkNotNull(device.wait(Until.findObject(By.scrollable(true)), TIMEOUT)) { "No list to scroll" }
+        return checkNotNull(list.scrollUntil(Direction.DOWN, Until.findObject(selector))) { "$selector not found" }
     }
 
     companion object {

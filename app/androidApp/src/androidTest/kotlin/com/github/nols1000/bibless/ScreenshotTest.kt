@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import org.junit.After
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Test
@@ -41,7 +42,32 @@ class ScreenshotTest {
             device.wait(Until.gone(By.text("Sam")), TIMEOUT)
             device.waitForIdle()
             Screengrab.screenshot("02-barcode")
+
+            device.pressBack()
+            checkNotNull(device.wait(Until.findObject(By.desc("Settings")), TIMEOUT)) { "List did not return" }.click()
+            // Mark the barcode to open on launch; radio rows are checkable, unlike the list rows
+            val option = By.checkable(true).hasDescendant(By.text("Me"))
+            val row = checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "Settings did not appear" }
+            row.click()
+            check(row.wait(Until.checked(true), TIMEOUT)) { "Default not selected" }
+            device.waitForIdle()
+            Screengrab.screenshot("04-settings")
         }
+
+        // Relaunching in dark mode opens straight on the default barcode, still black on white
+        device.executeShellCommand("cmd uimode night yes")
+        ActivityScenario.launch(MainActivity::class.java).use {
+            checkNotNull(device.wait(Until.findObject(By.text("A0123456")), TIMEOUT)) { "App did not start" }
+            // The list shows for a frame before the barcode opens on top of it
+            check(device.wait(Until.gone(By.text("Sam")), TIMEOUT)) { "Barcode did not open on launch" }
+            device.waitForIdle()
+            Screengrab.screenshot("03-barcode-dark")
+        }
+    }
+
+    @After
+    fun tearDown() {
+        device.executeShellCommand("cmd uimode night no")
     }
 
     companion object {

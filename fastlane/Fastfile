@@ -53,8 +53,12 @@ platform :android do
 
   desc "Sync the Play store listing (texts, images) without uploading a binary"
   lane :metadata do
+    # supply attaches the listing to an existing release; production stays empty until the first public release
+    track = "internal"
     upload_to_play_store(
       metadata_path: "fastlane/metadata/android",
+      track: track,
+      version_code: google_play_track_version_codes(track: track).max,
       skip_upload_aab: true,
       skip_upload_apk: true,
       skip_upload_changelogs: true

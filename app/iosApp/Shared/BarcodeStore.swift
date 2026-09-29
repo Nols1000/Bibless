@@ -68,6 +68,12 @@ final class BarcodeStore: ObservableObject {
         repository.find(id: id)
     }
 
+    /// The barcode whose detail view is open, so the app can reopen on it; nil once it was deleted.
+    var shownBarcodeId: String? {
+        get { repository.shownBarcodeId }
+        set { repository.shownBarcodeId = newValue }
+    }
+
     private func update(_ state: BarcodeState) {
         barcodes = state.barcodes
         format = state.format

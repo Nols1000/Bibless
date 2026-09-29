@@ -43,5 +43,6 @@ fun App(repository: BarcodeRepository) {
                 )
             }
         }
+        ReopenShownBarcode(navController, repository)
     }
 }

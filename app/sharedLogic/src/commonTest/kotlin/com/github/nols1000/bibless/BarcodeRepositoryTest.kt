@@ -169,4 +169,24 @@ class BarcodeRepositoryTest {
         repo.applyRemote("not json")
         assertEquals(emptyList(), repo.state.value.barcodes)
     }
+
+    @Test
+    fun shownBarcodePersists() {
+        val store = MemoryStore()
+        val repo = repo(store)
+        val barcode = repo.add("Me", "A1")
+        repo.shownBarcodeId = barcode.id
+        assertEquals(barcode.id, repo(store).shownBarcodeId)
+        repo.shownBarcodeId = null
+        assertNull(repo(store).shownBarcodeId)
+    }
+
+    @Test
+    fun shownBarcodeIsForgottenOnceDeleted() {
+        val (phone, watch) = pair()
+        val barcode = phone.add("Me", "A1")
+        phone.shownBarcodeId = barcode.id
+        watch.delete(barcode.id)
+        assertNull(phone.shownBarcodeId)
+    }
 }

@@ -52,6 +52,14 @@ class BarcodeRepository(
 
     fun find(id: String): Barcode? = all.value.firstOrNull { it.id == id && !it.deleted }
 
+    /**
+     * The barcode whose detail screen is open on this device, so the app can reopen on it after
+     * being closed; null once it was deleted. Kept per device and never synced.
+     */
+    var shownBarcodeId: String?
+        get() = store.get(KEY_SHOWN_BARCODE)?.takeIf { find(it) != null }
+        set(value) = store.put(KEY_SHOWN_BARCODE, value.orEmpty())
+
     /** Adds a barcode, or throws [IllegalArgumentException] if [athleteId] is not a valid parkrun ID. */
     @OptIn(ExperimentalUuidApi::class)
     @Throws(IllegalArgumentException::class)
@@ -134,6 +142,7 @@ class BarcodeRepository(
     private companion object {
         const val KEY_BARCODES = "barcodes"
         const val KEY_SETTINGS = "settings"
+        const val KEY_SHOWN_BARCODE = "shownBarcode"
 
         val json = Json { ignoreUnknownKeys = true }
 

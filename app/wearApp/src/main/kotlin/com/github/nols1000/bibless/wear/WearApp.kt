@@ -10,6 +10,7 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.nols1000.bibless.BarcodeRepository
 import com.github.nols1000.bibless.Device
+import com.github.nols1000.bibless.ReopenShownBarcode
 
 @Composable
 fun WearApp(repository: BarcodeRepository) {
@@ -47,6 +48,7 @@ fun WearApp(repository: BarcodeRepository) {
                     )
                 }
             }
+            ReopenShownBarcode(navController, repository)
         }
     }
 }

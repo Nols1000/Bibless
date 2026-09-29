@@ -5,8 +5,10 @@ struct ContentView: View {
     @EnvironmentObject private var store: BarcodeStore
     @State private var isAdding = false
 
+    @State private var path: [String] = []
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             List {
                 ForEach(store.barcodes) { barcode in
                     NavigationLink(value: barcode.id) {
@@ -42,6 +44,11 @@ struct ContentView: View {
                 }
             }
         }
+        // Reopen the barcode that was shown when the app was closed, on top of the list.
+        .onAppear {
+            if path.isEmpty, let id = store.shownBarcodeId { path = [id] }
+        }
+        .onChange(of: path) { store.shownBarcodeId = path.last }
     }
 }
 

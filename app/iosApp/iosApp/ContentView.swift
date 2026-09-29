@@ -155,6 +155,9 @@ private struct BarcodeDetailView: View {
             .padding()
             .navigationTitle(barcode.name)
             .navigationBarTitleDisplayMode(.inline)
+            // Stays on until the volunteer has scanned it; the timeout returns with the list.
+            .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+            .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         } else {
             ContentUnavailableView("Barcode Deleted", systemImage: "trash")
         }

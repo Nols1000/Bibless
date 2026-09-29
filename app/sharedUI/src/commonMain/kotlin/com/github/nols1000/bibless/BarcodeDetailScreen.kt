@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.unit.dp
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 
@@ -53,7 +54,8 @@ fun BarcodeDetailScreen(
             }
             // Black on white regardless of theme: scanners struggle with a code framed by a dark screen.
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                // Stays on until the volunteer has scanned it; the timeout returns with the list.
+                modifier = Modifier.fillMaxWidth().keepScreenOn(),
                 shape = RoundedCornerShape(12.dp),
                 color = Color.White,
                 contentColor = Color.Black,

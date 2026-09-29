@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.keepScreenOn
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,7 +35,8 @@ fun BarcodeDetailScreen(barcode: Barcode?, format: BarcodeFormat) {
         }
         val isRound = LocalConfiguration.current.isScreenRound
         BoxWithConstraints(
-            Modifier.fillMaxSize().background(Color.White),
+            // Stays on until the volunteer has scanned it; the timeout returns with the list.
+            Modifier.fillMaxSize().background(Color.White).keepScreenOn(),
             contentAlignment = Alignment.Center,
         ) {
             // On round screens, keep the code inside the largest square that fits in the circle.

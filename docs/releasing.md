@@ -5,7 +5,8 @@ All targets except `:server` are built and released from GitHub Actions.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | PRs, pushes to `main` | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned) |
-| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, deploys web to GitHub Pages, uploads to the Play internal track and TestFlight, and creates a GitHub Release |
+| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to the Play internal track and TestFlight, and creates a GitHub Release |
+| `pages.yml` | Changes to the web app on `main`, or manual run | Deploys the web app and the privacy policies to GitHub Pages |
 | `store-metadata.yml` | Changes to `fastlane/metadata/**` or `fastlane/screenshots/**` on `main`, or manual run | Pushes store listings to Google Play and App Store Connect |
 
 Signing and store steps are skipped automatically while their secrets are missing.
@@ -26,6 +27,8 @@ git push origin v1.2.3
 Versions are derived from the tag:
 - Android `versionName` is `1.2.3`. `versionCode` is `major*1000000 + minor*10000 + patch*100`, plus 1 for Wear OS, because the two apps share an applicationId and each bundle needs a unique code.
 - iOS `MARKETING_VERSION` is `1.2.3`, and `CURRENT_PROJECT_VERSION` is the workflow run number.
+
+Never move or reuse a tag once its build has reached a store: Play rejects a `versionCode` it has already seen. Tag the next patch version instead.
 
 Local builds can override the version the same way: `./gradlew :app:androidApp:bundleRelease -PappVersionName=1.2.3 -PappVersionCode=1020300`.
 

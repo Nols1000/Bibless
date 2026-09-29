@@ -1,1 +1,4 @@
-First release of Bibless.
+• Opens straight to your barcode: pick one under Settings → Open on Launch, or keep just one
+• Returns to the barcode you were showing if the app was closed
+• Full brightness and the screen stays on while a barcode is shown on your iPhone
+• The barcode is always black on white, also in dark mode

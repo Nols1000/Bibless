@@ -1,0 +1,4 @@
+• Opens straight to your barcode: pick one under Settings → Open on launch, or keep just one
+• Returns to the barcode you were showing if the app was closed
+• Full brightness and the screen stays on while a barcode is shown
+• The barcode is always black on white, also in dark mode

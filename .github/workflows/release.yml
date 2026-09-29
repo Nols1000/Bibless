@@ -20,7 +20,6 @@ jobs:
       code_phone: ${{ steps.version.outputs.code_phone }}
       code_wear: ${{ steps.version.outputs.code_wear }}
       has_keystore: ${{ steps.secrets.outputs.has_keystore }}
-      has_play: ${{ steps.secrets.outputs.has_play }}
       has_apple: ${{ steps.secrets.outputs.has_apple }}
     steps:
       - id: version
@@ -38,17 +37,18 @@ jobs:
       - id: secrets
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
         run: |
           echo "has_keystore=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "has_play=$([ -n "$PLAY_SERVICE_ACCOUNT_JSON" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "has_apple=$([ -n "$ASC_KEY_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   android:
     name: Android + Wear OS
     needs: version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
@@ -91,14 +91,17 @@ jobs:
       # Store uploads are opt-in: set the repository variable STORE_UPLOAD=true to enable them.
       # Until then, download the bundles from the GitHub Release and upload them manually.
       - uses: ruby/setup-ruby@v1
-        if: vars.STORE_UPLOAD == 'true' && needs.version.outputs.has_play == 'true' && needs.version.outputs.has_keystore == 'true'
+        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      - uses: google-github-actions/auth@v3
+        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
       - name: Upload to Google Play (internal track)
-        if: vars.STORE_UPLOAD == 'true' && needs.version.outputs.has_play == 'true' && needs.version.outputs.has_keystore == 'true'
-        env:
-          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
         run: bundle exec fastlane android upload track:internal
 
   ios:

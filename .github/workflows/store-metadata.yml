@@ -17,19 +17,27 @@ jobs:
   play:
     name: Google Play listing
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
     env:
-      PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
     steps:
-      - if: env.PLAY_SERVICE_ACCOUNT_JSON == ''
-        run: echo "::notice::PLAY_SERVICE_ACCOUNT_JSON not set, skipping Play listing sync"
+      - if: env.PLAY_SERVICE_ACCOUNT == ''
+        run: echo "::notice::PLAY_SERVICE_ACCOUNT variable not set, skipping Play listing sync"
       - uses: actions/checkout@v4
-        if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: env.PLAY_SERVICE_ACCOUNT != ''
       - uses: ruby/setup-ruby@v1
-        if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+        if: env.PLAY_SERVICE_ACCOUNT != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
-      - if: env.PLAY_SERVICE_ACCOUNT_JSON != ''
+      - uses: google-github-actions/auth@v3
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.PLAY_SERVICE_ACCOUNT }}
+      - if: env.PLAY_SERVICE_ACCOUNT != ''
         run: bundle exec fastlane android metadata
 
   app-store:

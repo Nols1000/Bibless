@@ -17,6 +17,13 @@ dependencies {
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
+
+    // Store screenshots via fastlane screengrab (ScreenshotTest)
+    androidTestImplementation(libs.fastlane.screengrab)
+    androidTestImplementation(libs.androidx.testExt.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
+    androidTestImplementation(libs.androidx.uiautomator)
 }
 
 android {
@@ -29,6 +36,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 1
         versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         // Release signing is configured via env vars in CI; without them release builds stay unsigned.

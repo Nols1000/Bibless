@@ -37,9 +37,25 @@ Local builds can override the version the same way: `./gradlew :app:androidApp:b
 The listings are kept in the repo and managed by [fastlane](https://docs.fastlane.tools):
 - `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`.
 - `fastlane/metadata/ios/<locale>/`: App Store texts. Put `release_notes.txt` here.
-- `fastlane/screenshots/ios/<locale>/`: App Store screenshots for iPhone, iPad and Apple Watch, assigned to device slots by pixel size.
+- `fastlane/screenshots/ios/<locale>/`: App Store screenshots for iPhone and Apple Watch, assigned to device slots by pixel size.
 
 If a listing already exists in a store, pull it once before editing: `bundle exec fastlane supply init` and `bundle exec fastlane deliver download_metadata`.
+
+### Screenshots
+
+Screenshots are captured by UI tests through fastlane ([snapshot](https://docs.fastlane.tools/actions/snapshot/) and [screengrab](https://docs.fastlane.tools/actions/screengrab/)). The tests start the apps with sample barcodes from `DemoData` (`app/sharedLogic`), so no real codes appear in the stores.
+
+```sh
+# iPhone 17 Pro Max (6.9") and Apple Watch Ultra 3 simulators
+bundle exec fastlane ios screenshots
+
+# Running phone and Wear OS emulators, by their `adb devices` serials
+bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
+```
+
+The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `androidTest` sources. The Android tests replace the app's saved barcodes, so they refuse to run on a real device.
+
+The images are not committed (they are git-ignored). `store-metadata.yml` captures them on CI simulators and emulators and uploads them with the listing; each run also keeps them as workflow artifacts for review. Run it manually after UI changes: `gh workflow run store-metadata.yml`. The local commands above are for previewing.
 
 ## Secrets
 

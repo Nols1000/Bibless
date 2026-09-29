@@ -6,15 +6,49 @@ ANDROID_AABS = [
   "app/wearApp/build/outputs/bundle/release/wearApp-release.aab",
 ].map { |p| File.expand_path("../#{p}", __dir__) }
 
+ANDROID_TEST_PACKAGE = "com.github.nols1000.bibless.test"
+
 platform :android do
+  desc "Capture the Play phone and Wear OS screenshots on running emulators (demo data, see ScreenshotTest). " \
+       "Options: phone:<adb serial>, wear:<adb serial>; omit one to skip it"
+  lane :screenshots do |options|
+    targets = { "androidApp" => ["phone", options[:phone]], "wearApp" => ["wear", options[:wear]] }
+      .select { |_, (_, serial)| serial }
+    UI.user_error!("Pass phone:<serial> and/or wear:<serial> (see `adb devices`)") if targets.empty?
+
+    gradle(tasks: targets.keys.flat_map { |m| [":app:#{m}:assembleDebug", ":app:#{m}:assembleDebugAndroidTest"] })
+    targets.each do |mod, (device_type, serial)|
+      capture_android_screenshots(
+        app_apk_path: "app/#{mod}/build/outputs/apk/debug/#{mod}-debug.apk",
+        tests_apk_path: "app/#{mod}/build/outputs/apk/androidTest/debug/#{mod}-debug-androidTest.apk",
+        app_package_name: "com.github.nols1000.bibless",
+        tests_package_name: ANDROID_TEST_PACKAGE,
+        test_instrumentation_runner: "androidx.test.runner.AndroidJUnitRunner",
+        specific_device: serial,
+        device_type: device_type,
+        locales: ["en-US"],
+        output_directory: "fastlane/metadata/android",
+        clear_previous_screenshots: true,
+        exit_on_test_failure: true
+      )
+    end
+  end
+
   desc "Upload the phone and Wear OS bundles (plus listing) to a Play track"
   lane :upload do |options|
-    upload_to_play_store(
-      track: options[:track] || "internal",
-      aab_paths: ANDROID_AABS,
+    track = options[:track] || "internal"
+    phone_aab, wear_aab = ANDROID_AABS
+    common = {
       metadata_path: "fastlane/metadata/android",
-      release_status: options[:release_status] || "completed"
-    )
+      release_status: options[:release_status] || "completed",
+      # The listing and its screenshots are synced by the metadata lane (store-metadata.yml)
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    }
+    upload_to_play_store(**common, track: track, aab: phone_aab)
+    # Wear OS bundles go to the Wear OS form factor tracks (Advanced settings → Form factors)
+    upload_to_play_store(**common, track: "wear:#{track}", aab: wear_aab)
   end
 
   desc "Sync the Play store listing (texts, images) without uploading a binary"
@@ -35,7 +69,9 @@ XCODE_PROJECT = "app/iosApp/iosApp.xcodeproj"
 MATCH_GIT_URL = "git@github.com:Nols1000/bibless-certificates.git"
 
 platform :ios do
-  before_all do
+  before_all do |lane|
+    next if lane == :screenshots # runs locally on simulators, no App Store Connect access needed
+
     app_store_connect_api_key(
       key_id: ENV.fetch("ASC_KEY_ID"),
       issuer_id: ENV.fetch("ASC_ISSUER_ID"),
@@ -102,6 +138,24 @@ platform :ios do
         "CURRENT_PROJECT_VERSION=#{options.fetch(:build_number)}",
       ].join(" ")
     )
+  end
+
+  desc "Capture the App Store iPhone and Apple Watch screenshots on simulators (demo data, see ScreenshotTests)"
+  lane :screenshots do
+    common = {
+      project: XCODE_PROJECT,
+      languages: ["en-US"],
+      output_directory: "fastlane/screenshots/ios",
+      skip_open_summary: true,
+      stop_after_first_error: true
+    }
+    # iPhone 6.9" slot (1320x2868); status bar overridden to 9:41 with full signal and battery
+    capture_ios_screenshots(**common, scheme: "iosApp", only_testing: ["iosAppUITests"],
+                            devices: ["iPhone 17 Pro Max"], override_status_bar: true,
+                            clear_previous_screenshots: true)
+    # Apple Watch Ultra slot (422x514)
+    capture_ios_screenshots(**common, scheme: "watchApp", only_testing: ["watchAppUITests"],
+                            devices: ["Apple Watch Ultra 3 (49mm)"])
   end
 
   desc "Sync the App Store listing (texts, screenshots) without uploading a binary"

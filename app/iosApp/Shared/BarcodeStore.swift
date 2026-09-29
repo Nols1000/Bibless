@@ -10,16 +10,26 @@ final class BarcodeStore: ObservableObject {
     @Published private(set) var settings = Settings(phoneFormat: .qr, watchFormat: .qr, updatedAt: 0)
 
     #if os(watchOS)
-    private let repository = BarcodeRepository(store: UserDefaultsStore(), device: .watch)
+    private static let device = Device.watch
     #else
-    private let repository = BarcodeRepository(store: UserDefaultsStore(), device: .phone)
+    private static let device = Device.phone
     #endif
-    private let watchSync: WatchSync
+    private let repository: BarcodeRepository
+    private let watchSync: WatchSync?
     private var observation: KotlinAutoCloseable?
 
     init() {
-        watchSync = WatchSync(repository: repository)
-        repository.sync = watchSync
+        if ProcessInfo.processInfo.arguments.contains(DemoData.shared.LAUNCH_ARGUMENT) {
+            // Store screenshots: sample codes kept in memory, nothing saved or synced
+            repository = BarcodeRepository(store: InMemoryStore(), device: Self.device)
+            DemoData.shared.load(repository: repository)
+            watchSync = nil
+        } else {
+            repository = BarcodeRepository(store: UserDefaultsStore(), device: Self.device)
+            let sync = WatchSync(repository: repository)
+            repository.sync = sync
+            watchSync = sync
+        }
         observation = repository.observe { [weak self] state in
             if Thread.isMainThread {
                 MainActor.assumeIsolated { self?.update(state) }
@@ -27,7 +37,7 @@ final class BarcodeStore: ObservableObject {
                 DispatchQueue.main.async { self?.update(state) }
             }
         }
-        watchSync.activate()
+        watchSync?.activate()
     }
 
     deinit {

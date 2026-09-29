@@ -1,12 +1,16 @@
 name: Store metadata
 
-# Syncs store listings (texts, screenshots) from fastlane/ to Google Play and App Store Connect.
+# Syncs store listings to Google Play and App Store Connect: texts from fastlane/metadata, plus
+# screenshots that are captured here by the UI tests (fastlane screengrab / snapshot, demo data).
 on:
   push:
     branches: [main]
     paths:
       - 'fastlane/metadata/**'
-      - 'fastlane/screenshots/**'
+      - 'fastlane/Fastfile'
+      - 'app/iosApp/*UITests*/**'
+      - 'app/*/src/androidTest/**'
+      - '.github/workflows/store-metadata.yml'
   workflow_dispatch:
 
 concurrency:
@@ -27,11 +31,40 @@ jobs:
         run: echo "::notice::PLAY_SERVICE_ACCOUNT variable not set, skipping Play listing sync"
       - uses: actions/checkout@v4
         if: env.PLAY_SERVICE_ACCOUNT != ''
+      - uses: ./.github/actions/setup-build
+        if: env.PLAY_SERVICE_ACCOUNT != ''
       - uses: ruby/setup-ruby@v1
         if: env.PLAY_SERVICE_ACCOUNT != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      - name: Enable KVM for the emulators
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Phone screenshots
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          disable-animations: true
+          script: bundle exec fastlane android screenshots phone:emulator-5554
+      - name: Wear OS screenshots
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: android-wear
+          arch: x86_64
+          profile: wearos_large_round
+          disable-animations: true
+          script: bundle exec fastlane android screenshots wear:emulator-5554
+      # Authenticate after the emulator steps so the short-lived token is fresh for the upload
       - uses: google-github-actions/auth@v3
         if: env.PLAY_SERVICE_ACCOUNT != ''
         with:
@@ -39,10 +72,16 @@ jobs:
           service_account: ${{ env.PLAY_SERVICE_ACCOUNT }}
       - if: env.PLAY_SERVICE_ACCOUNT != ''
         run: bundle exec fastlane android metadata
+      - uses: actions/upload-artifact@v4
+        if: always() && env.PLAY_SERVICE_ACCOUNT != ''
+        with:
+          name: play-screenshots
+          path: fastlane/metadata/android/*/images/*Screenshots/
+          if-no-files-found: ignore
 
   app-store:
     name: App Store listing
-    runs-on: ubuntu-latest
+    runs-on: macos-26
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -53,10 +92,22 @@ jobs:
         run: echo "::notice::ASC_KEY_ID not set, skipping App Store listing sync"
       - uses: actions/checkout@v4
         if: env.ASC_KEY_ID != ''
+      # The Xcode build compiles the shared Kotlin framework through Gradle
+      - uses: ./.github/actions/setup-build
+        if: env.ASC_KEY_ID != ''
       - uses: ruby/setup-ruby@v1
         if: env.ASC_KEY_ID != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      - name: iPhone and Apple Watch screenshots
+        if: env.ASC_KEY_ID != ''
+        run: bundle exec fastlane ios screenshots
       - if: env.ASC_KEY_ID != ''
         run: bundle exec fastlane ios metadata
+      - uses: actions/upload-artifact@v4
+        if: always() && env.ASC_KEY_ID != ''
+        with:
+          name: app-store-screenshots
+          path: fastlane/screenshots/ios/*/
+          if-no-files-found: ignore

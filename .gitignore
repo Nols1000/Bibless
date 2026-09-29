@@ -20,6 +20,10 @@ node_modules/
 fastlane/report.xml
 fastlane/README.md
 fastlane/test_output
+fastlane/**/screenshots.html
+# Store screenshots are generated in CI (store-metadata.yml), not committed
+fastlane/screenshots/ios/*/
+fastlane/metadata/android/*/images/*Screenshots/
 *.ipa
 *.dSYM.zip
 vendor/bundle

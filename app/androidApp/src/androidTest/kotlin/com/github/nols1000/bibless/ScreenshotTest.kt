@@ -32,10 +32,12 @@ class ScreenshotTest {
     @Test
     fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
-            device.wait(Until.hasObject(By.text("Me")), TIMEOUT)
+            // A cold emulator can take a while to render the first frame
+            val me = checkNotNull(device.wait(Until.findObject(By.text("Me")), TIMEOUT)) { "Demo barcode list did not appear" }
+            device.waitForIdle()
             Screengrab.screenshot("01-list")
 
-            device.findObject(By.text("Me")).click()
+            me.click()
             device.wait(Until.gone(By.text("Sam")), TIMEOUT)
             device.waitForIdle()
             Screengrab.screenshot("02-barcode")
@@ -43,7 +45,7 @@ class ScreenshotTest {
     }
 
     companion object {
-        private const val TIMEOUT = 10_000L
+        private const val TIMEOUT = 30_000L
 
         @get:ClassRule
         @JvmStatic

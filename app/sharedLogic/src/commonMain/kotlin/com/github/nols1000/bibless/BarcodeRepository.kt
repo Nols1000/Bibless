@@ -60,6 +60,16 @@ class BarcodeRepository(
         get() = store.get(KEY_SHOWN_BARCODE)?.takeIf { find(it) != null }
         set(value) = store.put(KEY_SHOWN_BARCODE, value.orEmpty())
 
+    /**
+     * The barcode to open on launch, on top of the list: the one still shown from last time, else
+     * the default, else the only barcode there is. Null starts on the list.
+     */
+    fun startBarcodeId(): String? =
+        shownBarcodeId ?: defaultBarcodeId() ?: _state.value.barcodes.singleOrNull()?.id
+
+    /** The barcode marked as default in the settings, if it still exists. */
+    fun defaultBarcodeId(): String? = settings.defaultBarcodeId?.takeIf { find(it) != null }
+
     /** Adds a barcode, or throws [IllegalArgumentException] if [athleteId] is not a valid parkrun ID. */
     @OptIn(ExperimentalUuidApi::class)
     @Throws(IllegalArgumentException::class)
@@ -89,6 +99,12 @@ class BarcodeRepository(
             Device.PHONE -> settings.copy(phoneFormat = format)
             Device.WATCH -> settings.copy(watchFormat = format)
         }.copy(updatedAt = now())
+        commit(push = true)
+    }
+
+    /** Marks the barcode to open on launch, or null for the list; syncs to the paired device. */
+    fun setDefaultBarcode(id: String?) {
+        settings = settings.copy(defaultBarcodeId = id, updatedAt = now())
         commit(push = true)
     }
 

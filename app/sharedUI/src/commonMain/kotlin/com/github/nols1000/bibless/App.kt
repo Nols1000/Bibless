@@ -38,11 +38,13 @@ fun App(repository: BarcodeRepository) {
             composable("settings") {
                 SettingsScreen(
                     settings = state.settings,
+                    barcodes = state.barcodes,
                     onDefaultFormatChange = repository::setDefaultFormat,
+                    onDefaultBarcodeChange = repository::setDefaultBarcode,
                     onBack = { navController.popBackStack() },
                 )
             }
         }
-        ReopenShownBarcode(navController, repository)
+        OpenStartBarcode(navController, repository)
     }
 }

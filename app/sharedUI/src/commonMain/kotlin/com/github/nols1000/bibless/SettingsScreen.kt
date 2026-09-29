@@ -29,7 +29,9 @@ val BarcodeFormat.label: String
 @Composable
 fun SettingsScreen(
     settings: Settings,
+    barcodes: List<Barcode>,
     onDefaultFormatChange: (Device, BarcodeFormat) -> Unit,
+    onDefaultBarcodeChange: (String?) -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(
@@ -68,6 +70,36 @@ fun SettingsScreen(
                                 ),
                             )
                         }
+                    }
+                }
+            }
+            item(key = "start") {
+                Text(
+                    "Open on launch",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(start = 16.dp, top = 24.dp, bottom = 8.dp),
+                )
+            }
+            item(key = "start-options") {
+                val defaultId = settings.defaultBarcodeId?.takeIf { id -> barcodes.any { it.id == id } }
+                Column(Modifier.selectableGroup()) {
+                    (listOf(null to "Barcode list") + barcodes.map { it.id to it.name }).forEach { (id, label) ->
+                        val selected = defaultId == id
+                        ListItem(
+                            headlineContent = { Text(label) },
+                            supportingContent = if (id == null && barcodes.size == 1) {
+                                { Text("Your only barcode opens either way") }
+                            } else {
+                                null
+                            },
+                            leadingContent = { RadioButton(selected = selected, onClick = null) },
+                            modifier = Modifier.selectable(
+                                selected = selected,
+                                role = Role.RadioButton,
+                                onClick = { onDefaultBarcodeChange(id) },
+                            ),
+                        )
                     }
                 }
             }

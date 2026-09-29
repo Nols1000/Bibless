@@ -14,6 +14,8 @@ enum class Device { PHONE, WATCH }
 data class Settings(
     val phoneFormat: BarcodeFormat = BarcodeFormat.QR,
     val watchFormat: BarcodeFormat = BarcodeFormat.QR,
+    /** Barcode the apps open on launch instead of the list; null opens the list. */
+    val defaultBarcodeId: String? = null,
     val updatedAt: Long = 0,
 ) {
     fun formatFor(device: Device): BarcodeFormat = when (device) {

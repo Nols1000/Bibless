@@ -10,7 +10,7 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.nols1000.bibless.BarcodeRepository
 import com.github.nols1000.bibless.Device
-import com.github.nols1000.bibless.ReopenShownBarcode
+import com.github.nols1000.bibless.OpenStartBarcode
 
 @Composable
 fun WearApp(repository: BarcodeRepository) {
@@ -45,10 +45,13 @@ fun WearApp(repository: BarcodeRepository) {
                     SettingsScreen(
                         format = state.format,
                         onFormatChange = { repository.setDefaultFormat(Device.WATCH, it) },
+                        barcodes = state.barcodes,
+                        defaultBarcodeId = state.settings.defaultBarcodeId,
+                        onDefaultBarcodeChange = repository::setDefaultBarcode,
                     )
                 }
             }
-            ReopenShownBarcode(navController, repository)
+            OpenStartBarcode(navController, repository)
         }
     }
 }

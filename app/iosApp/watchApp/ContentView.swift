@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var isAdding = false
 
     @State private var path: [String] = []
+    @State private var didStart = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -44,9 +45,11 @@ struct ContentView: View {
                 }
             }
         }
-        // Reopen the barcode that was shown when the app was closed, on top of the list.
+        // Open the start barcode (last shown, default or only one) on top of the list, once per launch.
         .onAppear {
-            if path.isEmpty, let id = store.shownBarcodeId { path = [id] }
+            guard !didStart else { return }
+            didStart = true
+            if let id = store.startBarcodeId { path = [id] }
         }
         .onChange(of: path) { store.shownBarcodeId = path.last }
     }
@@ -88,6 +91,13 @@ private struct SettingsView: View {
             Picker("Default Format", selection: store.defaultFormat(for: .watch)) {
                 ForEach(BarcodeFormat.entries, id: \.self) { format in
                     Text(format.label).tag(format)
+                }
+            }
+            .pickerStyle(.inline)
+            Picker("Open on Launch", selection: store.defaultBarcodeId) {
+                Text("Barcode List").tag(String?.none)
+                ForEach(store.barcodes) { barcode in
+                    Text(barcode.name).tag(Optional(barcode.id))
                 }
             }
             .pickerStyle(.inline)

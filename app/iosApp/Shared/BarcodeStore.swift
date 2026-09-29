@@ -7,7 +7,7 @@ import SwiftUI
 final class BarcodeStore: ObservableObject {
     @Published private(set) var barcodes: [Barcode] = []
     @Published private(set) var format: BarcodeFormat = .qr
-    @Published private(set) var settings = Settings(phoneFormat: .qr, watchFormat: .qr, updatedAt: 0)
+    @Published private(set) var settings = Settings(phoneFormat: .qr, watchFormat: .qr, defaultBarcodeId: nil, updatedAt: 0)
 
     #if os(watchOS)
     private static let device = Device.watch
@@ -72,6 +72,19 @@ final class BarcodeStore: ObservableObject {
     var shownBarcodeId: String? {
         get { repository.shownBarcodeId }
         set { repository.shownBarcodeId = newValue }
+    }
+
+    /// The barcode to open on launch, on top of the list; see `BarcodeRepository.startBarcodeId`.
+    var startBarcodeId: String? {
+        repository.startBarcodeId()
+    }
+
+    /// Binding for a picker that sets the barcode both apps open on launch; nil opens the list.
+    var defaultBarcodeId: Binding<String?> {
+        Binding(
+            get: { self.repository.defaultBarcodeId() },
+            set: { self.repository.setDefaultBarcode(id: $0) }
+        )
     }
 
     private func update(_ state: BarcodeState) {

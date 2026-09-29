@@ -10,12 +10,22 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
+import com.github.nols1000.bibless.Barcode
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.nols1000.bibless.label
 
-/** Lets the watch pick its own default format; the phone default is set on the phone. */
+/**
+ * Lets the watch pick its own default format (the phone default is set on the phone) and the
+ * barcode both apps open on launch.
+ */
 @Composable
-fun SettingsScreen(format: BarcodeFormat, onFormatChange: (BarcodeFormat) -> Unit) {
+fun SettingsScreen(
+    format: BarcodeFormat,
+    onFormatChange: (BarcodeFormat) -> Unit,
+    barcodes: List<Barcode>,
+    defaultBarcodeId: String?,
+    onDefaultBarcodeChange: (String?) -> Unit,
+) {
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
@@ -28,6 +38,18 @@ fun SettingsScreen(format: BarcodeFormat, onFormatChange: (BarcodeFormat) -> Uni
                     onSelect = { onFormatChange(option) },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text(option.label) },
+                )
+            }
+            item {
+                ListHeader { Text("Open on launch") }
+            }
+            val defaultId = defaultBarcodeId?.takeIf { id -> barcodes.any { it.id == id } }
+            items(listOf(null to "Barcode list") + barcodes.map { it.id to it.name }) { (id, label) ->
+                RadioButton(
+                    selected = id == defaultId,
+                    onSelect = { onDefaultBarcodeChange(id) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(label) },
                 )
             }
         }

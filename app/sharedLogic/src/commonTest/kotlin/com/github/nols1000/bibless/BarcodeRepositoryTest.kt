@@ -189,4 +189,36 @@ class BarcodeRepositoryTest {
         watch.delete(barcode.id)
         assertNull(phone.shownBarcodeId)
     }
+
+    @Test
+    fun startsOnTheOnlyBarcode() {
+        val repo = repo()
+        assertNull(repo.startBarcodeId())
+        val barcode = repo.add("Me", "A1")
+        assertEquals(barcode.id, repo.startBarcodeId())
+        repo.add("Sam", "A2")
+        assertNull(repo.startBarcodeId())
+    }
+
+    @Test
+    fun startsOnTheSyncedDefault() {
+        val (phone, watch) = pair()
+        phone.add("Me", "A1")
+        phone.add("Alex", "A3")
+        val sam = phone.add("Sam", "A2")
+        phone.setDefaultBarcode(sam.id)
+        assertEquals(sam.id, watch.startBarcodeId())
+        watch.delete(sam.id)
+        assertNull(phone.startBarcodeId())
+    }
+
+    @Test
+    fun shownBarcodeWinsOverDefault() {
+        val repo = repo()
+        val me = repo.add("Me", "A1")
+        val sam = repo.add("Sam", "A2")
+        repo.setDefaultBarcode(me.id)
+        repo.shownBarcodeId = sam.id
+        assertEquals(sam.id, repo.startBarcodeId())
+    }
 }

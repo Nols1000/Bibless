@@ -20,6 +20,7 @@ import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import com.github.nols1000.bibless.Barcode
 import com.github.nols1000.bibless.BarcodeImage
+import com.github.nols1000.bibless.FullBrightness
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import kotlin.math.sqrt
 
@@ -33,6 +34,7 @@ fun BarcodeDetailScreen(barcode: Barcode?, format: BarcodeFormat) {
             }
             return@ScreenScaffold
         }
+        FullBrightness()
         val isRound = LocalConfiguration.current.isScreenRound
         BoxWithConstraints(
             // Stays on until the volunteer has scanned it; the timeout returns with the list.

@@ -158,6 +158,7 @@ private struct BarcodeDetailView: View {
             // Stays on until the volunteer has scanned it; the timeout returns with the list.
             .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
             .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
+            .modifier(FullBrightness())
         } else {
             ContentUnavailableView("Barcode Deleted", systemImage: "trash")
         }
@@ -167,4 +168,32 @@ private struct BarcodeDetailView: View {
 #Preview {
     ContentView()
         .environmentObject(BarcodeStore())
+}
+
+/// Turns the screen to full brightness while the view is visible and the app is active, so scanners
+/// read the code in bright sunlight, and restores the previous brightness afterwards.
+private struct FullBrightness: ViewModifier {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var previous: CGFloat?
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear(perform: raise)
+            .onDisappear(perform: restore)
+            .onChange(of: scenePhase) { _, phase in
+                phase == .active ? raise() : restore()
+            }
+    }
+
+    private func raise() {
+        guard previous == nil else { return }
+        previous = UIScreen.main.brightness
+        UIScreen.main.brightness = 1
+    }
+
+    private func restore() {
+        guard let previous else { return }
+        UIScreen.main.brightness = previous
+        self.previous = nil
+    }
 }

@@ -52,6 +52,7 @@ fun BarcodeDetailScreen(
                 Text("This barcode was deleted.")
                 return@Column
             }
+            FullBrightness()
             // Black on white regardless of theme: scanners struggle with a code framed by a dark screen.
             Surface(
                 // Stays on until the volunteer has scanned it; the timeout returns with the list.

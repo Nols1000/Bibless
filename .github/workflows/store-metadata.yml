@@ -38,6 +38,10 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      # The Gradle build plus two emulator images overflow the runner's disk otherwise
+      - name: Free disk space
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
       - name: Enable KVM for the emulators
         if: env.PLAY_SERVICE_ACCOUNT != ''
         run: |
@@ -62,6 +66,8 @@ jobs:
           target: android-wear
           arch: x86_64
           profile: wearos_large_round
+          # The Wear OS image defaults to a 7 GB userdata partition
+          disk-size: 2048M
           disable-animations: true
           script: bundle exec fastlane android screenshots wear:emulator-5554
       # Authenticate after the emulator steps so the short-lived token is fresh for the upload

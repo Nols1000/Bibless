@@ -139,11 +139,16 @@ private struct BarcodeDetailView: View {
     var body: some View {
         if let barcode = store.barcode(id: id) {
             VStack(spacing: 24) {
-                BarcodeImageView(text: barcode.athleteId, format: store.format)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                // Black on white regardless of theme: scanners struggle with a code framed by a dark screen.
+                VStack(spacing: 0) {
+                    BarcodeImageView(text: barcode.athleteId, format: store.format)
 
-                Text(barcode.athleteId)
-                    .font(.title.monospacedDigit())
+                    Text(barcode.athleteId)
+                        .font(.title.monospacedDigit())
+                        .foregroundStyle(.black)
+                        .padding(.bottom, 24)
+                }
+                .background(.white, in: RoundedRectangle(cornerRadius: 12))
 
                 Spacer()
             }

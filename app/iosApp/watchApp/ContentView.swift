@@ -125,39 +125,90 @@ private struct SettingsView: View {
     }
 }
 
-/// Shows the code alone on a white screen, as large as fits, so scanners pick it up easily.
+/// Shows one page per barcode, starting on the one opened; swiping or turning the crown moves to
+/// the next, so runners scanning for several people needn't go back to the list.
 private struct BarcodeDetailView: View {
     @EnvironmentObject private var store: BarcodeStore
-    @Environment(\.dismiss) private var dismiss
-    let id: String
+    @State private var shownId: String?
+
+    init(id: String) {
+        _shownId = State(initialValue: id)
+    }
 
     var body: some View {
-        if let barcode = store.barcode(id: id) {
-            // Centered on the whole display, not the safe area, so the clock doesn't push it down.
-            ZStack {
-                Color.white
-                // Small inset keeps the code clear of the display's rounded corners.
-                BarcodeImageView(text: barcode.athleteId, format: store.format)
-                    .padding(6)
+        if let shownId, store.barcode(id: shownId) != nil {
+            // A paging scroll view rather than a paged TabView, whose clock bar covers the name.
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(store.barcodes) { barcode in
+                        BarcodePage(barcode: barcode)
+                            .containerRelativeFrame([.horizontal, .vertical])
+                    }
+                }
+                .scrollTargetLayout()
             }
-            // Labels sit in the white space above and below the code without shifting it off center.
-            .overlay(alignment: .top) {
-                caption(barcode.name)
-                    .padding(.top, 6)
-            }
-            .overlay(alignment: .bottom) {
-                caption(barcode.athleteId)
-                    .monospacedDigit()
-                    .padding(.bottom, 6)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $shownId)
+            .scrollIndicators(.hidden)
+            // With a single barcode there's nothing to page to, so the screen stays as it was.
+            .scrollDisabled(store.barcodes.count == 1)
+            .overlay(alignment: .trailing) {
+                if store.barcodes.count > 1 {
+                    PageIndicator(count: store.barcodes.count, current: store.barcodes.firstIndex { $0.id == shownId })
+                }
             }
             .ignoresSafeArea()
             .toolbar(.hidden, for: .navigationBar)
-            .contentShape(Rectangle())
-            .onTapGesture { dismiss() }
-            .accessibilityHint("Tap to close")
+            .onChange(of: shownId) { store.shownBarcodeId = shownId }
         } else {
             Text("Barcode deleted")
         }
+    }
+}
+
+/// Dots along the edge by the crown, one per barcode, like the system's vertical page indicator.
+private struct PageIndicator: View {
+    let count: Int
+    let current: Int?
+
+    var body: some View {
+        VStack(spacing: 4) {
+            ForEach(0..<count, id: \.self) { index in
+                Circle()
+                    .fill(index == current ? Color.black : Color.gray.opacity(0.5))
+                    .frame(width: 6, height: 6)
+            }
+        }
+        .padding(.trailing, 3)
+        .accessibilityElement()
+        .accessibilityValue(current.map { "Barcode \($0 + 1) of \(count)" } ?? "")
+    }
+}
+
+/// Shows the code alone on a white screen, as large as fits, so scanners pick it up easily.
+private struct BarcodePage: View {
+    @EnvironmentObject private var store: BarcodeStore
+    @Environment(\.dismiss) private var dismiss
+    let barcode: Barcode
+
+    var body: some View {
+        // Centered on the whole display, not the safe area, so the clock doesn't push it down.
+        ZStack {
+            Color.white
+            // The labels sit right against the code, above and below it, whatever its shape.
+            VStack(spacing: 2) {
+                caption(barcode.name)
+                // Small inset keeps the code clear of the display's rounded corners.
+                BarcodeImageView(text: barcode.athleteId, format: store.format)
+                    .padding(.horizontal, 6)
+                    .layoutPriority(1)
+                caption(barcode.athleteId)
+                    .monospacedDigit()
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { dismiss() }
+        .accessibilityHint("Tap to close")
     }
 
     private func caption(_ text: String) -> some View {

@@ -39,8 +39,12 @@ fun WearApp(repository: BarcodeRepository) {
                     )
                 }
                 composable("detail/{id}") { entry ->
-                    val barcode = entry.arguments?.getString("id")?.let(repository::find)
-                    BarcodeDetailScreen(barcode = barcode, format = state.format)
+                    BarcodeDetailScreen(
+                        barcodes = state.barcodes,
+                        startId = entry.arguments?.getString("id"),
+                        format = state.format,
+                        onShown = { repository.shownBarcodeId = it.id },
+                    )
                 }
                 composable("settings") {
                     SettingsScreen(

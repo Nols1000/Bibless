@@ -84,6 +84,8 @@ class ScreenshotTest {
             if (!round) return
 
             device.pressBack()
+            // The code's pager scrolls too, so let it close before looking for the list
+            waitFor(By.text("Sam")) { "List did not return" }
             scrollTo(By.text("Add")).click()
             val addHeader = waitFor(By.text("Add barcode")) { "Add screen did not open" }
             device.waitForIdle()

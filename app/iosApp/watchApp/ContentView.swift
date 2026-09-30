@@ -88,16 +88,24 @@ private struct SettingsView: View {
 
     var body: some View {
         Form {
+            // First, since skipping the list is what matters most on the wrist
+            Section {
+                Picker("Open on Launch", selection: store.defaultBarcodeId) {
+                    Text("Barcode List").tag(String?.none)
+                    ForEach(store.barcodes) { barcode in
+                        Text(barcode.name).tag(Optional(barcode.id))
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            } header: {
+                Text("Open on Launch")
+            } footer: {
+                Text("Pick a barcode to skip the list and have it ready to scan.")
+            }
             Picker("Default Format", selection: store.defaultFormat(for: .watch)) {
                 ForEach(BarcodeFormat.entries, id: \.self) { format in
                     Text(format.label).tag(format)
-                }
-            }
-            .pickerStyle(.inline)
-            Picker("Open on Launch", selection: store.defaultBarcodeId) {
-                Text("Barcode List").tag(String?.none)
-                ForEach(store.barcodes) { barcode in
-                    Text(barcode.name).tag(Optional(barcode.id))
                 }
             }
             .pickerStyle(.inline)

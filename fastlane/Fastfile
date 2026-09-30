@@ -8,16 +8,27 @@ ANDROID_AABS = [
 
 ANDROID_TEST_PACKAGE = "com.github.nols1000.bibless.test"
 
+# Puts the headlines from fastlane/screenshots/captions.json on phone screenshots (tools/screenshots/frame.py)
+def frame_screenshots(platform_flag, directory)
+  Dir.chdir("..") { sh("python3", "tools/screenshots/frame.py", platform_flag, directory) }
+end
+
 platform :android do
   desc "Capture the Play phone and Wear OS screenshots on running emulators (demo data, see ScreenshotTest). " \
-       "Options: phone:<adb serial>, wear:<adb serial>; omit one to skip it"
+       "Options: phone:<adb serial>, wear:<adb serial> (round watch), wear_square:<adb serial>; " \
+       "omit one to skip it. The square watch adds to the round one's screenshots, so capture it last"
   lane :screenshots do |options|
-    targets = { "androidApp" => ["phone", options[:phone]], "wearApp" => ["wear", options[:wear]] }
-      .select { |_, (_, serial)| serial }
-    UI.user_error!("Pass phone:<serial> and/or wear:<serial> (see `adb devices`)") if targets.empty?
+    # Module, screengrab device type, serial, whether to clear that device type's screenshots first
+    runs = [
+      ["androidApp", "phone", options[:phone], true],
+      ["wearApp", "wear", options[:wear], true],
+      ["wearApp", "wear", options[:wear_square], false],
+    ].select { |_, _, serial| serial }
+    UI.user_error!("Pass phone:, wear: and/or wear_square:<serial> (see `adb devices`)") if runs.empty?
 
-    gradle(tasks: targets.keys.flat_map { |m| [":app:#{m}:assembleDebug", ":app:#{m}:assembleDebugAndroidTest"] })
-    targets.each do |mod, (device_type, serial)|
+    modules = runs.map(&:first).uniq
+    gradle(tasks: modules.flat_map { |m| [":app:#{m}:assembleDebug", ":app:#{m}:assembleDebugAndroidTest"] })
+    runs.each do |mod, device_type, serial, clear|
       capture_android_screenshots(
         app_apk_path: "app/#{mod}/build/outputs/apk/debug/#{mod}-debug.apk",
         tests_apk_path: "app/#{mod}/build/outputs/apk/androidTest/debug/#{mod}-debug-androidTest.apk",
@@ -28,10 +39,18 @@ platform :android do
         device_type: device_type,
         locales: ["en-US"],
         output_directory: "fastlane/metadata/android",
-        clear_previous_screenshots: true,
+        clear_previous_screenshots: clear,
         exit_on_test_failure: true
       )
     end
+    # A reused emulator hands back empty files for screenshots an earlier run left on it
+    Dir.glob(File.join(__dir__, "metadata/android/*/images/*Screenshots/*.png"))
+       .select { |f| File.zero?(f) }
+       .each { |f| File.delete(f) }
+    # Headlines on the phone screenshots; Wear OS screenshots show the app alone
+    frame_screenshots("--android", "fastlane/metadata/android/en-US/images/phoneScreenshots") if options[:phone]
+    # A square watch's screenshots are below Google Play's minimum size
+    frame_screenshots("--wear", "fastlane/metadata/android/en-US/images/wearScreenshots") if options[:wear_square]
   end
 
   desc "Upload the phone and Wear OS bundles (plus listing) to a Play track"
@@ -157,6 +176,8 @@ platform :ios do
     capture_ios_screenshots(**common, scheme: "iosApp", only_testing: ["iosAppUITests"],
                             devices: ["iPhone 17 Pro Max"], override_status_bar: true,
                             clear_previous_screenshots: true)
+    # Headlines on the iPhone screenshots; the App Store shows watch screenshots in its own frame
+    frame_screenshots("--ios", "fastlane/screenshots/ios/en-US")
     # Apple Watch Ultra slot (422x514)
     capture_ios_screenshots(**common, scheme: "watchApp", only_testing: ["watchAppUITests"],
                             devices: ["Apple Watch Ultra 3 (49mm)"])

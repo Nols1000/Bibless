@@ -1,6 +1,7 @@
 package com.github.nols1000.bibless
 
 import android.os.Build
+import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -8,6 +9,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.After
 import org.junit.Before
 import org.junit.ClassRule
@@ -22,46 +24,64 @@ import tools.fastlane.screengrab.locale.LocaleTestRule
 class ScreenshotTest {
     private val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
 
+    private val repository = Bibless.repository(ApplicationProvider.getApplicationContext())
+
     @Before
     fun setUp() {
         // DemoData replaces the saved barcodes, so never run this on a real device
         check(Build.HARDWARE == "ranchu") { "Screenshot tests only run on an emulator (they replace saved barcodes)" }
         Screengrab.setDefaultScreenshotStrategy(UiAutomatorScreenshotStrategy())
-        DemoData.load(Bibless.repository(ApplicationProvider.getApplicationContext()))
+        DemoData.load(repository)
     }
 
+    /**
+     * Captures the screens that tools/screenshots/frame.py builds the store screenshots from, as
+     * listed in fastlane/screenshots/captions.json.
+     */
     @Test
     fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
             // A cold emulator can take a while to render the first frame
             val me = checkNotNull(device.wait(Until.findObject(By.text("Me")), TIMEOUT)) { "Demo barcode list did not appear" }
-            device.waitForIdle()
-            Screengrab.screenshot("01-list")
+            capture("list")
 
             me.click()
-            device.wait(Until.gone(By.text("Sam")), TIMEOUT)
-            device.waitForIdle()
-            Screengrab.screenshot("02-barcode")
+            check(device.wait(Until.gone(By.text("Sam")), TIMEOUT)) { "Barcode did not open" }
+            capture("barcode")
 
             device.pressBack()
+            // Set in the repository rather than tapped, so the screen draws with it already selected
+            repository.setDefaultBarcode(repository.state.value.barcodes.single { it.name == "Me" }.id)
             checkNotNull(device.wait(Until.findObject(By.desc("Settings")), TIMEOUT)) { "List did not return" }.click()
-            // Mark the barcode to open on launch; radio rows are checkable, unlike the list rows
-            val option = By.checkable(true).hasDescendant(By.text("Me"))
-            val row = checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "Settings did not appear" }
-            row.click()
-            check(row.wait(Until.checked(true), TIMEOUT)) { "Default not selected" }
-            device.waitForIdle()
-            Screengrab.screenshot("04-settings")
+            val option = By.checked(true).hasDescendant(By.text("Me"))
+            checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "Me is not marked to open on launch" }
+            capture("settings")
         }
 
-        // Relaunching in dark mode opens straight on the default barcode, still black on white
+        // The other format, in light and dark mode; relaunching opens straight on the default barcode
+        repository.setDefaultFormat(Device.PHONE, BarcodeFormat.CODE128)
+        captureOnLaunch("barcode-code128")
         device.executeShellCommand("cmd uimode night yes")
+        captureOnLaunch("barcode-dark")
+    }
+
+    /**
+     * Captures the screen as [name]. The emulator can still hand out the previous frame right after
+     * a screen change, even once the new screen reports idle, so give it a moment to draw.
+     */
+    private fun capture(name: String) {
+        device.waitForIdle()
+        SystemClock.sleep(SETTLE_MILLIS)
+        Screengrab.screenshot(name)
+    }
+
+    /** Launches the app, waits for it to open on the default barcode and captures it as [name]. */
+    private fun captureOnLaunch(name: String) {
         ActivityScenario.launch(MainActivity::class.java).use {
             checkNotNull(device.wait(Until.findObject(By.text("A0123456")), TIMEOUT)) { "App did not start" }
             // The list shows for a frame before the barcode opens on top of it
             check(device.wait(Until.gone(By.text("Sam")), TIMEOUT)) { "Barcode did not open on launch" }
-            device.waitForIdle()
-            Screengrab.screenshot("03-barcode-dark")
+            capture(name)
         }
     }
 
@@ -72,6 +92,7 @@ class ScreenshotTest {
 
     companion object {
         private const val TIMEOUT = 30_000L
+        private const val SETTLE_MILLIS = 1_000L
 
         @get:ClassRule
         @JvmStatic

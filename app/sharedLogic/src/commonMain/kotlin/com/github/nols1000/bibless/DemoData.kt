@@ -15,10 +15,20 @@ object DemoData {
         "Jamie (junior)" to "A0135791",
     )
 
-    /** Replaces every saved barcode in [repository] with [barcodes]. */
+    /** Entry typed into the add form in the screenshots; never saved. */
+    val newBarcode = "Alex" to "A0975310"
+
+    /**
+     * Replaces every saved barcode in [repository] with [barcodes] and resets the settings, so the
+     * app starts on the list with its default formats whatever an earlier run left behind.
+     */
     fun load(repository: BarcodeRepository) {
         repository.state.value.barcodes.forEach { repository.delete(it.id) }
         barcodes.forEach { (name, id) -> repository.add(name, id) }
+        repository.shownBarcodeId = null
+        repository.setDefaultBarcode(null)
+        val defaults = Settings()
+        Device.entries.forEach { repository.setDefaultFormat(it, defaults.formatFor(it)) }
     }
 }
 

@@ -31,6 +31,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.uiautomator)
+    // Answers the system text input with the demo entry
+    androidTestImplementation(libs.androidx.espresso.intents)
 }
 
 android {

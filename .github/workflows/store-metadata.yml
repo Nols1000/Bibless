@@ -8,6 +8,8 @@ on:
     paths:
       - 'fastlane/metadata/**'
       - 'fastlane/Fastfile'
+      - 'fastlane/screenshots/captions.json'
+      - 'tools/screenshots/**'
       - 'app/iosApp/*UITests*/**'
       - 'app/*/src/androidTest/**'
       - '.github/workflows/store-metadata.yml'
@@ -42,6 +44,13 @@ jobs:
       - name: Free disk space
         if: env.PLAY_SERVICE_ACCOUNT != ''
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
+      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
+      - uses: actions/setup-python@v5
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        with:
+          python-version: '3.13'
+      - if: env.PLAY_SERVICE_ACCOUNT != ''
+        run: pip install pillow
       - name: Enable KVM for the emulators
         if: env.PLAY_SERVICE_ACCOUNT != ''
         run: |
@@ -70,6 +79,18 @@ jobs:
           disk-size: 2048M
           disable-animations: true
           script: bundle exec fastlane android screenshots wear:emulator-5554
+      # Adds to the round watch's screenshots, so it runs after them
+      - name: Wear OS square screenshots
+        if: env.PLAY_SERVICE_ACCOUNT != ''
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: android-wear
+          arch: x86_64
+          profile: wearos_square
+          disk-size: 2048M
+          disable-animations: true
+          script: bundle exec fastlane android screenshots wear_square:emulator-5554
       # Authenticate after the emulator steps so the short-lived token is fresh for the upload
       - uses: google-github-actions/auth@v3
         if: env.PLAY_SERVICE_ACCOUNT != ''
@@ -106,6 +127,13 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true
+      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
+      - uses: actions/setup-python@v5
+        if: env.ASC_KEY_ID != ''
+        with:
+          python-version: '3.13'
+      - if: env.ASC_KEY_ID != ''
+        run: pip install pillow
       - name: iPhone and Apple Watch screenshots
         if: env.ASC_KEY_ID != ''
         run: bundle exec fastlane ios screenshots

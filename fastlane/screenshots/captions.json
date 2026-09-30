@@ -1,0 +1,20 @@
+{
+  "01-formats": {
+    "caption": "Your barcode or QR code, ready to scan",
+    "shots": ["barcode", "barcode-code128"],
+    "layout": "pair"
+  },
+  "02-themes": {
+    "caption": "Light or dark, always scannable",
+    "shots": ["barcode-code128", "barcode-dark"],
+    "layout": "split"
+  },
+  "03-list": {
+    "caption": "Barcodes for the whole family",
+    "shots": ["list"]
+  },
+  "04-settings": {
+    "caption": "Opens straight to your barcode",
+    "shots": ["settings"]
+  }
+}

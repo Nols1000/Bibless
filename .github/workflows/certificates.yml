@@ -1,0 +1,45 @@
+name: Certificates
+
+# Refreshes the App Store signing profiles in the match repo without building a release, e.g. after
+# enabling a capability (such as the watch app group) on an app id in the Developer Portal.
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Regenerate the profiles even if match considers them valid
+        type: boolean
+        default: true
+
+concurrency:
+  group: certificates
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  match:
+    name: Update profiles
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Set up access to the match certificates repo
+        env:
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$MATCH_DEPLOY_KEY" > ~/.ssh/match_deploy_key
+          chmod 600 ~/.ssh/match_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/match_deploy_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+      - name: Register app ids and update profiles
+        env:
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+        run: bundle exec fastlane ios certificates force:${{ inputs.force }}

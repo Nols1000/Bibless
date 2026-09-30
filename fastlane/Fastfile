@@ -119,20 +119,23 @@ platform :ios do
     end
   end
 
-  desc "Fetch (or on first run create) the App Store certificate and profiles via match"
+  desc "Fetch (or on first run create) the App Store certificate and profiles via match. " \
+       "force:true regenerates the profiles, e.g. after changing an app id's capabilities " \
+       "(run it from the Certificates workflow)"
   lane :certificates do |options|
+    setup_ci # temporary keychain on CI runners; does nothing locally
     register_app_ids unless options[:readonly]
     match(
       type: "appstore",
       app_identifier: [IOS_APP_ID, WATCH_APP_ID],
       git_url: MATCH_GIT_URL,
-      readonly: options.fetch(:readonly, false)
+      readonly: options.fetch(:readonly, false),
+      force: options.fetch(:force, false)
     )
   end
 
   desc "Build a signed App Store IPA (with embedded watchOS app) into build/ios"
   lane :build_ipa do |options|
-    setup_ci # temporary keychain on CI runners
     certificates
     profiles = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
 

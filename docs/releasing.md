@@ -38,7 +38,7 @@ Local builds can override the version the same way: `./gradlew :app:androidApp:b
 ## Store listings
 
 The listings are kept in the repo and managed by [fastlane](https://docs.fastlane.tools):
-- `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`.
+- `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`. `images/featureGraphic.png` is drawn by `tools/screenshots/feature_graphic.py` (needs `pip install pillow segno`) and committed.
 - `fastlane/metadata/ios/<locale>/`: App Store texts. Put `release_notes.txt` here.
 - `fastlane/screenshots/ios/<locale>/`: App Store screenshots for iPhone and Apple Watch, assigned to device slots by pixel size.
 

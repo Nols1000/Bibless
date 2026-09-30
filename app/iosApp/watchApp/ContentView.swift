@@ -7,6 +7,8 @@ struct ContentView: View {
 
     @State private var path: [String] = []
     @State private var didStart = false
+    /// Counts widget taps, so each one starts a fresh pager on the widget's barcode.
+    @State private var widgetOpens = 0
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -50,8 +52,9 @@ struct ContentView: View {
             .navigationTitle("Barcodes")
             .navigationDestination(for: String.self) { id in
                 BarcodeDetailView(id: id)
-                    // A new pager when the widget opens another barcode on top of an open one
-                    .id(id)
+                    // The path keeps the barcode a pager was opened on, not the one paged to, so
+                    // the widget's barcode can already be in it; start over on it all the same.
+                    .id("\(id)#\(widgetOpens)")
             }
             .sheet(isPresented: $isAdding) {
                 NavigationStack {
@@ -70,7 +73,11 @@ struct ContentView: View {
         .onOpenURL { url in
             guard let id = WidgetBarcode.id(from: url), store.barcode(id: id) != nil else { return }
             didStart = true
+            isAdding = false // the add sheet would cover the code
+            widgetOpens += 1
             path = [id]
+            // Also when the path already was [id], where onChange(of: path) doesn't fire
+            store.shownBarcodeId = id
         }
     }
 }

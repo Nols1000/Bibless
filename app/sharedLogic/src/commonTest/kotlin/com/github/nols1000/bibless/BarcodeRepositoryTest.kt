@@ -39,13 +39,103 @@ class BarcodeRepositoryTest {
     }
 
     @Test
-    fun addPersistsAndSorts() {
+    fun addPersistsInOrderAdded() {
         val store = MemoryStore()
         val repo = repo(store)
         repo.add("Zoe", "a2")
         repo.add("Alex", "1")
-        assertEquals(listOf("Alex", "Zoe"), repo.state.value.barcodes.map { it.name })
-        assertEquals(listOf("A1", "A2"), repo(store).state.value.barcodes.map { it.athleteId })
+        assertEquals(listOf("Zoe", "Alex"), repo.state.value.barcodes.map { it.name })
+        assertEquals(listOf("A2", "A1"), repo(store).state.value.barcodes.map { it.athleteId })
+    }
+
+    @Test
+    fun orderPersistsAndNewBarcodesGoLast() {
+        val store = MemoryStore()
+        val repo = repo(store)
+        val zoe = repo.add("Zoe", "A2")
+        val alex = repo.add("Alex", "A1")
+        repo.setOrder(listOf(alex.id, zoe.id))
+        repo.add("Sam", "A3")
+        assertEquals(listOf("Alex", "Zoe", "Sam"), repo(store).state.value.barcodes.map { it.name })
+    }
+
+    @Test
+    fun moveToTopKeepsTheRestInOrder() {
+        val repo = repo()
+        repo.add("Me", "A1")
+        repo.add("Sam", "A2")
+        val jamie = repo.add("Jamie", "A3")
+        repo.moveToTop(jamie.id)
+        assertEquals(listOf("Jamie", "Me", "Sam"), repo.state.value.barcodes.map { it.name })
+    }
+
+    @Test
+    fun orderSyncsAndSkipsDeletedAndUnknownIds() {
+        val (phone, watch) = pair()
+        val me = phone.add("Me", "A1")
+        val sam = phone.add("Sam", "A2")
+        watch.moveToTop(sam.id)
+        assertEquals(listOf("Sam", "Me"), phone.state.value.barcodes.map { it.name })
+
+        phone.delete(sam.id)
+        watch.add("Jamie", "A3")
+        assertEquals(listOf("Me", "Jamie"), phone.state.value.barcodes.map { it.name })
+        assertEquals(listOf("Me", "Jamie"), watch.state.value.barcodes.map { it.name })
+        assertEquals(me.id, watch.state.value.barcodes.first().id)
+    }
+
+    @Test
+    fun newerOrderWinsWhole() {
+        val phone = repo()
+        val watch = repo(device = Device.WATCH)
+        phone.sync = Link().also { it.peer = watch }
+        watch.sync = Link().also { it.peer = phone }
+        val a = phone.add("A", "A1")
+        val b = phone.add("B", "A2")
+        val c = phone.add("C", "A3")
+        phone.sync = null
+        watch.sync = null
+        phone.setOrder(listOf(c.id, a.id, b.id))
+        watch.setOrder(listOf(b.id, c.id, a.id))
+
+        phone.sync = Link().also { it.peer = watch }
+        watch.sync = Link().also { it.peer = phone }
+        phone.applyRemote(watch.payload())
+        assertEquals(listOf("B", "C", "A"), phone.state.value.barcodes.map { it.name })
+        assertEquals(phone.payload(), watch.payload())
+    }
+
+    @Test
+    fun migratesToNameOrderWithThePickedLaunchBarcodeFirst() {
+        val store = MemoryStore()
+        store.values["barcodes"] = """[
+            {"id":"z","name":"Zoe","athleteId":"A1","updatedAt":1},
+            {"id":"m","name":"Me","athleteId":"A2","updatedAt":2},
+            {"id":"a","name":"Alex","athleteId":"A3","updatedAt":3}
+        ]"""
+        store.values["settings"] = """{"defaultBarcodeId":"z","updatedAt":5}"""
+        val repo = repo(store)
+        assertEquals(listOf("Zoe", "Alex", "Me"), repo.state.value.barcodes.map { it.name })
+        assertEquals(LaunchScreen.FIRST_BARCODE, repo.state.value.settings.openOnLaunch)
+        assertEquals("z", repo.startBarcodeId())
+
+        store.values["settings"] = """{"updatedAt":5}"""
+        val listRepo = repo(store)
+        assertEquals(listOf("Alex", "Me", "Zoe"), listRepo.state.value.barcodes.map { it.name })
+        assertEquals(LaunchScreen.BARCODE_LIST, listRepo.state.value.settings.openOnLaunch)
+    }
+
+    @Test
+    fun settingsFromAnOlderVersionKeepTheLocalOrder() {
+        val repo = repo()
+        val me = repo.add("Me", "A1")
+        val sam = repo.add("Sam", "A2")
+        repo.moveToTop(sam.id)
+        repo.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
+        repo.applyRemote("""{"barcodes":[],"settings":{"watchFormat":"CODE128","updatedAt":99999}}""")
+        assertEquals(listOf(sam.id, me.id), repo.state.value.barcodes.map { it.id })
+        assertEquals(LaunchScreen.FIRST_BARCODE, repo.state.value.settings.openOnLaunch)
+        assertEquals(BarcodeFormat.CODE128, repo.state.value.settings.watchFormat)
     }
 
     @Test
@@ -201,23 +291,24 @@ class BarcodeRepositoryTest {
     }
 
     @Test
-    fun startsOnTheSyncedDefault() {
+    fun startsOnTheFirstBarcodeWhenSetOnTheOtherDevice() {
         val (phone, watch) = pair()
         phone.add("Me", "A1")
-        phone.add("Alex", "A3")
         val sam = phone.add("Sam", "A2")
-        phone.setDefaultBarcode(sam.id)
+        phone.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
+        assertEquals(phone.state.value.barcodes.first().id, watch.startBarcodeId())
+        phone.moveToTop(sam.id)
         assertEquals(sam.id, watch.startBarcodeId())
         watch.delete(sam.id)
-        assertNull(phone.startBarcodeId())
+        assertEquals(phone.state.value.barcodes.single().id, phone.startBarcodeId())
     }
 
     @Test
-    fun shownBarcodeWinsOverDefault() {
+    fun shownBarcodeWinsOverFirst() {
         val repo = repo()
-        val me = repo.add("Me", "A1")
+        repo.add("Me", "A1")
         val sam = repo.add("Sam", "A2")
-        repo.setDefaultBarcode(me.id)
+        repo.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
         repo.shownBarcodeId = sam.id
         assertEquals(sam.id, repo.startBarcodeId())
     }

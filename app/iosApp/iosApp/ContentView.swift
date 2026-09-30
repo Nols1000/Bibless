@@ -25,6 +25,7 @@ struct ContentView: View {
                 .onDelete { offsets in
                     offsets.map { store.barcodes[$0] }.forEach(store.delete)
                 }
+                .onMove(perform: store.move)
             }
             .overlay {
                 if store.barcodes.isEmpty {
@@ -46,6 +47,12 @@ struct ContentView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add Barcode", systemImage: "plus") { isAdding = true }
                 }
+                // Shows the handles for dragging barcodes into a different order
+                if store.barcodes.count > 1 {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        EditButton()
+                    }
+                }
             }
             .sheet(isPresented: $isAdding) {
                 AddBarcodeView()
@@ -54,7 +61,7 @@ struct ContentView: View {
                 SettingsView()
             }
         }
-        // Open the start barcode (last shown, default or only one) on top of the list, once per launch.
+        // Open the start barcode (last shown, first or only one) on top of the list, once per launch.
         .onAppear {
             guard !didStart else { return }
             didStart = true
@@ -131,10 +138,9 @@ private struct SettingsView: View {
                     }
                 }
                 Section {
-                    Picker("Open on Launch", selection: store.defaultBarcodeId) {
-                        Text("Barcode List").tag(String?.none)
-                        ForEach(store.barcodes) { barcode in
-                            Text(barcode.name).tag(Optional(barcode.id))
+                    Picker("Open on Launch", selection: store.openOnLaunch) {
+                        ForEach(LaunchScreen.entries, id: \.self) { screen in
+                            Text(screen.label).tag(screen)
                         }
                     }
                     .pickerStyle(.inline)
@@ -142,8 +148,10 @@ private struct SettingsView: View {
                 } header: {
                     Text("Open on Launch")
                 } footer: {
-                    if store.barcodes.count == 1 {
+                    if store.settings.openOnLaunch == .barcodeList && store.barcodes.count == 1 {
                         Text("Your only barcode opens either way.")
+                    } else {
+                        Text("Tap Edit in the list, then drag a barcode to change which comes first.")
                     }
                 }
             }

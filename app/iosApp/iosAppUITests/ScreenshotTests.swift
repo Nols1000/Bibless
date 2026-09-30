@@ -27,8 +27,8 @@ final class ScreenshotTests: XCTestCase {
 
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Settings"].tap()
-        // Mark the barcode to open on launch
-        let option = app.collectionViews.buttons["Me"]
+        // Open the first barcode on launch
+        let option = app.collectionViews.buttons["First Barcode"]
         XCTAssertTrue(option.waitForExistence(timeout: 5))
         option.tap()
         XCTAssertTrue(option.isSelected)

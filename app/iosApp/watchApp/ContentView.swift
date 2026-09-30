@@ -20,9 +20,21 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
-                }
-                .onDelete { offsets in
-                    offsets.map { store.barcodes[$0] }.forEach(store.delete)
+                    // Dragging is fiddly on the wrist, so a swipe moves a barcode to the top instead.
+                    .swipeActions(edge: .leading) {
+                        if barcode.id != store.barcodes.first?.id {
+                            Button("Move to Top", systemImage: "arrow.up.to.line") {
+                                store.moveToTop(barcode)
+                            }
+                            .tint(.accentColor)
+                        }
+                    }
+                    // Declared here too, since custom swipe actions replace the ones onDelete adds.
+                    .swipeActions(edge: .trailing) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
+                            store.delete(barcode)
+                        }
+                    }
                 }
                 Button {
                     isAdding = true
@@ -45,7 +57,7 @@ struct ContentView: View {
                 }
             }
         }
-        // Open the start barcode (last shown, default or only one) on top of the list, once per launch.
+        // Open the start barcode (last shown, first or only one) on top of the list, once per launch.
         .onAppear {
             guard !didStart else { return }
             didStart = true
@@ -90,10 +102,9 @@ private struct SettingsView: View {
         Form {
             // First, since skipping the list is what matters most on the wrist
             Section {
-                Picker("Open on Launch", selection: store.defaultBarcodeId) {
-                    Text("Barcode List").tag(String?.none)
-                    ForEach(store.barcodes) { barcode in
-                        Text(barcode.name).tag(Optional(barcode.id))
+                Picker("Open on Launch", selection: store.openOnLaunch) {
+                    ForEach(LaunchScreen.entries, id: \.self) { screen in
+                        Text(screen.label).tag(screen)
                     }
                 }
                 .pickerStyle(.inline)
@@ -101,7 +112,7 @@ private struct SettingsView: View {
             } header: {
                 Text("Open on Launch")
             } footer: {
-                Text("Pick a barcode to skip the list and have it ready to scan.")
+                Text("Swipe right on a barcode in the list to move it to the top.")
             }
             Picker("Default Format", selection: store.defaultFormat(for: .watch)) {
                 ForEach(BarcodeFormat.entries, id: \.self) { format in

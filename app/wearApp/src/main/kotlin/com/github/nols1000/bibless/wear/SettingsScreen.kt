@@ -13,21 +13,20 @@ import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
-import com.github.nols1000.bibless.Barcode
+import com.github.nols1000.bibless.LaunchScreen
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.nols1000.bibless.label
 
 /**
- * Lets the watch pick the barcode both apps open on launch and its own default format (the phone
- * default is set on the phone).
+ * Lets the watch pick what both apps open on launch and its own default format (the phone default
+ * is set on the phone).
  */
 @Composable
 fun SettingsScreen(
     format: BarcodeFormat,
     onFormatChange: (BarcodeFormat) -> Unit,
-    barcodes: List<Barcode>,
-    defaultBarcodeId: String?,
-    onDefaultBarcodeChange: (String?) -> Unit,
+    openOnLaunch: LaunchScreen,
+    onOpenOnLaunchChange: (LaunchScreen) -> Unit,
 ) {
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
@@ -36,18 +35,17 @@ fun SettingsScreen(
             item {
                 ListHeader { Text("Open on launch") }
             }
-            val defaultId = defaultBarcodeId?.takeIf { id -> barcodes.any { it.id == id } }
-            items(listOf(null to "Barcode list") + barcodes.map { it.id to it.name }) { (id, label) ->
+            items(LaunchScreen.entries) { screen ->
                 RadioButton(
-                    selected = id == defaultId,
-                    onSelect = { onDefaultBarcodeChange(id) },
+                    selected = screen == openOnLaunch,
+                    onSelect = { onOpenOnLaunchChange(screen) },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text(label) },
+                    label = { Text(screen.label) },
                 )
             }
             item {
                 Text(
-                    "Pick a barcode to skip the list and have it ready to scan.",
+                    "Long-press a barcode in the list to move it to the top.",
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

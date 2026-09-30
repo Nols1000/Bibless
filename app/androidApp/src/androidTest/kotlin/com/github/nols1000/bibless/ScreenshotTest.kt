@@ -51,14 +51,14 @@ class ScreenshotTest {
 
             device.pressBack()
             // Set in the repository rather than tapped, so the screen draws with it already selected
-            repository.setDefaultBarcode(repository.state.value.barcodes.single { it.name == "Me" }.id)
+            repository.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
             checkNotNull(device.wait(Until.findObject(By.desc("Settings")), TIMEOUT)) { "List did not return" }.click()
-            val option = By.checked(true).hasDescendant(By.text("Me"))
-            checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "Me is not marked to open on launch" }
+            val option = By.checked(true).hasDescendant(By.text("First barcode"))
+            checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "First barcode is not marked to open on launch" }
             capture("settings")
         }
 
-        // The other format, in light and dark mode; relaunching opens straight on the default barcode
+        // The other format, in light and dark mode; relaunching opens straight on the first barcode, Me
         repository.setDefaultFormat(Device.PHONE, BarcodeFormat.CODE128)
         captureOnLaunch("barcode-code128")
         device.executeShellCommand("cmd uimode night yes")

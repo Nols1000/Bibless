@@ -37,8 +37,8 @@ final class ScreenshotTests: XCTestCase {
         let settings = app.buttons["Settings"]
         scroll(app, to: settings)
         settings.tap()
-        // Mark the barcode to open on launch; the setting comes first, so it shows with its header
-        let option = app.buttons["Me"]
+        // Open the first barcode on launch; the setting comes first, so it shows with its header
+        let option = app.buttons["First Barcode"]
         XCTAssertTrue(option.waitForExistence(timeout: 5))
         option.tap()
         XCTAssertTrue(app.staticTexts["Open on Launch"].isHittable)

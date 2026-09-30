@@ -26,6 +26,7 @@ fun WearApp(repository: BarcodeRepository) {
                         onOpen = { navController.navigate("detail/${it.id}") },
                         onAdd = { navController.navigate("add") },
                         onDelete = { repository.delete(it.id) },
+                        onMoveToTop = { repository.moveToTop(it.id) },
                         onSettings = { navController.navigate("settings") },
                     )
                 }
@@ -45,9 +46,8 @@ fun WearApp(repository: BarcodeRepository) {
                     SettingsScreen(
                         format = state.format,
                         onFormatChange = { repository.setDefaultFormat(Device.WATCH, it) },
-                        barcodes = state.barcodes,
-                        defaultBarcodeId = state.settings.defaultBarcodeId,
-                        onDefaultBarcodeChange = repository::setDefaultBarcode,
+                        openOnLaunch = state.settings.openOnLaunch,
+                        onOpenOnLaunchChange = repository::setOpenOnLaunch,
                     )
                 }
             }

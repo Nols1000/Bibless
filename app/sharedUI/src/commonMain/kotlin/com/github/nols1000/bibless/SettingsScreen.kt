@@ -25,13 +25,16 @@ import com.github.nols1000.bibless.barcode.BarcodeFormat
 val BarcodeFormat.label: String
     get() = if (this == BarcodeFormat.QR) "QR code" else "Barcode"
 
+val LaunchScreen.label: String
+    get() = if (this == LaunchScreen.FIRST_BARCODE) "First barcode" else "Barcode list"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     settings: Settings,
-    barcodes: List<Barcode>,
+    barcodeCount: Int,
     onDefaultFormatChange: (Device, BarcodeFormat) -> Unit,
-    onDefaultBarcodeChange: (String?) -> Unit,
+    onOpenOnLaunchChange: (LaunchScreen) -> Unit,
     onBack: () -> Unit,
 ) {
     Scaffold(
@@ -82,22 +85,25 @@ fun SettingsScreen(
                 )
             }
             item(key = "start-options") {
-                val defaultId = settings.defaultBarcodeId?.takeIf { id -> barcodes.any { it.id == id } }
                 Column(Modifier.selectableGroup()) {
-                    (listOf(null to "Barcode list") + barcodes.map { it.id to it.name }).forEach { (id, label) ->
-                        val selected = defaultId == id
+                    LaunchScreen.entries.forEach { screen ->
+                        val selected = settings.openOnLaunch == screen
                         ListItem(
-                            headlineContent = { Text(label) },
-                            supportingContent = if (id == null && barcodes.size == 1) {
-                                { Text("Your only barcode opens either way") }
-                            } else {
-                                null
+                            headlineContent = { Text(screen.label) },
+                            supportingContent = when {
+                                screen == LaunchScreen.FIRST_BARCODE -> {
+                                    { Text("Drag barcodes in the list to choose which comes first") }
+                                }
+                                barcodeCount == 1 -> {
+                                    { Text("Your only barcode opens either way") }
+                                }
+                                else -> null
                             },
                             leadingContent = { RadioButton(selected = selected, onClick = null) },
                             modifier = Modifier.selectable(
                                 selected = selected,
                                 role = Role.RadioButton,
-                                onClick = { onDefaultBarcodeChange(id) },
+                                onClick = { onOpenOnLaunchChange(screen) },
                             ),
                         )
                     }

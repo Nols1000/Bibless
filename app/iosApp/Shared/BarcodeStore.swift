@@ -7,7 +7,9 @@ import SwiftUI
 final class BarcodeStore: ObservableObject {
     @Published private(set) var barcodes: [Barcode] = []
     @Published private(set) var format: BarcodeFormat = .qr
-    @Published private(set) var settings = Settings(phoneFormat: .qr, watchFormat: .qr, defaultBarcodeId: nil, updatedAt: 0)
+    @Published private(set) var settings = Settings(
+        phoneFormat: .qr, watchFormat: .qr, openOnLaunch: .barcodeList, barcodeOrder: nil, defaultBarcodeId: nil, updatedAt: 0
+    )
 
     #if os(watchOS)
     private static let device = Device.watch
@@ -52,6 +54,18 @@ final class BarcodeStore: ObservableObject {
         repository.delete(id: barcode.id)
     }
 
+    /// Reorders the list like `Array.move(fromOffsets:toOffset:)`, for `onMove`.
+    func move(fromOffsets source: IndexSet, toOffset destination: Int) {
+        var ids = barcodes.map(\.id)
+        ids.move(fromOffsets: source, toOffset: destination)
+        repository.setOrder(ids: ids)
+    }
+
+    /// Makes `barcode` the first one, the one the apps open first.
+    func moveToTop(_ barcode: Barcode) {
+        repository.moveToTop(id: barcode.id)
+    }
+
     func setDefaultFormat(_ format: BarcodeFormat, for device: Device) {
         repository.setDefaultFormat(device: device, format: format)
     }
@@ -79,11 +93,11 @@ final class BarcodeStore: ObservableObject {
         repository.startBarcodeId()
     }
 
-    /// Binding for a picker that sets the barcode both apps open on launch; nil opens the list.
-    var defaultBarcodeId: Binding<String?> {
+    /// Binding for a picker that sets what both apps open on launch.
+    var openOnLaunch: Binding<LaunchScreen> {
         Binding(
-            get: { self.repository.defaultBarcodeId() },
-            set: { self.repository.setDefaultBarcode(id: $0) }
+            get: { self.settings.openOnLaunch },
+            set: { self.repository.setOpenOnLaunch(screen: $0) }
         )
     }
 
@@ -100,6 +114,10 @@ func normalizeAthleteId(_ input: String) -> String? {
 
 extension BarcodeFormat {
     var label: String { self == .qr ? "QR code" : "Barcode" }
+}
+
+extension LaunchScreen {
+    var label: String { self == .firstBarcode ? "First Barcode" : "Barcode List" }
 }
 
 extension Device {

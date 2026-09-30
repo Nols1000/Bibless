@@ -19,14 +19,16 @@ object DemoData {
     val newBarcode = "Alex" to "A0975310"
 
     /**
-     * Replaces every saved barcode in [repository] with [barcodes] and resets the settings, so the
-     * app starts on the list with its default formats whatever an earlier run left behind.
+     * Replaces every saved barcode in [repository] with [barcodes], in that order, and resets the
+     * settings, so the app starts on the list with its default formats whatever an earlier run
+     * left behind.
      */
     fun load(repository: BarcodeRepository) {
         repository.state.value.barcodes.forEach { repository.delete(it.id) }
-        barcodes.forEach { (name, id) -> repository.add(name, id) }
+        // Added within the same millisecond, so their order is set explicitly
+        repository.setOrder(barcodes.map { (name, id) -> repository.add(name, id).id })
         repository.shownBarcodeId = null
-        repository.setDefaultBarcode(null)
+        repository.setOpenOnLaunch(Settings().openOnLaunch)
         val defaults = Settings()
         Device.entries.forEach { repository.setDefaultFormat(it, defaults.formatFor(it)) }
     }

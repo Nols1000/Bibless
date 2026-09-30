@@ -24,6 +24,7 @@ fun App(repository: BarcodeRepository) {
                     onOpen = { navController.navigate("detail/${it.id}") },
                     onAdd = repository::add,
                     onDelete = { repository.delete(it.id) },
+                    onReorder = { order -> repository.setOrder(order.map { it.id }) },
                     onSettings = { navController.navigate("settings") },
                 )
             }
@@ -38,9 +39,9 @@ fun App(repository: BarcodeRepository) {
             composable("settings") {
                 SettingsScreen(
                     settings = state.settings,
-                    barcodes = state.barcodes,
+                    barcodeCount = state.barcodes.size,
                     onDefaultFormatChange = repository::setDefaultFormat,
-                    onDefaultBarcodeChange = repository::setDefaultBarcode,
+                    onOpenOnLaunchChange = repository::setOpenOnLaunch,
                     onBack = { navController.popBackStack() },
                 )
             }

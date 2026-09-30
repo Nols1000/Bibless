@@ -25,6 +25,7 @@ import androidx.wear.input.RemoteInputIntentHelper
 import com.github.nols1000.bibless.Bibless
 import com.github.nols1000.bibless.DemoData
 import com.github.nols1000.bibless.Device
+import com.github.nols1000.bibless.LaunchScreen
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.After
 import org.junit.Before
@@ -96,12 +97,14 @@ class ScreenshotTest {
             device.pressBack()
             check(device.wait(Until.gone(By.text("Add barcode")), TIMEOUT)) { "Add screen did not close" }
             // Set in the repository rather than tapped, so the screen draws with it already selected
-            repository.setDefaultBarcode(repository.state.value.barcodes.single { it.name == "Me" }.id)
+            repository.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
             scrollTo(By.text("Settings")).click()
             val header = waitFor(By.text("Open on launch")) { "Settings did not open" }
-            waitFor(By.checked(true).hasDescendant(By.text("Me"))) { "Me is not marked to open on launch" }
-            // Show the marked row below the header and the two rows above it
-            nudgeIntoView(By.text("Me"), header)
+            waitFor(By.checked(true).hasDescendant(By.text("First barcode"))) {
+                "First barcode is not marked to open on launch"
+            }
+            // Show the marked row below the header
+            nudgeIntoView(By.text("First barcode"), header)
             capture("05-settings")
         }
     }

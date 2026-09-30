@@ -43,8 +43,9 @@ class BarcodeRepository(
     var sync: BarcodeSync? = null
 
     private val all = MutableStateFlow(runCatching { decode(store.get(KEY_BARCODES)) }.getOrDefault(emptyList()))
-    private var settings = runCatching { store.get(KEY_SETTINGS)?.let { json.decodeFromString<Settings>(it) } }
-        .getOrNull() ?: Settings()
+    private var settings = (
+        runCatching { store.get(KEY_SETTINGS)?.let { json.decodeFromString<Settings>(it) } }.getOrNull() ?: Settings()
+    ).migrated(order = byName(all.value), launch = LaunchScreen.BARCODE_LIST)
     private val _state = MutableStateFlow(currentState())
     val state: StateFlow<BarcodeState> = _state.asStateFlow()
 
@@ -62,13 +63,16 @@ class BarcodeRepository(
 
     /**
      * The barcode to open on launch, on top of the list: the one still shown from last time, else
-     * the default, else the only barcode there is. Null starts on the list.
+     * the first one if [Settings.openOnLaunch] says so, else the only barcode there is. Null starts
+     * on the list.
      */
-    fun startBarcodeId(): String? =
-        shownBarcodeId ?: defaultBarcodeId() ?: _state.value.barcodes.singleOrNull()?.id
-
-    /** The barcode marked as default in the settings, if it still exists. */
-    fun defaultBarcodeId(): String? = settings.defaultBarcodeId?.takeIf { find(it) != null }
+    fun startBarcodeId(): String? {
+        val barcodes = _state.value.barcodes
+        return shownBarcodeId ?: when (settings.openOnLaunch) {
+            LaunchScreen.FIRST_BARCODE -> barcodes.firstOrNull()?.id
+            LaunchScreen.BARCODE_LIST -> barcodes.singleOrNull()?.id
+        }
+    }
 
     /** Adds a barcode, or throws [IllegalArgumentException] if [athleteId] is not a valid parkrun ID. */
     @OptIn(ExperimentalUuidApi::class)
@@ -102,11 +106,21 @@ class BarcodeRepository(
         commit(push = true)
     }
 
-    /** Marks the barcode to open on launch, or null for the list; syncs to the paired device. */
-    fun setDefaultBarcode(id: String?) {
-        settings = settings.copy(defaultBarcodeId = id, updatedAt = now())
+    /** Sets what both apps open on launch; syncs to the paired device. */
+    fun setOpenOnLaunch(screen: LaunchScreen) {
+        settings = settings.copy(openOnLaunch = screen, updatedAt = now())
         commit(push = true)
     }
+
+    /** Puts the barcodes in the order of [ids]; any left out follow in their current order. Syncs. */
+    fun setOrder(ids: List<String>) {
+        val rest = _state.value.barcodes.map { it.id }.filterNot { it in ids }
+        settings = settings.copy(barcodeOrder = ids + rest, updatedAt = now())
+        commit(push = true)
+    }
+
+    /** Makes [id] the first barcode, the one the apps open first. Syncs. */
+    fun moveToTop(id: String) = setOrder(listOf(id))
 
     /** JSON snapshot of every entry, including tombstones, plus the settings, for [BarcodeSync]. */
     fun payload(): String = json.encodeToString(SyncPayload(all.value.sortedBy { it.id }, settings))
@@ -123,7 +137,11 @@ class BarcodeRepository(
         }
         val remoteSettings = remote.settings
         if (remoteSettings != null && remoteSettings.updatedAt > settings.updatedAt) {
-            settings = remoteSettings
+            // An older app version on the other device doesn't know the order; keep this device's.
+            settings = remoteSettings.migrated(
+                order = visible(merged, settings.barcodeOrder.orEmpty()).map { it.id },
+                launch = settings.openOnLaunch,
+            )
             changedLocally = true
         }
         if (changedLocally) commit(push = false)
@@ -153,7 +171,8 @@ class BarcodeRepository(
         listeners.value.forEach { it(state) }
     }
 
-    private fun currentState() = BarcodeState(visible(all.value), settings, settings.formatFor(device))
+    private fun currentState() =
+        BarcodeState(visible(all.value, settings.barcodeOrder.orEmpty()), settings, settings.formatFor(device))
 
     private companion object {
         const val KEY_BARCODES = "barcodes"
@@ -175,7 +194,18 @@ class BarcodeRepository(
             }
         }
 
-        fun visible(all: List<Barcode>) =
-            all.filterNot { it.deleted }.sortedWith(compareBy({ it.name.lowercase() }, { it.athleteId }))
+        /** IDs of the live barcodes sorted by name, the order the list had before it could be changed. */
+        fun byName(all: List<Barcode>): List<String> =
+            all.filterNot { it.deleted }.sortedWith(compareBy({ it.name.lowercase() }, { it.athleteId })).map { it.id }
+
+        /**
+         * Live barcodes in [order]. Ones missing from it, e.g. just added on either device, follow
+         * in the order they were added; IDs of deleted barcodes are skipped.
+         */
+        fun visible(all: List<Barcode>, order: List<String>): List<Barcode> {
+            val position = order.withIndex().associate { (index, id) -> id to index }
+            return all.filterNot { it.deleted }
+                .sortedWith(compareBy({ position[it.id] ?: Int.MAX_VALUE }, { it.updatedAt }, { it.id }))
+        }
     }
 }

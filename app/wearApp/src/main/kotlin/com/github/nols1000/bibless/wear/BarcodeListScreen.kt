@@ -6,12 +6,18 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.AlertDialog
+import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
@@ -29,8 +35,11 @@ fun BarcodeListScreen(
     onOpen: (Barcode) -> Unit,
     onAdd: () -> Unit,
     onDelete: (Barcode) -> Unit,
+    onMoveToTop: (Barcode) -> Unit,
     onSettings: () -> Unit,
 ) {
+    // Dragging is fiddly on a watch, so a long press offers to move a barcode to the top instead.
+    var moving by remember { mutableStateOf<Barcode?>(null) }
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
@@ -62,6 +71,12 @@ fun BarcodeListScreen(
                     Button(
                         onClick = { onOpen(barcode) },
                         modifier = Modifier.fillMaxWidth(),
+                        onLongClick = if (barcode != barcodes.first()) {
+                            { moving = barcode }
+                        } else {
+                            null
+                        },
+                        onLongClickLabel = "Move to top",
                         label = { Text(barcode.name) },
                         secondaryLabel = { Text(barcode.athleteId) },
                     )
@@ -85,6 +100,25 @@ fun BarcodeListScreen(
             }
         }
     }
+
+    // Keeps the name while the dialog animates out.
+    var shown by remember { mutableStateOf<Barcode?>(null) }
+    moving?.let { shown = it }
+    AlertDialog(
+        visible = moving != null,
+        onDismissRequest = { moving = null },
+        title = { Text(shown?.name.orEmpty()) },
+        edgeButton = {
+            AlertDialogDefaults.EdgeButton(
+                onClick = {
+                    moving?.let(onMoveToTop)
+                    moving = null
+                },
+            ) {
+                Text("Move to top")
+            }
+        },
+    )
 }
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
@@ -96,6 +130,7 @@ private fun BarcodeListPreview() {
             onOpen = {},
             onAdd = {},
             onDelete = {},
+            onMoveToTop = {},
             onSettings = {},
         )
     }

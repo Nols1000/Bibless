@@ -3,7 +3,7 @@ package com.github.nols1000.bibless
 /**
  * Sample barcodes for the store screenshots (fastlane snapshot / screengrab), so no real
  * athlete's code shows up in them. The IDs are made up and written with a leading zero, so they
- * don't match anyone's printed parkrun ID.
+ * don't match anyone's printed athlete ID.
  */
 object DemoData {
     /** Launch argument that starts the iOS and watchOS apps with the demo data in memory. */

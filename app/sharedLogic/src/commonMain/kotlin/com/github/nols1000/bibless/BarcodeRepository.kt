@@ -74,11 +74,11 @@ class BarcodeRepository(
         }
     }
 
-    /** Adds a barcode, or throws [IllegalArgumentException] if [athleteId] is not a valid parkrun ID. */
+    /** Adds a barcode, or throws [IllegalArgumentException] if [athleteId] is not a valid athlete ID. */
     @OptIn(ExperimentalUuidApi::class)
     @Throws(IllegalArgumentException::class)
     fun add(name: String, athleteId: String): Barcode {
-        val id = requireNotNull(normalizeAthleteId(athleteId)) { "Invalid parkrun ID: $athleteId" }
+        val id = requireNotNull(normalizeAthleteId(athleteId)) { "Invalid athlete ID: $athleteId" }
         val barcode = Barcode(
             id = Uuid.random().toString(),
             name = name.trim().ifEmpty { id },

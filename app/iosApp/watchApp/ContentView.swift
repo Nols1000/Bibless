@@ -78,7 +78,7 @@ private struct AddBarcodeView: View {
     var body: some View {
         Form {
             TextField("Name", text: $name)
-            TextField("parkrun ID", text: $athleteId, prompt: Text("A1234567"))
+            TextField("Athlete ID", text: $athleteId, prompt: Text("A1234567"))
                 .textInputAutocapitalization(.characters)
             if !athleteId.isEmpty && !isValid {
                 Text("Use the format A1234567")

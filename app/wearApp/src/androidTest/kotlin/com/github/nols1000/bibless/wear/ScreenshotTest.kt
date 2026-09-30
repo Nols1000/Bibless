@@ -89,7 +89,7 @@ class ScreenshotTest {
             device.waitForIdle()
             val (name, athleteId) = DemoData.newBarcode
             enterText("Name", name)
-            enterText("parkrun ID", athleteId)
+            enterText("Athlete ID", athleteId)
             // Show the enabled Save button below the filled fields
             nudgeIntoView(By.text("Save"), addHeader)
             capture("04-add")

@@ -49,7 +49,7 @@ fun BarcodeListScreen(
             if (barcodes.isEmpty()) {
                 item {
                     Text(
-                        "Add your parkrun ID here or on your phone.",
+                        "Add your athlete ID here or on your phone.",
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.bodySmall,

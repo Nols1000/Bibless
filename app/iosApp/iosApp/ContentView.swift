@@ -32,7 +32,7 @@ struct ContentView: View {
                     ContentUnavailableView(
                         "No Barcodes",
                         systemImage: "barcode",
-                        description: Text("Tap + to add your parkrun ID.")
+                        description: Text("Tap + to add your athlete ID.")
                     )
                 }
             }
@@ -85,7 +85,7 @@ private struct AddBarcodeView: View {
                 TextField("Name", text: $name)
                     .textContentType(.name)
                 Section {
-                    TextField("parkrun ID", text: $athleteId, prompt: Text("A1234567"))
+                    TextField("Athlete ID", text: $athleteId, prompt: Text("A1234567"))
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                 } footer: {

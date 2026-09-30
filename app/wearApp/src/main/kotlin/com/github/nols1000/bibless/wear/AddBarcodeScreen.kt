@@ -28,7 +28,7 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     val normalized = normalizeAthleteId(athleteId)
 
     val nameInput = rememberTextInput("Name") { name = it }
-    val idInput = rememberTextInput("parkrun ID") { athleteId = it }
+    val idInput = rememberTextInput("Athlete ID") { athleteId = it }
 
     val listState = rememberTransformingLazyColumnState()
     ScreenScaffold(scrollState = listState) { contentPadding ->
@@ -48,7 +48,7 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
                 FilledTonalButton(
                     onClick = idInput,
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("parkrun ID") },
+                    label = { Text("Athlete ID") },
                     secondaryLabel = {
                         Text(
                             when {

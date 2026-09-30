@@ -84,7 +84,7 @@ fun BarcodeListScreen(
         if (barcodes.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(padding).padding(32.dp), contentAlignment = Alignment.Center) {
                 Text(
-                    "No barcodes yet. Tap + to add your parkrun ID.",
+                    "No barcodes yet. Tap + to add your athlete ID.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -245,7 +245,7 @@ private fun AddBarcodeDialog(
                 OutlinedTextField(
                     value = athleteId,
                     onValueChange = { athleteId = it },
-                    label = { Text("parkrun ID") },
+                    label = { Text("Athlete ID") },
                     placeholder = { Text("A1234567") },
                     singleLine = true,
                     isError = showError,

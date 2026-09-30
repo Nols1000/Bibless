@@ -100,9 +100,9 @@ jobs:
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-      - name: Upload to Google Play (internal track)
+      - name: Upload to Google Play (closed testing, see PLAY_TRACK in the Fastfile)
         if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
-        run: bundle exec fastlane android upload track:internal
+        run: bundle exec fastlane android upload
 
   ios:
     name: iOS + watchOS

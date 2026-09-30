@@ -8,6 +8,10 @@ ANDROID_AABS = [
 
 ANDROID_TEST_PACKAGE = "com.github.nols1000.bibless.test"
 
+# Play track releases go to: closed testing ("alpha"; the Wear OS bundle to "wear:alpha").
+# The listing sync attaches to the newest release on the same track.
+PLAY_TRACK = "alpha"
+
 # Puts the headlines from fastlane/screenshots/captions.json on phone screenshots (tools/screenshots/frame.py)
 def frame_screenshots(platform_flag, directory)
   Dir.chdir("..") { sh("python3", "tools/screenshots/frame.py", platform_flag, directory) }
@@ -55,7 +59,7 @@ platform :android do
 
   desc "Upload the phone and Wear OS bundles (plus listing) to a Play track"
   lane :upload do |options|
-    track = options[:track] || "internal"
+    track = options[:track] || PLAY_TRACK
     phone_aab, wear_aab = ANDROID_AABS
     common = {
       metadata_path: "fastlane/metadata/android",
@@ -73,7 +77,7 @@ platform :android do
   desc "Sync the Play store listing (texts, images) without uploading a binary"
   lane :metadata do
     # supply attaches the listing to an existing release; production stays empty until the first public release
-    track = "internal"
+    track = PLAY_TRACK
     upload_to_play_store(
       metadata_path: "fastlane/metadata/android",
       track: track,

@@ -5,9 +5,10 @@ All targets except `:server` are built and released from GitHub Actions.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | PRs, pushes to `main` | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned) |
-| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to the Play internal track and TestFlight, and creates a GitHub Release |
+| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release |
 | `pages.yml` | Changes to the web app on `main`, or manual run | Deploys the web app and the privacy policies to GitHub Pages |
-| `store-metadata.yml` | Changes to `fastlane/metadata/**` or `fastlane/screenshots/**` on `main`, or manual run | Pushes store listings to Google Play and App Store Connect |
+| `store-metadata.yml` | Called by `release.yml`, or manual run; changes to the screenshot tests on `main` capture only | Captures the screenshots and pushes the store listings to Google Play and App Store Connect |
+| `certificates.yml` | Manual run | Registers the Apple bundle ids and regenerates the App Store profiles in the match repo |
 
 Signing and store steps are skipped automatically while their secrets or variables are missing.
 
@@ -15,7 +16,7 @@ Store uploads are **opt-in**. By default a release only builds the artifacts and
 - **Android**: upload `androidApp-release.aab` and `wearApp-release.aab` in Play Console.
 - **iOS**: upload `Bibless.ipa` with Apple's [Transporter](https://apps.apple.com/app/transporter/id1450874784) app.
 
-To have CI upload to the Play internal track and TestFlight, set the repository variable `STORE_UPLOAD=true` under *Settings → Secrets and variables → Actions → Variables*.
+To have CI upload to Play closed testing and TestFlight, set the repository variable `STORE_UPLOAD=true` under *Settings → Secrets and variables → Actions → Variables*.
 
 ## Cutting a release
 
@@ -27,6 +28,8 @@ git push origin v1.2.3
 Versions are derived from the tag:
 - Android `versionName` is `1.2.3`. `versionCode` is `major*1000000 + minor*10000 + patch*100`, plus 1 for Wear OS, because the two apps share an applicationId and each bundle needs a unique code.
 - iOS `MARKETING_VERSION` is `1.2.3`, and `CURRENT_PROJECT_VERSION` is the workflow run number.
+
+Release notes and listing changes go live with the release that ships them, so commit them before tagging.
 
 Never move or reuse a tag once its build has reached a store: Play rejects a `versionCode` it has already seen. Tag the next patch version instead.
 
@@ -55,7 +58,7 @@ bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
 
 The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `androidTest` sources. The Android tests replace the app's saved barcodes, so they refuse to run on a real device.
 
-The images are not committed (they are git-ignored). `store-metadata.yml` captures them on CI simulators and emulators and uploads them with the listing; each run also keeps them as workflow artifacts for review. Run it manually after UI changes: `gh workflow run store-metadata.yml`. The local commands above are for previewing.
+The images are not committed (they are git-ignored). `store-metadata.yml` captures them on CI simulators and emulators and uploads them with the listing; each run also keeps them as workflow artifacts for review. Releases run it after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run it on `main` without uploading. To update a listing between releases, run it manually: `gh workflow run store-metadata.yml`. The local commands above are for previewing.
 
 ## Secrets
 
@@ -89,8 +92,9 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
    1. Create the app `com.github.nols1000.bibless` in Play Console.
    2. Upload the first signed AAB by hand, since the API refuses to create the app's first release. You can download it from a release workflow run once the keystore secrets are set.
    3. Add the Wear OS form factor under *Advanced settings → Form factors*.
-   4. Invite the service account `fastlane@fastlane-510106.iam.gserviceaccount.com` in Play Console with release permissions.
-   5. Let this repository's workflows impersonate it through the `github` workload identity pool. The pool's provider must map `attribute.repository=assertion.repository`:
+   4. Set up closed testing (the `alpha` track, `PLAY_TRACK` in the Fastfile) with a testers list, for the phone and the Wear OS form factor.
+   5. Invite the service account `fastlane@fastlane-510106.iam.gserviceaccount.com` in Play Console with release permissions.
+   6. Let this repository's workflows impersonate it through the `github` workload identity pool. The pool's provider must map `attribute.repository=assertion.repository`:
       ```sh
       gcloud iam service-accounts add-iam-policy-binding fastlane@fastlane-510106.iam.gserviceaccount.com \
         --project=fastlane-510106 --role=roles/iam.workloadIdentityUser \
@@ -101,6 +105,7 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
       ```
       To run the Play lanes locally, export a JSON key of the service account as `PLAY_SERVICE_ACCOUNT_JSON`, or point `GOOGLE_APPLICATION_CREDENTIALS` at a credentials file.
 4. **Apple**:
-   1. Create the app for bundle id `com.github.nols1000.bibless` in App Store Connect. The watch app `com.github.nols1000.bibless.watchkitapp` is embedded in the iOS app, and its identifier is registered automatically on the first cloud-signed build.
-   2. Create a Team API key with the *Admin* role under *Users and Access → Integrations → App Store Connect API*. Admin is needed so Xcode can create the distribution certificate and profiles in the cloud.
-   3. Signing uses [fastlane match](https://docs.fastlane.tools/actions/match/). The Apple Distribution certificate and the App Store profiles for the app and watch app are stored encrypted in the private repo `Nols1000/bibless-certificates`. The first CI run creates them through the API key, and later runs reuse them. To use them locally, run `bundle exec fastlane ios certificates readonly:true` (needs `MATCH_PASSWORD` and SSH access to that repo). The Xcode project keeps automatic signing for local development; CI switches the targets to manual signing only on the runner.
+   1. Create the app for bundle id `com.github.nols1000.bibless` in App Store Connect. The watch app `com.github.nols1000.bibless.watchkitapp` is embedded in the iOS app, and its Smart Stack widget `com.github.nols1000.bibless.watchkitapp.widget` in the watch app; `fastlane ios certificates` registers both identifiers.
+   2. The watch app and the widget share the app group `group.com.github.nols1000.bibless`. App groups can't be set up through the API: create it under *Certificates, Identifiers & Profiles → Identifiers → App Groups*, enable it on both watch identifiers, then run `certificates.yml` to regenerate the profiles.
+   3. Create a Team API key with the *Admin* role under *Users and Access → Integrations → App Store Connect API*. Admin is needed so Xcode can create the distribution certificate and profiles in the cloud.
+   4. Signing uses [fastlane match](https://docs.fastlane.tools/actions/match/). The Apple Distribution certificate and the App Store profiles for the app, watch app and widget are stored encrypted in the private repo `Nols1000/bibless-certificates`. The first CI run creates them through the API key, and later runs reuse them. To use them locally, run `bundle exec fastlane ios certificates readonly:true` (needs `MATCH_PASSWORD` and SSH access to that repo). The Xcode project keeps automatic signing for local development; CI switches the targets to manual signing only on the runner.

@@ -1,0 +1,4 @@
+• Swipe up or down, or turn the crown, to go from one barcode to the next
+• Long-press a barcode in the list to move it to the top
+• Settings → Open on launch now opens the first barcode in your list, and comes first in Settings
+• Name and athlete ID sit right next to the code

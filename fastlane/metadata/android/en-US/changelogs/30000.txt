@@ -1,0 +1,3 @@
+• Put your barcodes in the order you like: drag them by the handle in the list
+• Settings → Open on launch now opens the first barcode in your list
+• Your ID is now called athlete ID throughout the app

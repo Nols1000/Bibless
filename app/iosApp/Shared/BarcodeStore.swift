@@ -1,6 +1,9 @@
 import Foundation
 import SharedLogic
 import SwiftUI
+#if os(watchOS)
+import WidgetKit
+#endif
 
 /// SwiftUI-facing wrapper around the shared Kotlin `BarcodeRepository`.
 @MainActor
@@ -18,15 +21,18 @@ final class BarcodeStore: ObservableObject {
     #endif
     private let repository: BarcodeRepository
     private let watchSync: WatchSync?
+    private let isDemo: Bool
     private var observation: KotlinAutoCloseable?
 
     init() {
         if ProcessInfo.processInfo.arguments.contains(DemoData.shared.LAUNCH_ARGUMENT) {
             // Store screenshots: sample codes kept in memory, nothing saved or synced
+            isDemo = true
             repository = BarcodeRepository(store: InMemoryStore(), device: Self.device)
             DemoData.shared.load(repository: repository)
             watchSync = nil
         } else {
+            isDemo = false
             repository = BarcodeRepository(store: UserDefaultsStore(), device: Self.device)
             let sync = WatchSync(repository: repository)
             repository.sync = sync
@@ -105,6 +111,12 @@ final class BarcodeStore: ObservableObject {
         barcodes = state.barcodes
         format = state.format
         settings = state.settings
+        #if os(watchOS)
+        // The Smart Stack widget offers the first barcode; demo data stays out of it.
+        if !isDemo, WidgetBarcode.save(barcodes.first.map { WidgetBarcode(id: $0.id, name: $0.name) }) {
+            WidgetCenter.shared.reloadTimelines(ofKind: WidgetBarcode.kind)
+        }
+        #endif
     }
 }
 

@@ -87,6 +87,7 @@ end
 
 IOS_APP_ID = "com.github.nols1000.bibless"
 WATCH_APP_ID = "#{IOS_APP_ID}.watchkitapp"
+WIDGET_APP_ID = "#{WATCH_APP_ID}.widget"
 XCODE_PROJECT = "app/iosApp/iosApp.xcodeproj"
 # Encrypted certificates/profiles; CI authenticates with the MATCH_DEPLOY_KEY deploy key
 MATCH_GIT_URL = "git@github.com:Nols1000/bibless-certificates.git"
@@ -109,9 +110,16 @@ platform :ios do
     upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
-  desc "Register the app and watch app bundle ids in the Developer Portal if missing"
+  # The watch app and its widget share the app group group.com.github.nols1000.bibless (see the
+  # entitlements in app/iosApp/Configuration). App groups can't be set up through the API: create
+  # the group in the Developer Portal, enable it on both ids, then run the Certificates workflow.
+  desc "Register the app, watch app and watch widget bundle ids in the Developer Portal if missing"
   lane :register_app_ids do
-    { IOS_APP_ID => "Bibless", WATCH_APP_ID => "Bibless Watch App" }.each do |identifier, name|
+    {
+      IOS_APP_ID => "Bibless",
+      WATCH_APP_ID => "Bibless Watch App",
+      WIDGET_APP_ID => "Bibless Watch Widget",
+    }.each do |identifier, name|
       next if Spaceship::ConnectAPI::BundleId.find(identifier)
 
       UI.message("Registering bundle id #{identifier}")
@@ -127,7 +135,7 @@ platform :ios do
     register_app_ids unless options[:readonly]
     match(
       type: "appstore",
-      app_identifier: [IOS_APP_ID, WATCH_APP_ID],
+      app_identifier: [IOS_APP_ID, WATCH_APP_ID, WIDGET_APP_ID],
       git_url: MATCH_GIT_URL,
       readonly: options.fetch(:readonly, false),
       force: options.fetch(:force, false)
@@ -140,7 +148,7 @@ platform :ios do
     profiles = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING]
 
     # Switch the targets to manual signing with the match profiles (runner-local change only)
-    { "iosApp" => IOS_APP_ID, "watchApp" => WATCH_APP_ID }.each do |target, bundle_id|
+    { "iosApp" => IOS_APP_ID, "watchApp" => WATCH_APP_ID, "watchWidget" => WIDGET_APP_ID }.each do |target, bundle_id|
       update_code_signing_settings(
         path: XCODE_PROJECT,
         targets: [target],

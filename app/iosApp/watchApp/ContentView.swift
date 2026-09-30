@@ -50,6 +50,8 @@ struct ContentView: View {
             .navigationTitle("Barcodes")
             .navigationDestination(for: String.self) { id in
                 BarcodeDetailView(id: id)
+                    // A new pager when the widget opens another barcode on top of an open one
+                    .id(id)
             }
             .sheet(isPresented: $isAdding) {
                 NavigationStack {
@@ -64,6 +66,12 @@ struct ContentView: View {
             if let id = store.startBarcodeId { path = [id] }
         }
         .onChange(of: path) { store.shownBarcodeId = path.last }
+        // Tapping the Smart Stack widget opens its barcode, from which the others are a swipe away.
+        .onOpenURL { url in
+            guard let id = WidgetBarcode.id(from: url), store.barcode(id: id) != nil else { return }
+            didStart = true
+            path = [id]
+        }
     }
 }
 

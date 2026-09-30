@@ -162,6 +162,20 @@ jobs:
           name: web
           path: bibless-web-*.zip
 
+  # The listing goes live with the builds it describes, and only once they're uploaded: Google Play
+  # allows one edit at a time, so a listing sync during the upload would discard it.
+  store-metadata:
+    name: Store listings
+    needs: [android, ios]
+    if: always() && needs.android.result == 'success' && needs.ios.result != 'failure'
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
+    uses: ./.github/workflows/store-metadata.yml
+    with:
+      upload: true
+    secrets: inherit
+
   github-release:
     name: GitHub Release
     needs: [android, ios, web]

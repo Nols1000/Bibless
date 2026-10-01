@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Bibless</string>
+    <string name="tile_label">Barcode</string>
 </resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The tile picker's preview: a barcode on the white the tile shows it on. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="192dp"
+    android:height="192dp"
+    android:viewportWidth="192"
+    android:viewportHeight="192">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M96,0a96,96 0,1 1,0 192a96,96 0,1 1,0 -192z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M44,76h4v40h-4z M50,76h2v40h-2z M56,76h6v40h-6z M64,76h2v40h-2z M70,76h4v40h-4z M78,76h2v40h-2z M84,76h6v40h-6z M92,76h2v40h-2z M98,76h4v40h-4z M106,76h2v40h-2z M110,76h6v40h-6z M120,76h2v40h-2z M126,76h4v40h-4z M134,76h2v40h-2z M140,76h6v40h-6z" />
+</vector>

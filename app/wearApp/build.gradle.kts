@@ -18,6 +18,9 @@ dependencies {
     implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.navigation)
     implementation(libs.wear.input)
+    implementation(libs.wear.tiles)
+    implementation(libs.wear.protolayout)
+    implementation(libs.androidx.concurrent.futures)
     implementation(libs.compose.materialIconsCore)
     implementation(libs.androidx.lifecycle.runtimeCompose)
 

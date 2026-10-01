@@ -2,6 +2,7 @@ package com.github.nols1000.bibless
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 
 /**
  * Opens the app on one barcode's detail screen from outside it: tiles, widgets and shortcuts. The
@@ -13,7 +14,12 @@ object BarcodeLink {
     /** Starts the app's launcher activity on [barcodeId], or on its usual start screen if null. */
     fun intent(context: Context, barcodeId: String?): Intent =
         requireNotNull(context.packageManager.getLaunchIntentForPackage(context.packageName)).apply {
-            barcodeId?.let { putExtra(EXTRA_BARCODE_ID, it) }
+            barcodeId?.let {
+                putExtra(EXTRA_BARCODE_ID, it)
+                // Intents that differ only in extras count as the same, so each barcode's pending
+                // intent in a widget or shortcut would be taken for the others'. Same URL as on iOS.
+                data = Uri.Builder().scheme("bibless").authority("barcode").appendPath(it).build()
+            }
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
 

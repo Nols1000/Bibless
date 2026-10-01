@@ -10,6 +10,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +48,12 @@ class BarcodeLinkTest {
             device.pressBack()
             check(device.wait(Until.hasObject(By.text("Jamie (junior)")), TIMEOUT)) { "List is not below the barcode" }
         }
+    }
+
+    /** Pending intents that differ only in extras would be reused for another barcode. */
+    @Test
+    fun keepsLinksToDifferentBarcodesApart() {
+        assertFalse(BarcodeLink.intent(context, id("Me")).filterEquals(BarcodeLink.intent(context, id("Sam"))))
     }
 
     private fun id(name: String) = repository.state.value.barcodes.first { it.name == name }.id

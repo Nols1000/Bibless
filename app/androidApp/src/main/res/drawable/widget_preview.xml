@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget picker's preview: a barcode on the white card the widget shows it on. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="160dp"
+    android:height="160dp"
+    android:viewportWidth="160"
+    android:viewportHeight="160">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,0h128a16,16 0,0 1,16 16v128a16,16 0,0 1,-16 16h-128a16,16 0,0 1,-16 -16v-128a16,16 0,0 1,16 -16z" />
+    <path
+        android:fillColor="#000000"
+        android:pathData="M28,56h4v48h-4z M34,56h2v48h-2z M40,56h6v48h-6z M48,56h2v48h-2z M54,56h4v48h-4z M62,56h2v48h-2z M68,56h6v48h-6z M76,56h2v48h-2z M82,56h4v48h-4z M90,56h2v48h-2z M94,56h6v48h-6z M104,56h2v48h-2z M110,56h4v48h-4z M118,56h2v48h-2z M124,56h6v48h-6z" />
+</vector>

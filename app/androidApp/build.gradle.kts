@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":app:sharedUI"))
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.glance.appwidget)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
@@ -24,6 +25,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.uiautomator)
+    androidTestImplementation(libs.glance.appwidget.testing)
 }
 
 android {

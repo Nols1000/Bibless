@@ -121,6 +121,12 @@ final class BarcodeStore: ObservableObject {
         if !isDemo, WidgetBarcode.save(widgetBarcode) {
             WidgetCenter.shared.reloadAllTimelines()
         }
+        #if os(iOS)
+        // Siri and Shortcuts offer every barcode by name.
+        if !isDemo, WidgetBarcode.saveAll(barcodes.map { WidgetBarcode(id: $0.id, name: $0.name) }) {
+            BiblessShortcuts.updateAppShortcutParameters()
+        }
+        #endif
     }
 }
 

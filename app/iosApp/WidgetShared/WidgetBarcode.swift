@@ -13,6 +13,7 @@ struct WidgetBarcode: Codable, Equatable {
     static let kind = "FirstBarcode"
     private static let appGroup = "group.com.github.nols1000.bibless"
     private static let key = "widgetBarcode"
+    private static let allKey = "allBarcodes"
     private static let scheme = "bibless"
 
     /// Opens this barcode's detail screen in the app.
@@ -44,6 +45,20 @@ struct WidgetBarcode: Codable, Equatable {
         } else {
             defaults.removeObject(forKey: key)
         }
+        return true
+    }
+
+    /// All barcodes in list order, names only, for Siri and Shortcuts to choose from.
+    static func loadAll() -> [WidgetBarcode] {
+        guard let data = UserDefaults(suiteName: appGroup)?.data(forKey: allKey) else { return [] }
+        return (try? JSONDecoder().decode([WidgetBarcode].self, from: data)) ?? []
+    }
+
+    /// Stores [barcodes] for [loadAll]; true if they differ from what was stored so far.
+    static func saveAll(_ barcodes: [WidgetBarcode]) -> Bool {
+        guard barcodes != loadAll(), let defaults = UserDefaults(suiteName: appGroup),
+              let data = try? JSONEncoder().encode(barcodes) else { return false }
+        defaults.set(data, forKey: allKey)
         return true
     }
 }

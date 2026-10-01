@@ -10,9 +10,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
+/** The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
 @Composable
-fun App(repository: BarcodeRepository) {
+fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
     MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
         val state by repository.state.collectAsStateWithLifecycle()
         val navController = rememberNavController()
@@ -46,6 +49,6 @@ fun App(repository: BarcodeRepository) {
                 )
             }
         }
-        OpenStartBarcode(navController, repository)
+        OpenStartBarcode(navController, repository, openRequests)
     }
 }

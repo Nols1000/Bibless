@@ -11,9 +11,12 @@ import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.nols1000.bibless.BarcodeRepository
 import com.github.nols1000.bibless.Device
 import com.github.nols1000.bibless.OpenStartBarcode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
+/** The watch app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
 @Composable
-fun WearApp(repository: BarcodeRepository) {
+fun WearApp(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
     MaterialTheme {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
@@ -55,7 +58,7 @@ fun WearApp(repository: BarcodeRepository) {
                     )
                 }
             }
-            OpenStartBarcode(navController, repository)
+            OpenStartBarcode(navController, repository, openRequests)
         }
     }
 }

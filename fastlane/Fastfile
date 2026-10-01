@@ -39,6 +39,8 @@ platform :android do
         app_package_name: "com.github.nols1000.bibless",
         tests_package_name: ANDROID_TEST_PACKAGE,
         test_instrumentation_runner: "androidx.test.runner.AndroidJUnitRunner",
+        # The other UI tests (e.g. BarcodeLinkTest) take no screenshots
+        use_tests_in_classes: [mod == "wearApp" ? "com.github.nols1000.bibless.wear.ScreenshotTest" : "com.github.nols1000.bibless.ScreenshotTest"],
         specific_device: serial,
         device_type: device_type,
         locales: ["en-US"],

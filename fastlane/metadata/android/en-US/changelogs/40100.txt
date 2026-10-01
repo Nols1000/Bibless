@@ -1,0 +1,3 @@
+• Home screen widget: your first barcode, ready to scan without opening the app
+• Quick Settings tile: show your first barcode on the lock screen without unlocking
+• Long-press the app icon to jump straight to one of your first four barcodes

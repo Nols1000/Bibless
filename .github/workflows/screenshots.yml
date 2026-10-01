@@ -1,0 +1,103 @@
+name: Screenshots
+
+# Captures the store screenshots with the UI tests (fastlane screengrab / snapshot, demo data) and
+# keeps them as artifacts of the run; store-metadata.yml uploads them. Each device runs in its own
+# job, so the captures take as long as the slowest one. The Release workflow starts this while it
+# builds. Changes to the screenshot tests run it on main, so a broken test shows up before a release.
+on:
+  workflow_call:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'fastlane/Fastfile'
+      - 'fastlane/screenshots/captions.json'
+      - 'tools/screenshots/**'
+      - 'app/iosApp/*UITests*/**'
+      - 'app/*/src/androidTest/**'
+      - '.github/workflows/screenshots.yml'
+
+jobs:
+  play:
+    name: Play ${{ matrix.name }} screenshots
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: phone
+            api-level: 35
+            target: google_apis
+            profile: pixel_7
+            disk-size: ''
+          - name: wear
+            api-level: 33
+            target: android-wear
+            profile: wearos_large_round
+            # The Wear OS image defaults to a 7 GB userdata partition
+            disk-size: 2048M
+          # A separate device type of the same Play slot; its files add to the round watch's
+          - name: wear_square
+            api-level: 33
+            target: android-wear
+            profile: wearos_square
+            disk-size: 2048M
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      # The Gradle build plus the emulator image overflow the runner's disk otherwise
+      - name: Free disk space
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
+      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install pillow
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Capture
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disk-size: ${{ matrix.disk-size }}
+          disable-animations: true
+          script: bundle exec fastlane android screenshots ${{ matrix.name }}:emulator-5554
+      - uses: actions/upload-artifact@v4
+        with:
+          name: play-screenshots-${{ matrix.name }}
+          path: fastlane/metadata/android/*/images/*Screenshots/
+          if-no-files-found: error
+
+  app-store:
+    name: App Store screenshots
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      # The Xcode build compiles the shared Kotlin framework through Gradle
+      - uses: ./.github/actions/setup-build
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install pillow
+      - name: iPhone and Apple Watch screenshots
+        run: bundle exec fastlane ios screenshots
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-store-screenshots
+          path: fastlane/screenshots/ios/
+          if-no-files-found: error

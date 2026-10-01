@@ -1,130 +1,63 @@
 name: Store metadata
 
-# Syncs store listings to Google Play and App Store Connect: texts from fastlane/metadata, plus
-# screenshots that are captured here by the UI tests (fastlane screengrab / snapshot, demo data).
-# The Release workflow runs it after uploading the builds, so the listing changes together with the
-# app it describes. Run it by hand for listing-only fixes. Changes to the screenshot tests run it on
-# main without uploading, so a broken screenshot test shows up before the release.
+# Syncs store listings to Google Play and App Store Connect: texts from fastlane/metadata, plus the
+# screenshots from screenshots.yml. The Release workflow captures the screenshots while it builds
+# and calls this with capture: false once the builds are uploaded, so the listing changes together
+# with the app it describes. Run it by hand for listing-only fixes; it then captures them itself.
 on:
   workflow_call:
     inputs:
-      upload:
-        description: Upload the listing and screenshots to the stores
+      capture:
+        description: Capture the screenshots first (false if this run already did)
         type: boolean
         default: true
   workflow_dispatch:
-    inputs:
-      upload:
-        description: Upload the listing and screenshots to the stores
-        type: boolean
-        default: true
-  push:
-    branches: [main]
-    paths:
-      - 'fastlane/Fastfile'
-      - 'fastlane/screenshots/captions.json'
-      - 'tools/screenshots/**'
-      - 'app/iosApp/*UITests*/**'
-      - 'app/*/src/androidTest/**'
-      - '.github/workflows/store-metadata.yml'
 
 jobs:
+  screenshots:
+    name: Screenshots
+    # Called with capture: false, or run by hand (no inputs, so capture is unset but wanted)
+    if: inputs.capture != false
+    uses: ./.github/workflows/screenshots.yml
+
   play:
     name: Google Play listing
+    needs: screenshots
+    if: ${{ !failure() && !cancelled() && vars.PLAY_SERVICE_ACCOUNT != '' }}
     runs-on: ubuntu-latest
-    # Uploads queue behind each other; capture-only runs from pushes don't hold them up
     concurrency:
-      group: store-metadata-play-${{ inputs.upload == true && 'upload' || github.run_id }}
+      group: store-metadata-play
       cancel-in-progress: false
     permissions:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
-    env:
-      PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
     steps:
-      - if: env.PLAY_SERVICE_ACCOUNT == ''
-        run: echo "::notice::PLAY_SERVICE_ACCOUNT variable not set, skipping Play listing sync"
       - uses: actions/checkout@v4
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-      - uses: ./.github/actions/setup-build
-        if: env.PLAY_SERVICE_ACCOUNT != ''
       - uses: ruby/setup-ruby@v1
-        if: env.PLAY_SERVICE_ACCOUNT != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
-      # The Gradle build plus two emulator images overflow the runner's disk otherwise
-      - name: Free disk space
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
-      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
-        if: env.PLAY_SERVICE_ACCOUNT != ''
+      - uses: actions/download-artifact@v4
         with:
-          python-version: '3.13'
-      - if: env.PLAY_SERVICE_ACCOUNT != ''
-        run: pip install pillow
-      - name: Enable KVM for the emulators
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-      - name: Phone screenshots
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_7
-          disable-animations: true
-          script: bundle exec fastlane android screenshots phone:emulator-5554
-      - name: Wear OS screenshots
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          target: android-wear
-          arch: x86_64
-          profile: wearos_large_round
-          # The Wear OS image defaults to a 7 GB userdata partition
-          disk-size: 2048M
-          disable-animations: true
-          script: bundle exec fastlane android screenshots wear:emulator-5554
-      # Adds to the round watch's screenshots, so it runs after them
-      - name: Wear OS square screenshots
-        if: env.PLAY_SERVICE_ACCOUNT != ''
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 33
-          target: android-wear
-          arch: x86_64
-          profile: wearos_square
-          disk-size: 2048M
-          disable-animations: true
-          script: bundle exec fastlane android screenshots wear_square:emulator-5554
-      # Authenticate after the emulator steps so the short-lived token is fresh for the upload
+          pattern: play-screenshots-*
+          path: fastlane/metadata/android
+          merge-multiple: true
       - uses: google-github-actions/auth@v3
-        if: env.PLAY_SERVICE_ACCOUNT != '' && inputs.upload == true
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ env.PLAY_SERVICE_ACCOUNT }}
-      - if: env.PLAY_SERVICE_ACCOUNT != '' && inputs.upload == true
-        run: bundle exec fastlane android metadata
-      - uses: actions/upload-artifact@v4
-        if: always() && env.PLAY_SERVICE_ACCOUNT != ''
-        with:
-          name: play-screenshots
-          path: fastlane/metadata/android/*/images/*Screenshots/
-          if-no-files-found: ignore
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+      - run: bundle exec fastlane android metadata
 
   app-store:
     name: App Store listing
+    needs: screenshots
+    if: ${{ !failure() && !cancelled() }}
     runs-on: macos-26
     concurrency:
-      group: store-metadata-app-store-${{ inputs.upload == true && 'upload' || github.run_id }}
+      group: store-metadata-app-store
       cancel-in-progress: false
+    permissions:
+      contents: read
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -135,29 +68,15 @@ jobs:
         run: echo "::notice::ASC_KEY_ID not set, skipping App Store listing sync"
       - uses: actions/checkout@v4
         if: env.ASC_KEY_ID != ''
-      # The Xcode build compiles the shared Kotlin framework through Gradle
-      - uses: ./.github/actions/setup-build
-        if: env.ASC_KEY_ID != ''
       - uses: ruby/setup-ruby@v1
         if: env.ASC_KEY_ID != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
-      # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
+      - uses: actions/download-artifact@v4
         if: env.ASC_KEY_ID != ''
-        with:
-          python-version: '3.13'
-      - if: env.ASC_KEY_ID != ''
-        run: pip install pillow
-      - name: iPhone and Apple Watch screenshots
-        if: env.ASC_KEY_ID != ''
-        run: bundle exec fastlane ios screenshots
-      - if: env.ASC_KEY_ID != '' && inputs.upload == true
-        run: bundle exec fastlane ios metadata
-      - uses: actions/upload-artifact@v4
-        if: always() && env.ASC_KEY_ID != ''
         with:
           name: app-store-screenshots
-          path: fastlane/screenshots/ios/*/
-          if-no-files-found: ignore
+          path: fastlane/screenshots/ios
+      - if: env.ASC_KEY_ID != ''
+        run: bundle exec fastlane ios metadata

@@ -5,9 +5,10 @@ All targets except `:server` are built and released from GitHub Actions.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | PRs, pushes to `main` | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned) |
-| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release |
+| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release. The screenshots are captured while it builds |
 | `pages.yml` | Changes to the web app on `main`, or manual run | Deploys the web app and the privacy policies to GitHub Pages |
-| `store-metadata.yml` | Called by `release.yml`, or manual run; changes to the screenshot tests on `main` capture only | Captures the screenshots and pushes the store listings to Google Play and App Store Connect |
+| `screenshots.yml` | Called by `release.yml` and `store-metadata.yml`; changes to the screenshot tests on `main` | Captures the store screenshots, one job per device, and keeps them as artifacts |
+| `store-metadata.yml` | Called by `release.yml`, or manual run | Pushes the store listings with the screenshots to Google Play and App Store Connect |
 | `certificates.yml` | Manual run | Registers the Apple bundle ids and regenerates the App Store profiles in the match repo |
 
 Signing and store steps are skipped automatically while their secrets or variables are missing.
@@ -33,7 +34,9 @@ Release notes and listing changes go live with the release that ships them, so c
 
 Never move or reuse a tag once its build has reached a store: Play rejects a `versionCode` it has already seen. Tag the next patch version instead.
 
-Local builds can override the version the same way: `./gradlew :app:androidApp:bundleRelease -PappVersionName=1.2.3 -PappVersionCode=1020300`.
+The phone and Wear OS bundles go to Google Play in separate jobs, one after the other. If one fails, fix the cause and use *Re-run failed jobs* on the same run: the upload skips a bundle the track already has. A failed Wear OS upload doesn't hold up the store listings or the GitHub Release. If Play has no such track, the error lists the tracks it does have.
+
+Local builds can override the version the same way: `./gradlew :app:androidApp:bundleRelease :app:wearApp:bundleRelease -PappVersionName=1.2.3 -PappVersionCode=1020300 -PwearVersionCode=1020301`. `appVersionCode` alone sets both.
 
 ## Store listings
 
@@ -58,7 +61,7 @@ bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
 
 The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `androidTest` sources. The Android tests replace the app's saved barcodes, so they refuse to run on a real device.
 
-The images are not committed (they are git-ignored). `store-metadata.yml` captures them on CI simulators and emulators and uploads them with the listing; each run also keeps them as workflow artifacts for review. Releases run it after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run it on `main` without uploading. To update a listing between releases, run it manually: `gh workflow run store-metadata.yml`. The local commands above are for previewing.
+The images are not committed (they are git-ignored). `screenshots.yml` captures them on CI simulators and emulators, each device in its own job, and keeps them as workflow artifacts for review. Releases start it alongside the builds and push the listing (`store-metadata.yml`) after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run `screenshots.yml` on `main` without uploading. To update a listing between releases, run `gh workflow run store-metadata.yml`, which captures the screenshots first. The local commands above are for previewing.
 
 ## Secrets
 

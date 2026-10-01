@@ -8,9 +8,27 @@ ANDROID_AABS = [
 
 ANDROID_TEST_PACKAGE = "com.github.nols1000.bibless.test"
 
-# Play track releases go to: closed testing ("alpha"; the Wear OS bundle to "wear:alpha").
+# Play track releases go to: closed testing ("alpha"; the Wear OS bundle to "wear:alpha", which exists
+# once closed testing is set up for the Wear OS form factor in Play Console).
 # The listing sync attaches to the newest release on the same track.
 PLAY_TRACK = "alpha"
+
+# The version codes on a Play track. Fails with the names of the tracks Google Play has if there is
+# no such track: form factor tracks only exist once they are set up in Play Console.
+def play_track_version_codes(track)
+  codes = begin
+    google_play_track_version_codes(track: track)
+  rescue StandardError
+    nil
+  end
+  # google_play_track_version_codes has set up Supply.config with the package and credentials
+  client = Supply::Client.make_from_config
+  client.begin_edit(package_name: Supply.config[:package_name])
+  tracks = client.tracks.map(&:track)
+  client.abort_current_edit
+  UI.user_error!("Google Play has no track '#{track}'. Its tracks: #{tracks.sort.join(", ")}") unless tracks.include?(track)
+  codes || google_play_track_version_codes(track: track)
+end
 
 # Puts the headlines from fastlane/screenshots/captions.json on phone screenshots (tools/screenshots/frame.py)
 def frame_screenshots(platform_flag, directory)
@@ -59,21 +77,32 @@ platform :android do
     frame_screenshots("--wear", "fastlane/metadata/android/en-US/images/wearScreenshots") if options[:wear_square]
   end
 
-  desc "Upload the phone and Wear OS bundles (plus listing) to a Play track"
+  desc "Upload one bundle to a Play track: form:phone or form:wear (to the Wear OS form factor's track), " \
+       "version_code:<the bundle's code>. Skips a bundle the track already has, so a failed release can be re-run"
   lane :upload do |options|
-    track = options[:track] || PLAY_TRACK
     phone_aab, wear_aab = ANDROID_AABS
-    common = {
+    aab, track = case options[:form]
+                 when "phone" then [phone_aab, options[:track] || PLAY_TRACK]
+                 # Wear OS bundles go to the Wear OS form factor tracks (Advanced settings → Form factors)
+                 when "wear" then [wear_aab, "wear:#{options[:track] || PLAY_TRACK}"]
+                 else UI.user_error!("Pass form:phone or form:wear")
+                 end
+    version_code = Integer(options[:version_code] || UI.user_error!("Pass version_code:<the bundle's code>"))
+
+    if play_track_version_codes(track).include?(version_code)
+      UI.success("#{track} already has #{version_code}, skipping the upload")
+      next
+    end
+    upload_to_play_store(
+      track: track,
+      aab: aab,
       metadata_path: "fastlane/metadata/android",
       release_status: options[:release_status] || "completed",
       # The listing and its screenshots are synced by the metadata lane (store-metadata.yml)
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
-    }
-    upload_to_play_store(**common, track: track, aab: phone_aab)
-    # Wear OS bundles go to the Wear OS form factor tracks (Advanced settings → Form factors)
-    upload_to_play_store(**common, track: "wear:#{track}", aab: wear_aab)
+    )
   end
 
   desc "Sync the Play store listing (texts, images) without uploading a binary"

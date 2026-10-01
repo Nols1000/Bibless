@@ -21,6 +21,7 @@ jobs:
       code_wear: ${{ steps.version.outputs.code_wear }}
       has_keystore: ${{ steps.secrets.outputs.has_keystore }}
       has_apple: ${{ steps.secrets.outputs.has_apple }}
+      play_upload: ${{ steps.secrets.outputs.play_upload }}
     steps:
       - id: version
         run: |
@@ -38,17 +39,27 @@ jobs:
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          # Store uploads are opt-in: set the repository variable STORE_UPLOAD=true to enable them.
+          # Until then, download the bundles from the GitHub Release and upload them manually.
+          STORE_UPLOAD: ${{ vars.STORE_UPLOAD }}
+          PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
         run: |
-          echo "has_keystore=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          has_keystore=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && echo true || echo false)
+          echo "has_keystore=$has_keystore" >> "$GITHUB_OUTPUT"
           echo "has_apple=$([ -n "$ASC_KEY_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          play_upload=false
+          [ "$STORE_UPLOAD" = true ] && [ -n "$PLAY_SERVICE_ACCOUNT" ] && [ "$has_keystore" = true ] && play_upload=true
+          echo "play_upload=$play_upload" >> "$GITHUB_OUTPUT"
+
+  # Starts right away: the listing needs the screenshots only once the builds are uploaded.
+  screenshots:
+    name: Screenshots
+    uses: ./.github/workflows/screenshots.yml
 
   android:
     name: Android + Wear OS
     needs: version
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # Workload Identity Federation for Google Play
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
@@ -75,34 +86,69 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          ./gradlew :app:androidApp:bundleRelease \
-            -PappVersionName=${{ needs.version.outputs.name }} \
-            -PappVersionCode=${{ needs.version.outputs.code_phone }}
-          ./gradlew :app:wearApp:bundleRelease \
-            -PappVersionName=${{ needs.version.outputs.name }} \
-            -PappVersionCode=${{ needs.version.outputs.code_wear }}
+        run: >
+          ./gradlew :app:androidApp:bundleRelease :app:wearApp:bundleRelease
+          -PappVersionName=${{ needs.version.outputs.name }}
+          -PappVersionCode=${{ needs.version.outputs.code_phone }}
+          -PwearVersionCode=${{ needs.version.outputs.code_wear }}
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: |
             app/androidApp/build/outputs/bundle/release/*.aab
             app/wearApp/build/outputs/bundle/release/*.aab
-      # Store uploads are opt-in: set the repository variable STORE_UPLOAD=true to enable them.
-      # Until then, download the bundles from the GitHub Release and upload them manually.
+
+  # Phone and Wear OS upload in their own jobs, so one can be re-run without the other; a bundle
+  # Play already has is skipped. Google Play allows one edit at a time, so they take turns.
+  play-phone:
+    name: Google Play phone
+    needs: [version, android]
+    if: needs.version.outputs.play_upload == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: app
       - uses: ruby/setup-ruby@v1
-        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
         with:
           ruby-version: '3.3'
           bundler-cache: true
       - uses: google-github-actions/auth@v3
-        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-      - name: Upload to Google Play (closed testing, see PLAY_TRACK in the Fastfile)
-        if: vars.STORE_UPLOAD == 'true' && vars.PLAY_SERVICE_ACCOUNT != '' && needs.version.outputs.has_keystore == 'true'
-        run: bundle exec fastlane android upload
+      - name: Upload to closed testing (PLAY_TRACK in the Fastfile)
+        run: bundle exec fastlane android upload form:phone version_code:${{ needs.version.outputs.code_phone }}
+
+  play-wear:
+    name: Google Play Wear OS
+    needs: [version, android, play-phone]
+    if: always() && needs.android.result == 'success' && needs.version.outputs.play_upload == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: android
+          path: app
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+      - name: Upload to the Wear OS closed testing track
+        run: bundle exec fastlane android upload form:wear version_code:${{ needs.version.outputs.code_wear }}
 
   ios:
     name: iOS + watchOS
@@ -163,17 +209,20 @@ jobs:
           path: bibless-web-*.zip
 
   # The listing goes live with the builds it describes, and only once they're uploaded: Google Play
-  # allows one edit at a time, so a listing sync during the upload would discard it.
+  # allows one edit at a time, so a listing sync during an upload would discard it. A failed Wear OS
+  # upload doesn't hold it up; re-run that job on its own.
   store-metadata:
     name: Store listings
-    needs: [android, ios]
-    if: always() && needs.android.result == 'success' && needs.ios.result != 'failure'
+    needs: [android, play-phone, play-wear, ios, screenshots]
+    if: >-
+      always() && needs.android.result == 'success' && needs.play-phone.result != 'failure'
+      && needs.ios.result != 'failure' && needs.screenshots.result == 'success'
     permissions:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
     uses: ./.github/workflows/store-metadata.yml
     with:
-      upload: true
+      capture: false
     secrets: inherit
 
   github-release:

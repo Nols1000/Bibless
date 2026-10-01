@@ -47,7 +47,10 @@ android {
         applicationId = "com.github.nols1000.bibless"
         minSdk = libs.versions.android.wear.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 2
+        // Its own code, since it shares the phone app's applicationId; wearVersionCode lets one Gradle
+        // run build both bundles, appVersionCode is for building this one alone.
+        versionCode = (providers.gradleProperty("wearVersionCode").orNull ?: providers.gradleProperty("appVersionCode").orNull)
+            ?.toInt() ?: 2
         versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

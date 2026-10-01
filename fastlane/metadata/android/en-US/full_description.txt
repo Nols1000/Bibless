@@ -2,7 +2,8 @@ Forgot your printed barcode again? Bibless keeps your parkrun barcode on your ph
 
 • Add your athlete ID once (for example A1234567) and your barcode is ready to scan
 • Opens straight to your barcode at full brightness, and keeps the screen on until you're scanned
-• Show it on your Wear OS watch – leave your phone at home on run day
+• Get to it even faster: a home screen widget, a Quick Settings tile that works on the lock screen, and app shortcuts
+• Show it on your Wear OS watch – leave your phone at home on run day. It's also a tile, one swipe from the watch face
 • Save barcodes for the whole family, put them in your order and swipe between them on your watch
 • Choose between QR code and classic barcode, separately for phone and watch
 • Add barcodes on your phone or directly on your watch – they sync automatically

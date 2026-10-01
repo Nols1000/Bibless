@@ -1,1 +1,1 @@
-barcode,run,running,5k,athlete,finish,token,scan,qr,watch,wallet,saturday,volunteer,club,race
+barcode,run,running,5k,athlete,finish,token,scan,qr,watch,wallet,saturday,volunteer,club,race,widget

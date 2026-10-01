@@ -1,4 +1,3 @@
-• Put your barcodes in the order you like: tap Edit in the list and drag them; on Apple Watch, swipe right on a barcode to move it to the top
-• Apple Watch: swipe or turn the Digital Crown to go from one barcode to the next
-• Apple Watch: a new Smart Stack widget keeps your first barcode one tap away on Saturday mornings and during workouts
-• Settings → Open on Launch now opens the first barcode in your list
+• Home Screen widget: your first barcode, ready to scan without opening the app
+• Lock Screen widgets and a Control Center control open your first barcode in one tap. You can also put it on the Action button
+• Siri and Shortcuts: say "Show my barcode in Bibless", or "Show Sam in Bibless" for someone else's barcode

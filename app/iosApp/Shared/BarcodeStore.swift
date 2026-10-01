@@ -1,9 +1,7 @@
 import Foundation
 import SharedLogic
 import SwiftUI
-#if os(watchOS)
 import WidgetKit
-#endif
 
 /// SwiftUI-facing wrapper around the shared Kotlin `BarcodeRepository`.
 @MainActor
@@ -111,12 +109,18 @@ final class BarcodeStore: ObservableObject {
         barcodes = state.barcodes
         format = state.format
         settings = state.settings
-        #if os(watchOS)
-        // The Smart Stack widget offers the first barcode; demo data stays out of it.
-        if !isDemo, WidgetBarcode.save(barcodes.first.map { WidgetBarcode(id: $0.id, name: $0.name) }) {
+        // The widgets (home screen, Smart Stack) offer the first barcode; demo data stays out of them.
+        let widgetBarcode = barcodes.first.map {
+            WidgetBarcode(
+                id: $0.id,
+                name: $0.name,
+                athleteId: $0.athleteId,
+                grid: ModuleGrid(format.encode(text: $0.athleteId))
+            )
+        }
+        if !isDemo, WidgetBarcode.save(widgetBarcode) {
             WidgetCenter.shared.reloadTimelines(ofKind: WidgetBarcode.kind)
         }
-        #endif
     }
 }
 

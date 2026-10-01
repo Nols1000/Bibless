@@ -7,44 +7,23 @@ struct BarcodeImageView: View {
     let format: BarcodeFormat
 
     var body: some View {
-        let matrix = format.encode(text: text)
-        let isLinear = matrix.height == 1
-        let quiet = isLinear ? 10 : 4
-        let columns = Int(matrix.width) + 2 * quiet
-        let rows = isLinear ? CGFloat(columns) * 0.4 : CGFloat(Int(matrix.height) + 2 * quiet)
+        ModuleGridView(grid: ModuleGrid(format.encode(text: text)))
+            .accessibilityLabel("\(format.label) for \(text)")
+    }
+}
 
-        Canvas { context, size in
-            // Whole-pixel modules keep bar edges crisp, which matters on small watch screens.
-            let scale = context.environment.displayScale
-            let module = max(1, (size.width * scale / CGFloat(columns)).rounded(.down)) / scale
-            let left = (size.width - module * CGFloat(columns)) / 2 + CGFloat(quiet) * module
-            let top = (size.height - module * rows) / 2 + CGFloat(quiet) * module
-            var path = Path()
-            for x in 0..<Int(matrix.width) {
-                if isLinear {
-                    if matrix.get(x: Int32(x), y: 0) {
-                        path.addRect(CGRect(
-                            x: left + CGFloat(x) * module,
-                            y: CGFloat(quiet) * module,
-                            width: module,
-                            height: size.height - 2 * CGFloat(quiet) * module
-                        ))
-                    }
-                } else {
-                    for y in 0..<Int(matrix.height) where matrix.get(x: Int32(x), y: Int32(y)) {
-                        path.addRect(CGRect(
-                            x: left + CGFloat(x) * module,
-                            y: top + CGFloat(y) * module,
-                            width: module,
-                            height: module
-                        ))
-                    }
-                }
+extension ModuleGrid {
+    /// The modules of a code from the shared encoder.
+    init(_ matrix: BitMatrix) {
+        let width = Int(matrix.width)
+        let height = Int(matrix.height)
+        var bits = ""
+        bits.reserveCapacity(width * height)
+        for y in 0..<height {
+            for x in 0..<width {
+                bits.append(matrix.get(x: Int32(x), y: Int32(y)) ? "1" : "0")
             }
-            context.fill(path, with: .color(.black))
         }
-        .aspectRatio(CGFloat(columns) / rows, contentMode: .fit)
-        .background(Color.white)
-        .accessibilityLabel("\(format.label) for \(text)")
+        self.init(width: width, height: height, bits: bits)
     }
 }

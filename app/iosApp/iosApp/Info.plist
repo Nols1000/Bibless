@@ -4,5 +4,17 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- bibless://barcode/<id> opens a barcode, see WidgetBarcode.url -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.github.nols1000.bibless</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>bibless</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

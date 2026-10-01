@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		F476FDA9A98AB8389A996BE5 /* Bibless Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = DCF07A86E848155E22B0A554 /* Bibless Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1B2C3D4E5F6071829304002 /* BiblessWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6071829304001 /* BiblessWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B1B2C3D4E5F6071829305002 /* BiblessHomeWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B1B2C3D4E5F6071829305001 /* BiblessHomeWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +41,13 @@
 			remoteGlobalIDString = A1B2C3D4E5F6071829304009;
 			remoteInfo = watchWidget;
 		};
+		B1B2C3D4E5F6071829305004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC491DAB3B87A390E95B9649 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B1B2C3D4E5F6071829305009;
+			remoteInfo = phoneWidget;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -65,6 +73,17 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B1B2C3D4E5F6071829305003 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B1B2C3D4E5F6071829305002 /* BiblessHomeWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -73,6 +92,7 @@
 		B5B486F880741A5510FD207E /* iosAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = iosAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		53FC2C03ED317276947463E6 /* watchAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = watchAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1B2C3D4E5F6071829304001 /* BiblessWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BiblessWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B1B2C3D4E5F6071829305001 /* BiblessHomeWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BiblessHomeWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -89,6 +109,13 @@
 				Info.plist,
 			);
 			target = A1B2C3D4E5F6071829304009 /* watchWidget */;
+		};
+		B1B2C3D4E5F6071829305008 /* Exceptions for "phoneWidget" folder in "phoneWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B1B2C3D4E5F6071829305009 /* phoneWidget */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -144,6 +171,14 @@
 			path = WidgetShared;
 			sourceTree = "<group>";
 		};
+		B1B2C3D4E5F6071829305006 /* phoneWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B1B2C3D4E5F6071829305008 /* Exceptions for "phoneWidget" folder in "phoneWidget" target */,
+			);
+			path = phoneWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -182,6 +217,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B1B2C3D4E5F607182930500B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -190,6 +232,7 @@
 			children = (
 				D12AFD3854B7E0DF0AD80FBF /* Configuration */,
 				FB83E870DF237953CF67A336 /* iosApp */,
+				B1B2C3D4E5F6071829305006 /* phoneWidget */,
 				5A1B2C3D4E5F60718293A4B5 /* Shared */,
 				119842642AE21CEDAD5686AB /* watchApp */,
 				A1B2C3D4E5F6071829304006 /* watchWidget */,
@@ -209,6 +252,7 @@
 				B5B486F880741A5510FD207E /* iosAppUITests.xctest */,
 				53FC2C03ED317276947463E6 /* watchAppUITests.xctest */,
 				A1B2C3D4E5F6071829304001 /* BiblessWidget.appex */,
+				B1B2C3D4E5F6071829305001 /* BiblessHomeWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -252,15 +296,18 @@
 				54812C62EDFAB52B9045DBA3 /* Frameworks */,
 				CF4C41759C63715D2E7CDF14 /* Resources */,
 				183BFD0E8433594C65F0FCF6 /* Embed Watch Content */,
+				B1B2C3D4E5F6071829305003 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				ED7FE4462080A0B386F45BDC /* PBXTargetDependency */,
+				B1B2C3D4E5F6071829305005 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				5A1B2C3D4E5F60718293A4B5 /* Shared */,
 				FB83E870DF237953CF67A336 /* iosApp */,
+				A1B2C3D4E5F6071829304007 /* WidgetShared */,
 			);
 			name = iosApp;
 			packageProductDependencies = (
@@ -340,6 +387,29 @@
 			productReference = A1B2C3D4E5F6071829304001 /* BiblessWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		B1B2C3D4E5F6071829305009 /* phoneWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1B2C3D4E5F607182930500D /* Build configuration list for PBXNativeTarget "phoneWidget" */;
+			buildPhases = (
+				B1B2C3D4E5F607182930500A /* Sources */,
+				B1B2C3D4E5F607182930500B /* Frameworks */,
+				B1B2C3D4E5F607182930500C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B1B2C3D4E5F6071829305006 /* phoneWidget */,
+				A1B2C3D4E5F6071829304007 /* WidgetShared */,
+			);
+			name = phoneWidget;
+			packageProductDependencies = (
+			);
+			productName = phoneWidget;
+			productReference = B1B2C3D4E5F6071829305001 /* BiblessHomeWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -361,6 +431,9 @@
 						TestTargetID = 77EF3B33B6F1A97073E7E139;
 					};
 					A1B2C3D4E5F6071829304009 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					B1B2C3D4E5F6071829305009 = {
 						CreatedOnToolsVersion = 27.0;
 					};
 					8F084B541D27866A83B0C7EC = {
@@ -388,6 +461,7 @@
 				6ACEDBA37DB6568B756AA733 /* iosAppUITests */,
 				8F084B541D27866A83B0C7EC /* watchAppUITests */,
 				A1B2C3D4E5F6071829304009 /* watchWidget */,
+				B1B2C3D4E5F6071829305009 /* phoneWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -422,6 +496,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A1B2C3D4E5F607182930400C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1B2C3D4E5F607182930500C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -507,6 +588,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B1B2C3D4E5F607182930500A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -529,6 +617,11 @@
 			isa = PBXTargetDependency;
 			target = A1B2C3D4E5F6071829304009 /* watchWidget */;
 			targetProxy = A1B2C3D4E5F6071829304004 /* PBXContainerItemProxy */;
+		};
+		B1B2C3D4E5F6071829305005 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B1B2C3D4E5F6071829305009 /* phoneWidget */;
+			targetProxy = B1B2C3D4E5F6071829305004 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -696,6 +789,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Configuration/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
@@ -753,6 +847,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Configuration/iosApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
@@ -900,6 +995,56 @@
 			};
 			name = Release;
 		};
+		B1B2C3D4E5F607182930500E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Configuration/phoneWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = phoneWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bibless;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).widget";
+				PRODUCT_NAME = BiblessHomeWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B1B2C3D4E5F607182930500F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Configuration/phoneWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = phoneWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Bibless;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_IDENTIFIER).widget";
+				PRODUCT_NAME = BiblessHomeWidget;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -953,6 +1098,15 @@
 			buildConfigurations = (
 				A1B2C3D4E5F607182930400E /* Debug */,
 				A1B2C3D4E5F607182930400F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B1B2C3D4E5F607182930500D /* Build configuration list for PBXNativeTarget "phoneWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B1B2C3D4E5F607182930500E /* Debug */,
+				B1B2C3D4E5F607182930500F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

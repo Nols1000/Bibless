@@ -1,17 +1,21 @@
 import Foundation
 
-/// The barcode the watch widget offers: the first one in the list. The watch app writes it to the
-/// app group it shares with the widget, which can't run the shared Kotlin code itself.
+/// The barcode the widgets offer: the first one in the list. Each app writes it to the app group it
+/// shares with its widget, which can't run the shared Kotlin code itself.
 struct WidgetBarcode: Codable, Equatable {
     let id: String
     let name: String
+    /// What the phone widget shows below the code; the watch widget shows only the name.
+    var athleteId: String? = nil
+    /// The code in this device's format, for the phone widget to draw.
+    var grid: ModuleGrid? = nil
 
     static let kind = "FirstBarcode"
     private static let appGroup = "group.com.github.nols1000.bibless"
     private static let key = "widgetBarcode"
     private static let scheme = "bibless"
 
-    /// Opens this barcode's detail screen in the watch app.
+    /// Opens this barcode's detail screen in the app.
     var url: URL {
         var components = URLComponents()
         components.scheme = Self.scheme

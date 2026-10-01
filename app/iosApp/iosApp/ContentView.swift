@@ -21,6 +21,8 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    // Lets UI tests open the barcode by its link
+                    .accessibilityIdentifier(barcode.id)
                 }
                 .onDelete { offsets in
                     offsets.map { store.barcodes[$0] }.forEach(store.delete)
@@ -68,6 +70,16 @@ struct ContentView: View {
             if let id = store.startBarcodeId { path = [id] }
         }
         .onChange(of: path) { store.shownBarcodeId = path.last }
+        // The widget opens its barcode on top of the list, over whatever was open.
+        .onOpenURL { url in
+            guard let id = WidgetBarcode.id(from: url), store.barcode(id: id) != nil else { return }
+            didStart = true
+            isAdding = false // the sheets would cover the code
+            isShowingSettings = false
+            path = [id]
+            // Also when the path already was [id], where onChange(of: path) doesn't fire
+            store.shownBarcodeId = id
+        }
     }
 }
 

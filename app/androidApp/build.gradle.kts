@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":app:sharedUI"))
 
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.core.ktx)
     implementation(libs.glance.appwidget)
 
     implementation(libs.compose.uiToolingPreview)

@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Bibless</string>
     <string name="widget_description">Your first barcode, ready to scan</string>
+    <string name="quick_settings_tile_label">Barcode</string>
 </resources>

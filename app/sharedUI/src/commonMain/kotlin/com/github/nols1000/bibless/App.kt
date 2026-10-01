@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.emptyFlow
 /** The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
 @Composable
 fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
+    BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
         val navController = rememberNavController()
 
@@ -51,4 +52,26 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
         }
         OpenStartBarcode(navController, repository, openRequests)
     }
+}
+
+/**
+ * Only the first barcode, for showing on the lock screen: no way to the list, the settings or
+ * editing. Calls [onClose] on Back, and when there is no barcode to show.
+ */
+@Composable
+fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
+    BiblessTheme {
+        val state by repository.state.collectAsStateWithLifecycle()
+        val barcode = state.barcodes.firstOrNull()
+        if (barcode == null) {
+            LaunchedEffect(Unit) { onClose() }
+            return@BiblessTheme
+        }
+        BarcodeDetailScreen(barcode = barcode, format = state.format, onBack = onClose)
+    }
+}
+
+@Composable
+private fun BiblessTheme(content: @Composable () -> Unit) {
+    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme(), content = content)
 }

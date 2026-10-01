@@ -2,6 +2,8 @@ package com.github.nols1000.bibless
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +47,8 @@ class BarcodeWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = Bibless.repository(context)
         provideContent {
-            val state = repository.state.value
+            // Also redraws a widget whose session is still running when the list changes
+            val state by repository.state.collectAsState()
             BarcodeWidgetContent(state.barcodes.firstOrNull(), state.format)
         }
     }

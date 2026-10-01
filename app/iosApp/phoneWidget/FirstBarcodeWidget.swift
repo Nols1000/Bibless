@@ -3,7 +3,6 @@ import WidgetKit
 
 /// Puts the first barcode on the home screen, ready to scan without opening the app. Tapping it
 /// opens the barcode at full brightness.
-@main
 struct FirstBarcodeWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: WidgetBarcode.kind, provider: FirstBarcodeProvider()) { entry in

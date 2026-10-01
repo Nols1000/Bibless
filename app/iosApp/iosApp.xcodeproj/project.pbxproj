@@ -171,6 +171,11 @@
 			path = WidgetShared;
 			sourceTree = "<group>";
 		};
+		B1B2C3D4E5F6071829305020 /* PhoneShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PhoneShared;
+			sourceTree = "<group>";
+		};
 		B1B2C3D4E5F6071829305006 /* phoneWidget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -233,6 +238,7 @@
 				D12AFD3854B7E0DF0AD80FBF /* Configuration */,
 				FB83E870DF237953CF67A336 /* iosApp */,
 				B1B2C3D4E5F6071829305006 /* phoneWidget */,
+				B1B2C3D4E5F6071829305020 /* PhoneShared */,
 				5A1B2C3D4E5F60718293A4B5 /* Shared */,
 				119842642AE21CEDAD5686AB /* watchApp */,
 				A1B2C3D4E5F6071829304006 /* watchWidget */,
@@ -307,6 +313,7 @@
 			fileSystemSynchronizedGroups = (
 				5A1B2C3D4E5F60718293A4B5 /* Shared */,
 				FB83E870DF237953CF67A336 /* iosApp */,
+				B1B2C3D4E5F6071829305020 /* PhoneShared */,
 				A1B2C3D4E5F6071829304007 /* WidgetShared */,
 			);
 			name = iosApp;
@@ -401,6 +408,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				B1B2C3D4E5F6071829305006 /* phoneWidget */,
+				B1B2C3D4E5F6071829305020 /* PhoneShared */,
 				A1B2C3D4E5F6071829304007 /* WidgetShared */,
 			);
 			name = phoneWidget;

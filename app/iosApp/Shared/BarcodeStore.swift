@@ -109,7 +109,7 @@ final class BarcodeStore: ObservableObject {
         barcodes = state.barcodes
         format = state.format
         settings = state.settings
-        // The widgets (home screen, Smart Stack) offer the first barcode; demo data stays out of them.
+        // The widgets (home and lock screen, Smart Stack) offer the first barcode; demo data stays out of them.
         let widgetBarcode = barcodes.first.map {
             WidgetBarcode(
                 id: $0.id,
@@ -119,7 +119,7 @@ final class BarcodeStore: ObservableObject {
             )
         }
         if !isDemo, WidgetBarcode.save(widgetBarcode) {
-            WidgetCenter.shared.reloadTimelines(ofKind: WidgetBarcode.kind)
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

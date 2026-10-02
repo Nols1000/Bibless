@@ -5,7 +5,7 @@ All targets except `:server` are built and released from GitHub Actions.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci-android.yml`, `ci-apple.yml`, `ci-web.yml` | PRs and pushes to `main` that touch the platform's sources or the shared build | Tests, then builds Android and Wear OS, iOS (simulator, unsigned), or web. Docs-only changes run none of them |
-| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release. The screenshots are captured while it builds |
+| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release. The screenshots are captured while it builds, unless a Screenshots run for the tagged commit already has them |
 | `pages.yml` | Changes to the web app on `main`, or manual run | Deploys the web app and the privacy policies to GitHub Pages |
 | `screenshots.yml` | Called by `release.yml` and `store-metadata.yml`; changes to the screenshot tests on `main` | Captures the store screenshots, one job per device, and keeps them as artifacts |
 | `store-metadata.yml` | Called by `release.yml`, or manual run | Pushes the store listings with the screenshots to Google Play and App Store Connect |

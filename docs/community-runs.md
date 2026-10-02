@@ -21,23 +21,49 @@ that span its stories.
   scan index is the position. Simpler to run, but a missed or swapped scan shifts everyone behind
   it, so the scanner offers "insert unknown finisher" and the review screen makes reordering easy.
 
+Runs have **open attendance**: anyone can turn up, with no registration list and no fixed set
+of tokens. Any athlete ID and any token number is accepted.
+
 ## Architecture
 
-1. **One race-day model, in `core`.** `core` reaches every target, including the server.
-   `RunSetup` (run ID, name, date, timing mode, token range) is serialisable and fits in a QR code.
-2. **Append-only records with IDs.** Finish taps and scans have their own IDs and are undone with
-   tombstones, the same approach as `Barcode` and `mergeBarcodes`. Merging devices, re-importing
-   files and re-uploading are all "union by ID", so they can't create duplicates.
-3. **Combining is a pure function** in `core` (`setup + taps + scans → results + issues`), shared by
-   the phones, the web app and the server.
-4. **Before the server:** the organiser creates the run in the browser (stored locally) and shows a
-   run QR code; volunteers scan it to join. Data comes back as a JSON bundle (lossless) or CSV (for
-   people). Once there is a server, invite links (#34) carry the same payload and uploads (#28)
-   send the same records.
-5. **On device:** a `RaceRepository` in `sharedLogic`, built like `BarcodeRepository`, persists
-   every tap immediately. Elapsed time comes from a monotonic clock anchored to the stored start.
-6. **Athlete IDs:** scanners accept parkrun `A…` IDs from day one; Bibless IDs (#31) get a distinct
+The race-day model lives in `core/.../race`, which reaches every target, including the server.
+
+1. **Event sourcing.** A run is the sum of its events: `CreatedEvent` (the organiser creates the
+   run: name and timing mode), `StartEvent` (a timer or scanner session starts), `RecordTimeEvent`,
+   `RemoveTimeEvent`, `RecordAthleteEvent` (athlete ID and token, both optional) and
+   `RemoveAthleteEvent`. Events are never changed; mistakes are undone with `Remove…` events, and
+   the organiser fixes data by adding events of their own. Positions aren't stored: they follow
+   from the order of the times.
+2. **Every event is signed by its author.** Each device has an ECDSA P-256 key; its public key
+   identifies the author. Each session is a chain: entries are numbered and point to the previous
+   entry's hash, so a changed, missing or duplicated entry shows. Signatures cover the exact JSON
+   bytes, which are never re-encoded.
+3. **Trust by certificates.** Devices record into their own chains without knowing about the run.
+   When the organiser merges their data, they sign a certificate per chain: "this author's chain,
+   up to this entry, belongs to my run". Volunteers' events keep only their own signatures, and
+   data recorded before joining a run needs nothing extra. Later entries need a newer certificate.
+4. **Run result.** The organiser signs the results together with the certificates and the timer
+   session they were computed from, and publishes them with the merged log (`RunLog`). Anyone can
+   recompute the results from the log and check that they match (`verifyRunResult`).
+5. **Platform-native crypto, no library.** java.security on the JVM and Android, the Security
+   framework on iOS and watchOS, WebCrypto in the browser. P-256 is the one signature scheme all of
+   them have, and it allows hardware-backed keys later.
+6. **Before the server:** the organiser creates the run in the browser and shows a run QR code
+   (`RunHint`: run ID, organiser key, name, timing mode); volunteers scan it to join. Data comes
+   back as a `RunLog` file (lossless) or CSV (for people). Once there is a server, invite links
+   (#34) carry the same hint and uploads (#28) send the same signed events.
+7. **On device:** a repository in `sharedLogic`, built like `BarcodeRepository`, signs and persists
+   every event immediately. Finish times are the session start plus elapsed time from a monotonic
+   clock, so changing the device clock mid-run can't move them.
+8. **Athlete IDs:** scanners accept parkrun `A…` IDs from day one; Bibless IDs (#31) get a distinct
    prefix.
+
+### Threat model
+
+- Signatures and chains make changes in transit, and after the fact, visible, and they tie
+  published results to exactly the data behind them.
+- A device can still record false data; the organiser vouches for a chain by certifying it.
+- In Phase 1 keys are stored like other app data. Accounts take over the root of trust in Phase 2.
 
 ## Phases
 

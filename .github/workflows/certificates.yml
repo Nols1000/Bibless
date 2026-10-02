@@ -21,6 +21,7 @@ jobs:
   match:
     name: Update profiles
     runs-on: macos-26
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ruby/setup-ruby@v1

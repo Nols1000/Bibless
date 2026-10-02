@@ -15,6 +15,7 @@ jobs:
   version:
     name: Resolve version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       name: ${{ steps.version.outputs.name }}
       code_phone: ${{ steps.version.outputs.code_phone }}
@@ -60,6 +61,7 @@ jobs:
     name: Android + Wear OS
     needs: version
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
@@ -105,6 +107,7 @@ jobs:
     needs: [version, android]
     if: needs.version.outputs.play_upload == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
@@ -130,6 +133,7 @@ jobs:
     needs: [version, android, play-phone]
     if: always() && needs.android.result == 'success' && needs.version.outputs.play_upload == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
@@ -155,6 +159,7 @@ jobs:
     needs: version
     if: needs.version.outputs.has_apple == 'true'
     runs-on: macos-26
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
@@ -191,6 +196,7 @@ jobs:
     name: Web
     needs: version
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
@@ -231,6 +237,7 @@ jobs:
     # iOS is skipped until Apple secrets exist; still release the other targets
     if: always() && needs.android.result == 'success' && needs.web.result == 'success' && needs.ios.result != 'failure'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:

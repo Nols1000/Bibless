@@ -25,6 +25,7 @@ jobs:
     needs: screenshots
     if: ${{ !failure() && !cancelled() && vars.PLAY_SERVICE_ACCOUNT != '' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: store-metadata-play
       cancel-in-progress: false
@@ -53,6 +54,7 @@ jobs:
     needs: screenshots
     if: ${{ !failure() && !cancelled() }}
     runs-on: macos-26
+    timeout-minutes: 15
     concurrency:
       group: store-metadata-app-store
       cancel-in-progress: false

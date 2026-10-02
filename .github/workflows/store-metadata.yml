@@ -61,7 +61,8 @@ jobs:
     name: App Store listing
     needs: screenshots
     if: ${{ !failure() && !cancelled() }}
-    runs-on: macos-26
+    # Uses only the App Store Connect API, so it needs no Mac
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     concurrency:
       group: store-metadata-app-store

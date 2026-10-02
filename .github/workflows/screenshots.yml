@@ -57,12 +57,36 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install pillow
+          cache: pip
+          cache-dependency-path: tools/screenshots/requirements.txt
+      - run: pip install -r tools/screenshots/requirements.txt
       - name: Enable KVM for the emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # A booted emulator snapshot, so the capture skips the cold boot
+      - name: Cache the emulator
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.profile }}-${{ matrix.disk-size }}
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disk-size: ${{ matrix.disk-size }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Created the emulator snapshot"
       - name: Capture
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -71,6 +95,8 @@ jobs:
           arch: x86_64
           profile: ${{ matrix.profile }}
           disk-size: ${{ matrix.disk-size }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: bundle exec fastlane android screenshots ${{ matrix.name }}:emulator-5554
       - uses: actions/upload-artifact@v4
@@ -95,7 +121,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install pillow
+          cache: pip
+          cache-dependency-path: tools/screenshots/requirements.txt
+      - run: pip install -r tools/screenshots/requirements.txt
       - name: iPhone and Apple Watch screenshots
         run: bundle exec fastlane ios screenshots
       - uses: actions/upload-artifact@v4

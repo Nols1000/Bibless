@@ -7,8 +7,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.BySelector
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.Until
+import androidx.test.uiautomator.UiObject2
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.After
 import org.junit.Before
@@ -43,21 +44,21 @@ class ScreenshotTest {
     fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
             // A cold emulator can take a while to render the first frame
-            val me = checkNotNull(device.wait(Until.findObject(By.text("Me")), FIRST_FRAME_TIMEOUT)) {
+            val me = checkNotNull(awaitObject(By.text("Me"), FIRST_FRAME_TIMEOUT)) {
                 "Demo barcode list did not appear; the screen shows ${shownTexts()}"
             }
             capture("list")
 
             me.click()
-            check(device.wait(Until.gone(By.text("Sam")), TIMEOUT)) { "Barcode did not open" }
+            check(awaitGone(By.text("Sam"))) { "Barcode did not open" }
             capture("barcode")
 
             device.pressBack()
             // Set in the repository rather than tapped, so the screen draws with it already selected
             repository.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
-            checkNotNull(device.wait(Until.findObject(By.desc("Settings")), TIMEOUT)) { "List did not return" }.click()
+            checkNotNull(awaitObject(By.desc("Settings"))) { "List did not return" }.click()
             val option = By.checked(true).hasDescendant(By.text("First barcode"))
-            checkNotNull(device.wait(Until.findObject(option), TIMEOUT)) { "First barcode is not marked to open on launch" }
+            checkNotNull(awaitObject(option)) { "First barcode is not marked to open on launch" }
             capture("settings")
         }
 
@@ -68,14 +69,37 @@ class ScreenshotTest {
         captureOnLaunch("barcode-dark")
     }
 
-    /**
-     * Answers the "isn't responding" dialog that the system UI or launcher can raise on a freshly
-     * booted CI emulator, and closes any other system dialog, so none covers the app.
-     */
+    /** Closes any system dialog left from booting, so none covers the app. */
     private fun dismissSystemDialogs() {
-        device.findObject(By.text("Wait"))?.takeIf { device.hasObject(By.textContains("isn't responding")) }?.click()
+        answerNotResponding()
         device.executeShellCommand("am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS")
         device.waitForIdle()
+    }
+
+    /**
+     * Answers the "isn't responding" dialog that the launcher or system UI can raise at any time
+     * on a freshly booted CI emulator, covering the app.
+     */
+    private fun answerNotResponding() {
+        if (device.hasObject(By.textContains("isn't responding"))) device.findObject(By.text("Wait"))?.click()
+    }
+
+    /** Waits for an object matching [selector], answering "isn't responding" dialogs meanwhile. */
+    private fun awaitObject(selector: BySelector, timeout: Long = TIMEOUT): UiObject2? =
+        poll(timeout) { device.findObject(selector) }
+
+    /** Waits for objects matching [selector] to go, answering "isn't responding" dialogs meanwhile. */
+    private fun awaitGone(selector: BySelector, timeout: Long = TIMEOUT): Boolean =
+        poll(timeout) { true.takeUnless { device.hasObject(selector) } } ?: false
+
+    private fun <T : Any> poll(timeout: Long, find: () -> T?): T? {
+        val deadline = SystemClock.uptimeMillis() + timeout
+        while (true) {
+            answerNotResponding()
+            find()?.let { return it }
+            if (SystemClock.uptimeMillis() > deadline) return null
+            SystemClock.sleep(POLL_MILLIS)
+        }
     }
 
     /** The texts on screen, for failure messages: the fastlane log shows those but no logcat. */
@@ -95,9 +119,9 @@ class ScreenshotTest {
     /** Launches the app, waits for it to open on the default barcode and captures it as [name]. */
     private fun captureOnLaunch(name: String) {
         ActivityScenario.launch(MainActivity::class.java).use {
-            checkNotNull(device.wait(Until.findObject(By.text("A0123456")), TIMEOUT)) { "App did not start" }
+            checkNotNull(awaitObject(By.text("A0123456"))) { "App did not start" }
             // The list shows for a frame before the barcode opens on top of it
-            check(device.wait(Until.gone(By.text("Sam")), TIMEOUT)) { "Barcode did not open on launch" }
+            check(awaitGone(By.text("Sam"))) { "Barcode did not open on launch" }
             capture(name)
         }
     }
@@ -112,6 +136,7 @@ class ScreenshotTest {
         /** A freshly booted emulator keeps busy for minutes; later screens come quickly. */
         private const val FIRST_FRAME_TIMEOUT = 90_000L
         private const val SETTLE_MILLIS = 1_000L
+        private const val POLL_MILLIS = 250L
 
         @get:ClassRule
         @JvmStatic

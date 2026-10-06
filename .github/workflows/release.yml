@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - name: Decode upload keystore
         if: needs.version.outputs.has_keystore == 'true'
@@ -108,7 +108,7 @@ jobs:
           -PappVersionName=${{ needs.version.outputs.name }}
           -PappVersionCode=${{ needs.version.outputs.code_phone }}
           -PwearVersionCode=${{ needs.version.outputs.code_wear }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android
           path: |
@@ -127,8 +127,8 @@ jobs:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: android
           path: app
@@ -153,8 +153,8 @@ jobs:
       contents: read
       id-token: write # Workload Identity Federation for Google Play
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: android
           path: app
@@ -176,7 +176,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - uses: ruby/setup-ruby@v1
         with:
@@ -202,7 +202,7 @@ jobs:
           bundle exec fastlane ios ${{ vars.STORE_UPLOAD == 'true' && 'beta' || 'build_ipa' }}
           version:${{ needs.version.outputs.name }}
           build_number:${{ github.run_number }}
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ios
           path: build/ios/*.ipa
@@ -213,9 +213,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: npm run build:shared
@@ -224,7 +224,7 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
       - run: cd app/webApp/dist && zip -r "$GITHUB_WORKSPACE/bibless-web-${{ needs.version.outputs.name }}.zip" .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: web
           path: bibless-web-*.zip
@@ -259,11 +259,11 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}

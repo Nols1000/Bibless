@@ -28,7 +28,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - run: ./gradlew :app:sharedLogic:iosSimulatorArm64Test :app:sharedLogic:watchosSimulatorArm64Test
       - name: Build iOS app (simulator, unsigned)

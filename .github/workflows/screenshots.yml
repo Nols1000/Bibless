@@ -44,7 +44,7 @@ jobs:
             profile: wearos_square
             disk-size: 2048M
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - uses: ruby/setup-ruby@v1
         with:
@@ -54,7 +54,7 @@ jobs:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
       # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -68,7 +68,7 @@ jobs:
       # A booted emulator snapshot, so the capture skips the cold boot
       - name: Cache the emulator
         id: avd-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.android/avd/*
@@ -99,7 +99,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: bundle exec fastlane android screenshots ${{ matrix.name }}:emulator-5554
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: play-screenshots-${{ matrix.name }}
           path: fastlane/metadata/android/*/images/*Screenshots/
@@ -110,7 +110,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The Xcode build compiles the shared Kotlin framework through Gradle
       - uses: ./.github/actions/setup-build
       - uses: ruby/setup-ruby@v1
@@ -118,7 +118,7 @@ jobs:
           ruby-version: '3.3'
           bundler-cache: true
       # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
           cache: pip
@@ -126,7 +126,7 @@ jobs:
       - run: pip install -r tools/screenshots/requirements.txt
       - name: iPhone and Apple Watch screenshots
         run: bundle exec fastlane ios screenshots
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-store-screenshots
           path: fastlane/screenshots/ios/

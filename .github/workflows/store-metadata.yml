@@ -38,12 +38,12 @@ jobs:
       actions: read # screenshots from another run
       id-token: write # Workload Identity Federation for Google Play
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
           bundler-cache: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           pattern: play-screenshots-*
           path: fastlane/metadata/android
@@ -78,14 +78,14 @@ jobs:
     steps:
       - if: env.ASC_KEY_ID == ''
         run: echo "::notice::ASC_KEY_ID not set, skipping App Store listing sync"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.ASC_KEY_ID != ''
       - uses: ruby/setup-ruby@v1
         if: env.ASC_KEY_ID != ''
         with:
           ruby-version: '3.3'
           bundler-cache: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: env.ASC_KEY_ID != ''
         with:
           name: app-store-screenshots

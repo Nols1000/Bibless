@@ -5,9 +5,9 @@ import android.app.Instrumentation
 import android.app.RemoteInput
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
-import androidx.core.os.bundleOf
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.intent.Intents
@@ -134,7 +134,7 @@ class ScreenshotTest {
      */
     private fun enterText(label: String, text: String) {
         val result = Intent()
-        RemoteInput.addResultsToIntent(arrayOf(RemoteInput.Builder(label).build()), result, bundleOf(label to text))
+        RemoteInput.addResultsToIntent(arrayOf(RemoteInput.Builder(label).build()), result, Bundle().apply { putString(label, text) })
         intending(hasAction(RemoteInputIntentHelper.createActionRemoteInputIntent().action))
             .respondWith(Instrumentation.ActivityResult(Activity.RESULT_OK, result))
         waitFor(By.text(label)) { "No $label button" }.click()

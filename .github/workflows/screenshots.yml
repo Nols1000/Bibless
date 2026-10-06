@@ -21,6 +21,7 @@ jobs:
   play:
     name: Play ${{ matrix.name }} screenshots
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +44,7 @@ jobs:
             profile: wearos_square
             disk-size: 2048M
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - uses: ruby/setup-ruby@v1
         with:
@@ -53,15 +54,39 @@ jobs:
       - name: Free disk space
         run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
       # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - run: pip install pillow
+          cache: pip
+          cache-dependency-path: tools/screenshots/requirements.txt
+      - run: pip install -r tools/screenshots/requirements.txt
       - name: Enable KVM for the emulator
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+      # A booted emulator snapshot, so the capture skips the cold boot
+      - name: Cache the emulator
+        id: avd-cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.profile }}-${{ matrix.disk-size }}
+      - name: Create the emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: ${{ matrix.profile }}
+          disk-size: ${{ matrix.disk-size }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Created the emulator snapshot"
       - name: Capture
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -70,9 +95,11 @@ jobs:
           arch: x86_64
           profile: ${{ matrix.profile }}
           disk-size: ${{ matrix.disk-size }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: bundle exec fastlane android screenshots ${{ matrix.name }}:emulator-5554
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: play-screenshots-${{ matrix.name }}
           path: fastlane/metadata/android/*/images/*Screenshots/
@@ -81,8 +108,9 @@ jobs:
   app-store:
     name: App Store screenshots
     runs-on: macos-26
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # The Xcode build compiles the shared Kotlin framework through Gradle
       - uses: ./.github/actions/setup-build
       - uses: ruby/setup-ruby@v1
@@ -90,13 +118,15 @@ jobs:
           ruby-version: '3.3'
           bundler-cache: true
       # Pillow draws the headlines on the phone screenshots (tools/screenshots/frame.py)
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - run: pip install pillow
+          cache: pip
+          cache-dependency-path: tools/screenshots/requirements.txt
+      - run: pip install -r tools/screenshots/requirements.txt
       - name: iPhone and Apple Watch screenshots
         run: bundle exec fastlane ios screenshots
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: app-store-screenshots
           path: fastlane/screenshots/ios/

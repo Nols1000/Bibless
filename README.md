@@ -26,6 +26,8 @@ This is a Kotlin Multiplatform project targeting Android, Wear OS, iOS, watchOS,
 
 * [/server](./server/src/main/kotlin) is for the Ktor server application.
 
+Plans for organising timed community runs with Bibless are in [docs/community-runs.md](./docs/community-runs.md).
+
 ### Running the apps
 
 Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:

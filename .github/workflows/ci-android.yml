@@ -1,0 +1,41 @@
+name: CI Android
+
+# One workflow per platform, so each runs only when its sources (or the shared build) change.
+on:
+  pull_request:
+    paths: &paths
+      - 'app/androidApp/**'
+      - 'app/wearApp/**'
+      - 'app/sharedUI/**'
+      - 'app/sharedLogic/**'
+      - 'core/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.github/actions/**'
+      - '.github/workflows/ci-android.yml'
+  push:
+    branches: [main]
+    paths: *paths
+
+concurrency:
+  group: ci-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android + Wear OS
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-build
+      - run: >
+          ./gradlew
+          :app:sharedUI:testAndroidHostTest
+          :app:sharedLogic:testAndroidHostTest
+          :app:androidApp:assembleDebug
+          :app:wearApp:assembleDebug
+          :app:androidApp:lintDebug
+          :app:wearApp:lintDebug

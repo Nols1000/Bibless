@@ -1,0 +1,42 @@
+name: CI Apple
+
+# One workflow per platform, so each runs only when its sources (or the shared build) change. Xcode
+# builds only :app:sharedLogic, so Android, Wear OS, web and sharedUI changes don't start a macOS runner.
+on:
+  pull_request:
+    paths: &paths
+      - 'app/iosApp/**'
+      - 'app/sharedLogic/**'
+      - 'core/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.github/actions/**'
+      - '.github/workflows/ci-apple.yml'
+  push:
+    branches: [main]
+    paths: *paths
+
+concurrency:
+  group: ci-apple-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apple:
+    name: iOS + watchOS
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-build
+      - run: ./gradlew :app:sharedLogic:iosSimulatorArm64Test :app:sharedLogic:watchosSimulatorArm64Test
+      - name: Build iOS app (simulator, unsigned)
+        run: >
+          xcodebuild build
+          -project app/iosApp/iosApp.xcodeproj
+          -scheme iosApp
+          -configuration Debug
+          -destination 'generic/platform=iOS Simulator'
+          ARCHS=arm64
+          CODE_SIGNING_ALLOWED=NO

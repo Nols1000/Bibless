@@ -1,0 +1,41 @@
+name: CI Web
+
+# One workflow per platform, so each runs only when its sources (or the shared build) change.
+on:
+  pull_request:
+    paths: &paths
+      - 'app/webApp/**'
+      - 'app/sharedLogic/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'kotlin-js-store/**'
+      - 'core/**'
+      - 'gradle/**'
+      - 'gradlew'
+      - '*.gradle.kts'
+      - 'gradle.properties'
+      - '.github/actions/**'
+      - '.github/workflows/ci-web.yml'
+  push:
+    branches: [main]
+    paths: *paths
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup-build
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: ./gradlew :app:sharedLogic:jsTest
+      - run: npm run build:shared
+      - run: npm install
+      - run: npm run build -w webApp

@@ -44,7 +44,7 @@ class JoinRunTest {
 
         device.leave()
         assertEquals("run-1", timer.state.value.session!!.run, "a running session keeps its run")
-        val scanner = ScannerRepository(device).also { it.start() }
+        val scanner = ScannerRepository(device).also { it.start(TimingMode.TOKENS) }
         assertNull(scanner.state.value.session!!.run)
         assertNull(device().joinedRun.value)
 

@@ -49,13 +49,19 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.github.nols1000.bibless.race.RunHint
+import com.github.nols1000.bibless.race.TimingMode
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.semantics.Role
 
 /** How many of the latest finishers stay on screen. */
 private const val RECENT_RECORDS = 5
 
 /**
- * The finish scanner: the camera pairs each runner's barcode with their finish token. [onScan]
- * gets codes from the camera, [onEnter] typed ones; both return what happened, for the feedback.
+ * The finish scanner: the camera pairs each runner's barcode with their finish token, or in scan
+ * order gives each runner the next position. [onScan] gets codes from the camera, [onEnter] typed
+ * ones, [onUnknown] finishers without a barcode; all return what happened, for the feedback.
  * [camera] is the live camera view, replaceable in tests.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -65,9 +71,10 @@ fun ScannerScreen(
     joinedRun: RunHint?,
     onJoin: () -> Unit,
     onLeave: () -> Unit,
-    onStart: () -> Unit,
+    onStart: (TimingMode) -> Unit,
     onScan: (String) -> ScanOutcome,
     onEnter: (String) -> ScanOutcome,
+    onUnknown: (name: String?) -> ScanOutcome,
     onUndo: () -> Unit,
     onStop: () -> Unit,
     onBack: () -> Unit,
@@ -97,19 +104,22 @@ fun ScannerScreen(
         ) {
             if (session == null) {
                 JoinedRunCard(joinedRun, onJoin, onLeave)
-                Spacer(Modifier.weight(1f))
-                Text(
-                    "Scan each runner's barcode and their finish token, in either order. " +
-                        "Tap Start when the first runners come in.",
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Button(onClick = onStart, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(24.dp)) {
+                // A joined run decides the mode; without one the volunteer picks it
+                var chosen by remember { mutableStateOf(TimingMode.TOKENS) }
+                val mode = joinedRun?.format ?: chosen
+                if (joinedRun == null) {
+                    ModePicker(chosen) { chosen = it }
+                } else {
+                    Spacer(Modifier.weight(1f))
+                }
+                Text(modeHint(mode), style = MaterialTheme.typography.bodyLarge)
+                Button(onClick = { onStart(mode) }, modifier = Modifier.fillMaxWidth().height(120.dp), shape = RoundedCornerShape(24.dp)) {
                     Text("Start", fontSize = 40.sp)
                 }
                 Spacer(Modifier.weight(1f))
             } else {
                 runLine(session.run, joinedRun)?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
-                Scanning(session, onScan, onEnter, onUndo, camera)
+                Scanning(session, onScan, onEnter, onUnknown, onUndo, camera)
             }
         }
     }
@@ -142,12 +152,15 @@ private fun ColumnScope.Scanning(
     session: ScannerSession,
     onScan: (String) -> ScanOutcome,
     onEnter: (String) -> ScanOutcome,
+    onUnknown: (name: String?) -> ScanOutcome,
     onUndo: () -> Unit,
     camera: @Composable (onCode: (String) -> Unit, modifier: Modifier) -> Unit,
 ) {
     val feedback = rememberScanFeedback()
     var message by remember { mutableStateOf<ScanMessage?>(null) }
     var typing by remember { mutableStateOf(false) }
+    var addingUnknown by remember { mutableStateOf(false) }
+    val scanOrder = session.mode == TimingMode.SCAN_ORDER
     val handle = { outcome: ScanOutcome ->
         outcome.message()?.let {
             message = it
@@ -160,7 +173,19 @@ private fun ColumnScope.Scanning(
         // Stays on while scanning; the screen timing out would stop the camera mid-run
         Modifier.fillMaxWidth().weight(1f).clip(RoundedCornerShape(16.dp)).background(Color.Black).keepScreenOn(),
     )
-    Text(session.nextStep(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("nextStep"))
+    if (scanOrder) {
+        Text(
+            "Next: P${session.nextPosition}",
+            style = MaterialTheme.typography.displayMedium,
+            modifier = Modifier.testTag("nextPosition"),
+        )
+        Text(
+            "Scan runners in the order they finish. A missed or swapped scan moves everyone behind it.",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    } else {
+        Text(session.nextStep(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.testTag("nextStep"))
+    }
     message?.let {
         val error = it.kind == ScanFeedbackKind.ERROR
         Text(
@@ -175,7 +200,7 @@ private fun ColumnScope.Scanning(
         session.records.takeLast(RECENT_RECORDS).asReversed().forEach { record ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("P${record.position}", style = MaterialTheme.typography.titleMedium)
-                Text(record.athleteId ?: "Unknown", style = MaterialTheme.typography.titleMedium)
+                Text(record.label(), style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -198,9 +223,25 @@ private fun ColumnScope.Scanning(
                 },
             )
         }
+        // With tokens, an unknown finisher takes the token scanned last
+        OutlinedButton(
+            onClick = { addingUnknown = true },
+            enabled = scanOrder || session.pendingPosition != null,
+            modifier = Modifier.weight(1f),
+        ) { Text("No barcode") }
         OutlinedButton(onClick = { typing = true }, modifier = Modifier.weight(1f)) { Text("Type a code") }
     }
 
+    if (addingUnknown) {
+        UnknownFinisherDialog(
+            position = if (scanOrder) session.nextPosition else session.pendingPosition,
+            onAdd = {
+                addingUnknown = false
+                handle(onUnknown(it))
+            },
+            onDismiss = { addingUnknown = false },
+        )
+    }
     if (typing) {
         TypeCodeDialog(
             onEnter = {
@@ -234,6 +275,50 @@ private fun TypeCodeDialog(onEnter: (String) -> Unit, onDismiss: () -> Unit) {
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
+}
+
+@Composable
+private fun UnknownFinisherDialog(position: Int?, onAdd: (String?) -> Unit, onDismiss: () -> Unit) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (position != null) "Finisher P$position without a barcode" else "Finisher without a barcode") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Name (optional)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onAdd(name) }),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onAdd(name) }) { Text("Add") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+/** Choosing how a scanner session gives positions, when no run decides it. */
+@Composable
+private fun ModePicker(selected: TimingMode, onSelect: (TimingMode) -> Unit) {
+    Column(Modifier.fillMaxWidth().selectableGroup(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        TimingMode.entries.forEach { mode ->
+            Row(
+                Modifier.fillMaxWidth().selectable(selected = mode == selected, role = Role.RadioButton) { onSelect(mode) }.padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                RadioButton(selected = mode == selected, onClick = null)
+                Text(mode.label(), style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+}
+
+private fun modeHint(mode: TimingMode) = when (mode) {
+    TimingMode.TOKENS -> "Scan each runner's barcode and their finish token, in either order. Tap Start when the first runners come in."
+    TimingMode.SCAN_ORDER ->
+        "Scan runners in the order they finish; each takes the next position. A missed or swapped scan moves everyone behind it."
 }
 
 private fun finishers(count: Int) = if (count == 1) "1 finisher" else "$count finishers"

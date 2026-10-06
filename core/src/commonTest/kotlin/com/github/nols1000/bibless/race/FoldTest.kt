@@ -107,6 +107,16 @@ class FoldTest {
     }
 
     @Test
+    fun unknownFinishersKeepTheirName() = runTest {
+        val run = TestRun.create(TimingMode.SCAN_ORDER)
+        val scanner = run.session()
+        scanner.athlete(null, name = "Sam")
+        run.certify(scanner)
+
+        assertEquals(listOf(null to "Sam"), run.state().athletes.map { it.athleteId to it.name })
+    }
+
+    @Test
     fun sessionsWithoutRunStillRead() {
         val json = """{"type":"start","id":"s","timestamp":1}"""
         assertEquals(StartEvent("s", 1), raceJson.decodeFromString(Event.serializer(), json))

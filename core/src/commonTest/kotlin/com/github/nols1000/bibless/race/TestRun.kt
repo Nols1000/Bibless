@@ -62,8 +62,8 @@ internal class TestSession(private val run: TestRun, val key: DeviceKey, genesis
     val entries = mutableListOf<SignedEvent>()
 
     suspend fun time(elapsed: Long) = add(RecordTimeEvent(run.nextId(), start + elapsed))
-    suspend fun athlete(athleteId: String?, position: Int? = null) =
-        add(RecordAthleteEvent(run.nextId(), run.tick(), athleteId, position))
+    suspend fun athlete(athleteId: String?, position: Int? = null, name: String? = null) =
+        add(RecordAthleteEvent(run.nextId(), run.tick(), athleteId, position, name))
     suspend fun removeTime(eventId: String) = add(RemoveTimeEvent(run.nextId(), run.tick(), eventId))
     suspend fun removeAthlete(eventId: String) = add(RemoveAthleteEvent(run.nextId(), run.tick(), eventId))
 

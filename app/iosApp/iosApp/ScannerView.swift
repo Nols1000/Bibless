@@ -12,6 +12,13 @@ struct ScannerView: View {
     @State private var isConfirmingStop = false
     @State private var isTyping = false
     @State private var typedCode = ""
+    @State private var isAddingUnknown = false
+    @State private var unknownName = ""
+    @State private var chosenMode: TimingMode = .tokens
+    @EnvironmentObject private var runs: RunStore
+
+    /// A joined run decides the mode; without one the volunteer picks it.
+    private var mode: TimingMode { runs.joinedRun?.format ?? chosenMode }
 
     var body: some View {
         NavigationStack {
@@ -53,6 +60,17 @@ struct ScannerView: View {
             } message: {
                 Text("An athlete ID or finish token that won't scan.")
             }
+            .alert(unknownTitle, isPresented: $isAddingUnknown) {
+                TextField("Name (optional)", text: $unknownName)
+                    .textInputAutocapitalization(.words)
+                Button("Add") {
+                    scanner.addUnknown(name: unknownName)
+                    unknownName = ""
+                }
+                Button("Cancel", role: .cancel) { unknownName = "" }
+            } message: {
+                Text("They get a position; the organiser can add their details later.")
+            }
         }
         // Stays on while scanning; the screen locking would stop the camera mid-run
         .onAppear { UIApplication.shared.isIdleTimerDisabled = scanner.isRunning }
@@ -63,9 +81,20 @@ struct ScannerView: View {
     private var notStarted: some View {
         VStack(spacing: 16) {
             JoinedRunCard()
+            if runs.joinedRun == nil {
+                Picker("Timing", selection: $chosenMode) {
+                    Text(TimingMode.tokens.label()).tag(TimingMode.tokens)
+                    Text(TimingMode.scanOrder.label()).tag(TimingMode.scanOrder)
+                }
+                .pickerStyle(.segmented)
+            }
             Spacer()
-            Text("Scan each runner's barcode and their finish token, in either order. Tap Start when the first runners come in.")
-            Button(action: scanner.start) {
+            Text(mode == .scanOrder
+                 ? "Scan runners in the order they finish; each takes the next position. A missed or swapped scan moves everyone behind it."
+                 : "Scan each runner's barcode and their finish token, in either order. Tap Start when the first runners come in.")
+            Button {
+                scanner.start(mode: mode)
+            } label: {
                 Text("Start")
                     .font(.system(size: 40, weight: .semibold))
                     .frame(maxWidth: .infinity, minHeight: 120)
@@ -83,9 +112,17 @@ struct ScannerView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.black)
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-            Text(session.nextStep())
-                .font(.headline)
-                .accessibilityIdentifier("nextStep")
+            if scanner.isScanOrder {
+                Text("Next: P\(session.nextPosition)")
+                    .font(.system(size: 44, weight: .semibold))
+                    .accessibilityIdentifier("nextPosition")
+                Text("Scan runners in the order they finish. A missed or swapped scan moves everyone behind it.")
+                    .font(.footnote)
+            } else {
+                Text(session.nextStep())
+                    .font(.headline)
+                    .accessibilityIdentifier("nextStep")
+            }
             if let message = scanner.message {
                 Text(message.text)
                     .foregroundStyle(message.kind == .error ? .red : .primary)
@@ -98,7 +135,7 @@ struct ScannerView: View {
                     HStack {
                         Text("P\(record.position?.intValue ?? 0)")
                         Spacer()
-                        Text(record.athleteId ?? "Unknown")
+                        Text(record.label())
                     }
                     .font(.headline)
                 }
@@ -117,6 +154,13 @@ struct ScannerView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .disabled(!scanner.hasPending && scanner.records.isEmpty)
+                // With tokens, an unknown finisher takes the token scanned last
+                Button {
+                    isAddingUnknown = true
+                } label: {
+                    Text("No Barcode").frame(maxWidth: .infinity)
+                }
+                .disabled(!scanner.isScanOrder && session.pendingPosition == nil)
                 Button {
                     isTyping = true
                 } label: {
@@ -184,6 +228,13 @@ private struct DataScanner: UIViewControllerRepresentable {
                 }
             }
         }
+    }
+}
+
+extension ScannerView {
+    private var unknownTitle: String {
+        let position = scanner.isScanOrder ? scanner.session?.nextPosition : scanner.session?.pendingPosition?.int32Value
+        return position.map { "Finisher P\($0) Without a Barcode" } ?? "Finisher Without a Barcode"
     }
 }
 

@@ -35,13 +35,19 @@ final class ScannerStore: ObservableObject {
 
     var hasPending: Bool { session?.pendingAthleteId != nil || session?.pendingPosition != nil }
 
-    func start() { repository.start() }
+    var isScanOrder: Bool { session?.mode == .scanOrder }
+
+    /// Starts a session that gives positions by `mode`; the joined run's mode, if there is one.
+    func start(mode: TimingMode) { repository.start(mode: mode) }
 
     /// A code from the camera, which reports the same code again while it stays in view.
     func scan(_ text: String) { handle(repository.scan(text: text)) }
 
     /// A typed code, taken every time.
     func enter(_ text: String) { handle(repository.enter(text: text)) }
+
+    /// A finisher without a barcode, with the name they gave, if any.
+    func addUnknown(name: String) { handle(repository.addUnknown(name: name)) }
 
     func undo() {
         repository.undo()

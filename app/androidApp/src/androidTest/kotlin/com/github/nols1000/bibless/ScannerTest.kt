@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.nols1000.bibless.race.TimingMode
 import androidx.test.rule.GrantPermissionRule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,7 @@ class ScannerTest {
             onStart = scanner::start,
             onScan = scanner::scan,
             onEnter = scanner::enter,
+            onUnknown = scanner::addUnknown,
             onUndo = scanner::undo,
             onStop = scanner::stop,
             onBack = {},
@@ -91,7 +93,7 @@ class ScannerTest {
 
     @Test
     fun warnsAboutDuplicatesAndUnknownCodes() {
-        scanner.start()
+        scanner.start(TimingMode.TOKENS)
         showScanner()
         see("A123456")
         see("P1")
@@ -104,7 +106,7 @@ class ScannerTest {
 
     @Test
     fun undoClearsTheHalfPairThenTheLastPair() {
-        scanner.start()
+        scanner.start(TimingMode.TOKENS)
         showScanner()
         compose.onNodeWithText("Undo").assertIsNotEnabled()
         see("A111111")
@@ -120,7 +122,7 @@ class ScannerTest {
 
     @Test
     fun typesACodeThatWontScan() {
-        scanner.start()
+        scanner.start(TimingMode.TOKENS)
         showScanner()
         see("P0007")
 
@@ -133,7 +135,7 @@ class ScannerTest {
 
     @Test
     fun stoppingAsksFirst() {
-        scanner.start()
+        scanner.start(TimingMode.TOKENS)
         showScanner()
         compose.onNodeWithText("Stop").performClick()
         compose.onNode(hasText("Stop") and hasAnyAncestor(isDialog())).performClick()
@@ -151,5 +153,71 @@ class ScannerTest {
         compose.onNodeWithText("Start").performClick()
 
         compose.onNodeWithTag("nextStep").assertExists()
+    }
+
+    @Test
+    fun scanOrderGivesEachRunnerTheNextPosition() {
+        showScanner()
+        compose.onNodeWithText("Scan order").performClick()
+        compose.onNodeWithText("A missed or swapped scan moves everyone behind it.", substring = true).assertExists()
+        compose.onNodeWithText("Start").performClick()
+        compose.onNodeWithTag("nextPosition").assertTextEquals("Next: P1")
+
+        see("A111111")
+        see("A222222")
+        compose.onNodeWithTag("nextPosition").assertTextEquals("Next: P3")
+        compose.onNodeWithText("P2: A222222").assertExists()
+        assertEquals(listOf("A111111" to 1, "A222222" to 2), records())
+
+        compose.onNodeWithText("Undo P2").performClick()
+        compose.onNodeWithTag("nextPosition").assertTextEquals("Next: P2")
+    }
+
+    @Test
+    fun unknownFinishersTakeAPositionWithAnOptionalName() {
+        scanner.start(TimingMode.SCAN_ORDER)
+        showScanner()
+        see("A111111")
+
+        compose.onNodeWithText("No barcode").performClick()
+        compose.onNodeWithText("Finisher P2 without a barcode").assertExists()
+        compose.onNode(hasSetTextAction()).performTextInput("Sam")
+        compose.onNode(hasText("Add") and hasAnyAncestor(isDialog())).performClick()
+
+        compose.onNodeWithText("Sam (no barcode)").assertExists()
+        assertEquals(listOf("A111111" to 1, null to 2), records())
+    }
+
+    @Test
+    fun withTokensNoBarcodeNeedsTheTokenFirst() {
+        scanner.start(TimingMode.TOKENS)
+        showScanner()
+        compose.onNodeWithText("No barcode").assertIsNotEnabled()
+
+        see("P0009")
+        compose.onNodeWithText("No barcode").performClick()
+        compose.onNode(hasText("Add") and hasAnyAncestor(isDialog())).performClick()
+
+        compose.onNodeWithText("P9: Unknown").assertExists()
+        assertEquals(listOf(null to 9), records())
+    }
+
+    @Test
+    fun aJoinedRunDecidesTheMode() {
+        device.join(com.github.nols1000.bibless.race.RunHint("run-1", "B".repeat(87), "Riverside 5k", TimingMode.SCAN_ORDER).toJson())
+        compose.setContent {
+            val state by scanner.state.collectAsState()
+            val joined by device.joinedRun.collectAsState()
+            ScannerScreen(
+                session = state.session, joinedRun = joined, onJoin = {}, onLeave = {},
+                onStart = scanner::start, onScan = scanner::scan, onEnter = scanner::enter,
+                onUnknown = scanner::addUnknown, onUndo = scanner::undo, onStop = scanner::stop, onBack = {},
+                camera = { _, modifier -> Box(modifier) },
+            )
+        }
+        compose.onNodeWithText("Finish tokens").assertDoesNotExist()
+        compose.onNodeWithText("Start").performClick()
+
+        assertEquals(TimingMode.SCAN_ORDER, scanner.state.value.session!!.mode)
     }
 }

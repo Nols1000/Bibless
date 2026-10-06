@@ -69,6 +69,7 @@ fun App(
                     onStart = scanner::start,
                     onScan = scanner::scan,
                     onEnter = scanner::enter,
+                    onUnknown = scanner::addUnknown,
                     onUndo = scanner::undo,
                     onStop = scanner::stop,
                     onBack = { navController.popBackStack() },

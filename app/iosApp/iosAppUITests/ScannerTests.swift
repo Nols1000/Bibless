@@ -54,6 +54,16 @@ final class ScannerTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["0 finishers"].waitForExistence(timeout: 5))
     }
 
+    func testNoBarcodeTakesTheScannedToken() {
+        XCTAssertFalse(app.buttons["No Barcode"].isEnabled)
+        type("P0009")
+
+        app.buttons["No Barcode"].tap()
+        app.alerts.buttons["Add"].tap()
+
+        XCTAssertTrue(app.staticTexts["P9: Unknown"].waitForExistence(timeout: 5))
+    }
+
     func testStoppingAsksFirst() {
         app.navigationBars.buttons["Stop"].tap()
         let alert = app.alerts["Stop scanning?"]

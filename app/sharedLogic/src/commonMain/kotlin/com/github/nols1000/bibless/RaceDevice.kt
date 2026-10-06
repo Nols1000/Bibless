@@ -6,6 +6,7 @@ import com.github.nols1000.bibless.race.RunHint
 import com.github.nols1000.bibless.race.RunLog
 import com.github.nols1000.bibless.race.SignedEvent
 import com.github.nols1000.bibless.race.StartEvent
+import com.github.nols1000.bibless.race.TimingMode
 import com.github.nols1000.bibless.race.crypto.DeviceKey
 import com.github.nols1000.bibless.race.verify
 import kotlinx.coroutines.CoroutineScope
@@ -98,6 +99,8 @@ internal data class SessionRecord(
     val startedAt: Long,
     val anchor: ClockAnchor,
     val events: List<Event>,
+    /** How a scanner session gives positions; null for the timer. */
+    val mode: TimingMode? = null,
 ) {
     /** The run the session records for, from its [StartEvent]. */
     val run: String? get() = (events.firstOrNull() as? StartEvent)?.run
@@ -130,11 +133,11 @@ internal class SessionLog(private val device: RaceDevice, private val kind: Stri
 
     /** Starts a session. Does nothing while one runs. */
     @OptIn(ExperimentalUuidApi::class)
-    fun start() {
+    fun start(mode: TimingMode? = null) {
         if (current != null) return
         val startedAt = clock.wallMillis()
         val start = StartEvent(Uuid.random().toString(), startedAt, device.joinedRun.value?.run)
-        save(SessionRecord(start.id, startedAt, ClockAnchor(clock.bootId(), clock.monotonicMillis(), 0), listOf(start)))
+        save(SessionRecord(start.id, startedAt, ClockAnchor(clock.bootId(), clock.monotonicMillis(), 0), listOf(start), mode))
         store.put("$kind.sessions", json.encodeToString(sessionIds() + start.id))
     }
 

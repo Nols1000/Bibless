@@ -11,6 +11,8 @@ data class AthleteRecord(
     val timestamp: Long,
     val athleteId: String?,
     val position: Int?,
+    /** What an unknown finisher told the scanner, if anything. */
+    val name: String? = null,
 )
 
 /** Why some of the data for a run isn't used. */
@@ -137,7 +139,7 @@ suspend fun foldRun(log: RunLog, run: String, certificates: Set<String>? = null)
     }
     val athletes = recordedAthletes.values.filter { it.entry.event.id !in removed }.map {
         val event = it.entry.event as RecordAthleteEvent
-        AthleteRecord(event.id, it.entry.author, it.entry.chain, event.timestamp, event.athleteId, event.position)
+        AthleteRecord(event.id, it.entry.author, it.entry.chain, event.timestamp, event.athleteId, event.position, event.name)
     }
     return RunState(
         run = run,

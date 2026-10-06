@@ -2,6 +2,7 @@ package com.github.nols1000.bibless
 
 import com.github.nols1000.bibless.race.RecordAthleteEvent
 import com.github.nols1000.bibless.race.RemoveAthleteEvent
+import com.github.nols1000.bibless.race.TimingMode
 import com.github.nols1000.bibless.race.verify
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -18,7 +19,7 @@ class ScannerRepositoryTest {
 
     private fun TestScope.device() = RaceDevice(store, clock, backgroundScope)
 
-    private fun TestScope.scanner() = ScannerRepository(device()).also { it.start() }
+    private fun TestScope.scanner(mode: TimingMode = TimingMode.TOKENS) = ScannerRepository(device()).also { it.start(mode) }
 
     /** Scans [text] after the previous code left the camera's view. */
     private fun ScannerRepository.scanLater(text: String): ScanOutcome {
@@ -157,7 +158,7 @@ class ScannerRepositoryTest {
     fun timerAndScannerSignWithTheSameKey() = runTest {
         val device = device()
         val timer = TimerRepository(device).also { it.start() }
-        val scanner = ScannerRepository(device).also { it.start() }
+        val scanner = ScannerRepository(device).also { it.start(TimingMode.TOKENS) }
         advanceUntilIdle()
 
         val authors = listOf(
@@ -165,5 +166,80 @@ class ScannerRepositoryTest {
             scanner.log(scanner.state.value.session!!.id)!!,
         ).map { it.verify().entries.single().entry.author }
         assertEquals(1, authors.toSet().size)
+    }
+
+    @Test
+    fun inScanOrderEachRunnerTakesTheNextPosition() = runTest {
+        val scanner = scanner(TimingMode.SCAN_ORDER)
+        assertEquals(1, scanner.state.value.session!!.nextPosition)
+
+        val first = assertIs<ScanOutcome.Recorded>(scanner.scanLater("A111111"))
+        assertEquals(1, first.record.position)
+        scanner.scanLater("A222222")
+
+        assertEquals(listOf("A111111" to 1, "A222222" to 2), scanner.records())
+        assertEquals(3, scanner.state.value.session!!.nextPosition)
+        assertEquals("Scan the next finisher", scanner.state.value.session!!.nextStep())
+    }
+
+    @Test
+    fun undoInScanOrderGivesThePositionBack() = runTest {
+        val scanner = scanner(TimingMode.SCAN_ORDER)
+        scanner.scanLater("A111111")
+        scanner.scanLater("A222222")
+        scanner.undo()
+
+        assertEquals(2, scanner.state.value.session!!.nextPosition)
+        assertIs<ScanOutcome.Recorded>(scanner.scanLater("A333333"))
+        assertEquals(listOf("A111111" to 1, "A333333" to 2), scanner.records())
+    }
+
+    @Test
+    fun scanOrderWarnsAboutDuplicatesButKeepsThem() = runTest {
+        val scanner = scanner(TimingMode.SCAN_ORDER)
+        scanner.scanLater("A111111")
+        val again = assertIs<ScanOutcome.Recorded>(scanner.scanLater("A111111"))
+
+        assertEquals(listOf(ScanWarning.DUPLICATE_ATHLETE), again.warnings)
+        assertEquals(2, scanner.records().size)
+    }
+
+    @Test
+    fun scanOrderTurnsTokensAway() = runTest {
+        val scanner = scanner(TimingMode.SCAN_ORDER)
+        assertEquals(ScanOutcome.TokenInScanOrder, scanner.scanLater("P0001"))
+        assertTrue(scanner.records().isEmpty())
+    }
+
+    @Test
+    fun unknownFinishersTakeTheNextPositionInScanOrder() = runTest {
+        val scanner = scanner(TimingMode.SCAN_ORDER)
+        scanner.scanLater("A111111")
+        val unknown = assertIs<ScanOutcome.Recorded>(scanner.addUnknown(" Sam "))
+        scanner.addUnknown("")
+
+        assertEquals(ScanRecord(unknown.record.eventId, null, 2, "Sam"), unknown.record)
+        assertEquals(listOf("A111111" to 1, null to 2, null to 3), scanner.records())
+        assertEquals("Sam (no barcode)", scanner.state.value.session!!.records[1].label())
+        assertEquals("Unknown", scanner.state.value.session!!.records[2].label())
+    }
+
+    @Test
+    fun unknownFinishersWithTokensNeedTheTokenFirst() = runTest {
+        val scanner = scanner()
+        assertEquals(ScanOutcome.MissingToken, scanner.addUnknown(null))
+
+        scanner.scanLater("P0005")
+        assertIs<ScanOutcome.Recorded>(scanner.addUnknown(null))
+        assertEquals(listOf(null to 5), scanner.records())
+        assertNull(scanner.state.value.session!!.pendingPosition)
+    }
+
+    @Test
+    fun theModeSurvivesARestart() = runTest {
+        scanner(TimingMode.SCAN_ORDER).scanLater("A111111")
+        val reopened = ScannerRepository(device())
+        assertEquals(TimingMode.SCAN_ORDER, reopened.state.value.session!!.mode)
+        assertEquals(listOf("A111111" to 1), reopened.records())
     }
 }

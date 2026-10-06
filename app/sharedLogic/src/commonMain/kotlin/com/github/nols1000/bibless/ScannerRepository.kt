@@ -3,6 +3,7 @@ package com.github.nols1000.bibless
 import com.github.nols1000.bibless.race.RecordAthleteEvent
 import com.github.nols1000.bibless.race.RemoveAthleteEvent
 import com.github.nols1000.bibless.race.RunLog
+import com.github.nols1000.bibless.race.TimingMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,8 +29,12 @@ fun parseScannedCode(text: String): ScannedCode {
     return ScannedCode.Unknown(trimmed)
 }
 
-/** A finisher recorded by this scanner, still in effect. */
-data class ScanRecord(val eventId: String, val athleteId: String?, val position: Int?)
+/**
+ * A finisher recorded by this scanner, still in effect. [position] is the token number, or in
+ * scan order the place in the order of records. Without [athleteId] the finisher is unknown, and
+ * [name] is what they told the scanner, if anything.
+ */
+data class ScanRecord(val eventId: String, val athleteId: String?, val position: Int?, val name: String? = null)
 
 data class ScannerState(val session: ScannerSession?)
 
@@ -44,7 +49,11 @@ data class ScannerSession(
     val pendingPosition: Int?,
     /** The run the session records for, or null for none. */
     val run: String? = null,
-)
+    val mode: TimingMode = TimingMode.TOKENS,
+) {
+    /** The position the next finisher gets in scan order. */
+    val nextPosition: Int get() = records.size + 1
+}
 
 enum class ScanWarning {
     /** This athlete was already recorded in this session. */
@@ -73,12 +82,19 @@ sealed interface ScanOutcome {
 
     data class NotRecognised(val text: String) : ScanOutcome
 
+    /** A finish token, but the session records in scan order. */
+    data object TokenInScanOrder : ScanOutcome
+
+    /** An unknown finisher with tokens needs their token scanned first. */
+    data object MissingToken : ScanOutcome
+
     data object NotRunning : ScanOutcome
 }
 
 /**
- * The finish scanner: pairs a runner's athlete barcode with their finish token, in either order.
- * Pairs are saved and signed like the timer's taps, see [SessionLog].
+ * The finish scanner. With [TimingMode.TOKENS] it pairs a runner's athlete barcode with their
+ * finish token, in either order; in [TimingMode.SCAN_ORDER] each runner takes the next position
+ * as they are scanned. Records are saved and signed like the timer's taps, see [SessionLog].
  */
 class ScannerRepository(private val device: RaceDevice) {
     private val sessions = SessionLog(device, "scanner") { publish() }
@@ -92,7 +108,8 @@ class ScannerRepository(private val device: RaceDevice) {
 
     private val listeners = MutableStateFlow(emptyList<(ScannerState) -> Unit>())
 
-    fun start() = sessions.start()
+    /** Starts a session that gives positions by [mode]; the joined run's mode, if there is one. */
+    fun start(mode: TimingMode) = sessions.start(mode)
 
     /**
      * Handles a code from the camera. The camera sees the same code many times while it is in
@@ -109,9 +126,20 @@ class ScannerRepository(private val device: RaceDevice) {
 
     /** Handles a typed code, e.g. a barcode too damaged to scan. */
     fun enter(text: String): ScanOutcome {
-        sessions.current ?: return ScanOutcome.NotRunning
-        val records = currentSession()?.records.orEmpty()
-        return when (val code = parseScannedCode(text)) {
+        val session = currentSession() ?: return ScanOutcome.NotRunning
+        val records = session.records
+        val code = parseScannedCode(text)
+        if (session.mode == TimingMode.SCAN_ORDER) {
+            return when (code) {
+                is ScannedCode.Unknown -> ScanOutcome.NotRecognised(code.text)
+                is ScannedCode.Token -> ScanOutcome.TokenInScanOrder
+                is ScannedCode.Athlete -> {
+                    val warnings = if (records.any { it.athleteId == code.athleteId }) listOf(ScanWarning.DUPLICATE_ATHLETE) else emptyList()
+                    record(code.athleteId, null, null, session.nextPosition, warnings)
+                }
+            }
+        }
+        return when (code) {
             is ScannedCode.Unknown -> ScanOutcome.NotRecognised(code.text)
             is ScannedCode.Athlete -> {
                 if (code.athleteId == pendingAthleteId) return ScanOutcome.Repeat
@@ -132,6 +160,19 @@ class ScannerRepository(private val device: RaceDevice) {
                 complete(warnings)
             }
         }
+    }
+
+    /**
+     * Records a finisher without a barcode, with the [name] they gave, if any. In scan order they
+     * take the next position; with tokens, the token scanned last.
+     */
+    fun addUnknown(name: String?): ScanOutcome {
+        val session = currentSession() ?: return ScanOutcome.NotRunning
+        val given = name?.trim()?.takeIf { it.isNotEmpty() }
+        if (session.mode == TimingMode.SCAN_ORDER) return record(null, null, given, session.nextPosition, emptyList())
+        val position = pendingPosition ?: return ScanOutcome.MissingToken
+        clearPending()
+        return record(null, position, given, position, emptyList())
     }
 
     /** Drops the half pair scanned so far, or else undoes the last recorded pair. */
@@ -169,8 +210,13 @@ class ScannerRepository(private val device: RaceDevice) {
             return ScanOutcome.Waiting(athleteId, position, warnings)
         }
         clearPending()
-        val event = sessions.append { id, timestamp -> RecordAthleteEvent(id, timestamp, athleteId, position) }!!
-        return ScanOutcome.Recorded(ScanRecord(event.id, athleteId, position), warnings)
+        return record(athleteId, position, null, position, warnings)
+    }
+
+    /** Saves a finisher; [shown] is the position they get on screen. */
+    private fun record(athleteId: String?, position: Int?, name: String?, shown: Int, warnings: List<ScanWarning>): ScanOutcome {
+        val event = sessions.append { id, timestamp -> RecordAthleteEvent(id, timestamp, athleteId, position, name) }!!
+        return ScanOutcome.Recorded(ScanRecord(event.id, athleteId, shown, name), warnings)
     }
 
     private fun clearPending() {
@@ -187,10 +233,14 @@ class ScannerRepository(private val device: RaceDevice) {
     private fun currentSession(): ScannerSession? {
         val record = sessions.current ?: return null
         val removed = record.events.filterIsInstance<RemoveAthleteEvent>().map { it.recordAthleteEventId }.toSet()
+        val mode = record.mode ?: TimingMode.TOKENS
         val records = record.events.filterIsInstance<RecordAthleteEvent>()
             .filter { it.id !in removed }
-            .map { ScanRecord(it.id, it.athleteId, it.position) }
-        return ScannerSession(record.id, record.startedAt, records, pendingAthleteId, pendingPosition, record.run)
+            .mapIndexed { index, event ->
+                val position = if (mode == TimingMode.SCAN_ORDER) index + 1 else event.position
+                ScanRecord(event.id, event.athleteId, position, event.name)
+            }
+        return ScannerSession(record.id, record.startedAt, records, pendingAthleteId, pendingPosition, record.run, mode)
     }
 
     private companion object {

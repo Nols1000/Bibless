@@ -65,7 +65,7 @@ data class RemoveTimeEvent(
 /**
  * A finisher is recorded. In [TimingMode.TOKENS] [position] is the token number; in
  * [TimingMode.SCAN_ORDER] it is usually null and the order of the records gives the position.
- * Without an [athleteId] the finisher is unknown.
+ * Without an [athleteId] the finisher is unknown; [name] is what they told the scanner, if anything.
  */
 @Serializable
 @SerialName("recordAthlete")
@@ -74,6 +74,7 @@ data class RecordAthleteEvent(
     override val timestamp: Long,
     val athleteId: String? = null,
     val position: Int? = null,
+    val name: String? = null,
 ) : Event
 
 @Serializable

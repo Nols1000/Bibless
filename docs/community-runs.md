@@ -64,6 +64,10 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    prefix.
 9. **Finish tokens** read `P` and the position, like parkrun's (`P0042`), as Code 128 or QR. The
    scanner pairs one with an athlete barcode in either order; codes that won't scan can be typed.
+   In scan order the scanner turns tokens away and gives each scan the next position. Finishers
+   without a barcode are recorded as unknown, with an optional name (`RecordAthleteEvent.name`);
+   with tokens they take the token scanned last. A scanner session's mode is the joined run's, or
+   the volunteer's choice without a run.
 
 ### Threat model
 

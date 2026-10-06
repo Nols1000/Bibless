@@ -2,9 +2,13 @@ package com.github.nols1000.bibless.wear
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -17,7 +21,10 @@ import kotlinx.coroutines.flow.emptyFlow
 /** The watch app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
 @Composable
 fun WearApp(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
-    MaterialTheme {
+    // Takes on the watch's system colors where it has them (Wear OS 6 on), the defaults otherwise.
+    val context = LocalContext.current
+    val colorScheme = remember(context) { dynamicColorScheme(context) ?: ColorScheme() }
+    MaterialTheme(colorScheme = colorScheme) {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
             val navController = rememberSwipeDismissableNavController()

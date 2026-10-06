@@ -64,6 +64,17 @@ class BarcodeLinkTest {
         }
     }
 
+    /** On round screens the labels are curved text, which TalkBack only reads out through the layout's semantics. */
+    @Test
+    fun readsOutALongNameInFull() {
+        val name = "Jamie Alexandra Fitzgerald-Smith"
+        val barcode = repository.add(name, "A0864213")
+        ActivityScenario.launch<MainActivity>(BarcodeLink.intent(context, barcode.id)).use {
+            awaitShown(name, "A0864213")
+            check(device.wait(Until.hasObject(By.text(name)), TIMEOUT)) { "The full name is not read out" }
+        }
+    }
+
     private fun id(name: String) = repository.state.value.barcodes.first { it.name == name }.id
 
     private fun awaitShown(name: String, athleteId: String) {

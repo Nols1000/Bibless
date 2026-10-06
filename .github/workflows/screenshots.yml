@@ -99,7 +99,8 @@ jobs:
         id: snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
         run: |
-          timeout 150 sh -c 'while pgrep -f qemu-system > /dev/null; do sleep 1; done' || echo "::warning::The emulator was still running"
+          # By process name: -f would match this shell, whose command line names it too
+          timeout 150 sh -c 'while pgrep qemu-system > /dev/null; do sleep 1; done' || echo "::warning::The emulator was still running"
           if [ -f ~/.android/avd/test.avd/snapshots/default_boot/snapshot.pb ]; then
             echo "saved=true" >> "$GITHUB_OUTPUT"
           else

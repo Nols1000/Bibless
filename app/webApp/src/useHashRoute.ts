@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 
-export type Route = { page: 'runs' } | { page: 'new' } | { page: 'run'; id: string };
+export type Route =
+  | { page: 'runs' }
+  | { page: 'new' }
+  | { page: 'run'; id: string }
+  | { page: 'results'; id: string };
 
 /** Routes live in the URL hash, so the app works from any path on GitHub Pages. */
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '');
   if (path === '/new') return { page: 'new' };
-  const run = path.match(/^\/runs\/([^/]+)$/);
-  if (run) return { page: 'run', id: decodeURIComponent(run[1]) };
+  const run = path.match(/^\/runs\/([^/]+)(\/results)?$/);
+  if (run) return { page: run[2] ? 'results' : 'run', id: decodeURIComponent(run[1]) };
   return { page: 'runs' };
 }
 

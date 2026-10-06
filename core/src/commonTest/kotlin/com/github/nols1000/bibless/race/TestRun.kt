@@ -12,8 +12,8 @@ internal class TestRun private constructor(val organiser: DeviceKey, val run: St
 
     /** Organiser corrections; times are absolute, so they line up with the timer's start. */
     suspend fun recordTime(elapsed: Long, start: Long = START) = organiserEvent(RecordTimeEvent(nextId(), start + elapsed))
-    suspend fun recordAthlete(athleteId: String?, position: Int? = null) =
-        organiserEvent(RecordAthleteEvent(nextId(), tick(), athleteId, position))
+    suspend fun recordAthlete(athleteId: String?, position: Int? = null, name: String? = null) =
+        organiserEvent(RecordAthleteEvent(nextId(), tick(), athleteId, position, name))
     suspend fun removeTime(eventId: String) = organiserEvent(RemoveTimeEvent(nextId(), tick(), eventId))
     suspend fun removeAthlete(eventId: String) = organiserEvent(RemoveAthleteEvent(nextId(), tick(), eventId))
 

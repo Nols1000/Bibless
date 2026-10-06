@@ -3,6 +3,7 @@ package com.github.nols1000.bibless.race
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ResultsTest {
 
@@ -120,6 +121,42 @@ class ResultsTest {
         val results = run.results()
         assertEquals(listOf("A1", "A2", "A3"), results.rows.map { it.athleteId })
         assertEquals(emptyList(), results.issues)
+    }
+
+    @Test
+    fun movesInScanOrderBuildOnEachOther() = runTest {
+        val run = TestRun.create(TimingMode.SCAN_ORDER)
+        val scanner = run.session()
+        val ids = listOf("A1", "A2", "A3", "A4").associateWith { scanner.athlete(it) }
+        run.certify(scanner)
+        // Move A4 to 2nd, then A3 to 2nd: both corrections hold, nobody is dropped
+        run.removeAthlete(ids.getValue("A4"))
+        run.recordAthlete("A4", position = 2)
+        run.removeAthlete(ids.getValue("A3"))
+        run.recordAthlete("A3", position = 2)
+        val results = run.results()
+        assertEquals(listOf("A1", "A3", "A4", "A2"), results.rows.map { it.athleteId })
+        assertEquals(listOf(ResultIssue.CountMismatch(0, 4)), results.issues.filterIsInstance<ResultIssue.CountMismatch>())
+        assertTrue(results.issues.none { it is ResultIssue.DuplicatePosition })
+    }
+
+    @Test
+    fun aPositionPastTheEndLeavesAGap() = runTest {
+        val run = TestRun.create(TimingMode.SCAN_ORDER)
+        val scanner = run.session()
+        scanner.athlete("A1")
+        run.certify(scanner)
+        run.recordAthlete("A3", position = 3)
+        assertEquals(listOf("A1", null, "A3"), run.results().rows.map { it.athleteId })
+    }
+
+    @Test
+    fun unknownFinishersKeepTheirName() = runTest {
+        val run = TestRun.create()
+        val scanner = run.session()
+        scanner.athlete(null, 1, name = "Sam")
+        run.certify(scanner)
+        assertEquals("Sam", run.results().rows.single().name)
     }
 
     @Test

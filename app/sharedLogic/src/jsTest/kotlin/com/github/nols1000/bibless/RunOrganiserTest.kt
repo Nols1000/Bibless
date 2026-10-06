@@ -45,4 +45,28 @@ class RunOrganiserTest {
         assertEquals(0, organiser.listRuns().await().size)
         assertNull(localStorage.getItem("bibless.run.${run.id}"))
     }
+
+    @Test
+    fun reviewShowsRowsAndIssues() = runTest {
+        val organiser = RunOrganiser.create()
+        val run = organiser.createRun("Riverside 5k", null, "TOKENS").await()
+        organiser.addFinisher(run.id, 1, "123", "  ").await()
+        organiser.addFinisher(run.id, null, null, "Sam").await()
+        val review = organiser.getReview(run.id).await()!!
+
+        assertEquals("Riverside 5k", review.run.name)
+        assertEquals(listOf("A123"), review.rows.map { it.athleteId })
+        assertEquals(listOf("MISSING_POSITION", "MISSING_TIME"), review.issues.map { it.kind })
+        assertEquals("Sam", review.issues[0].finishers.single().name)
+        assertEquals(listOf(1), review.issues[1].positions.toList())
+        assertEquals("position,time,elapsed_ms,athlete_id,name\n1,,,A123,\n", organiser.resultsCsv(run.id).await())
+    }
+
+    @Test
+    fun importRejectsOtherFiles() = runTest {
+        val organiser = RunOrganiser.create()
+        val run = organiser.createRun("Riverside 5k", null, "TOKENS").await()
+        assertTrue(runCatching { organiser.importLog(run.id, "position,time").await() }.isFailure)
+        assertEquals(0, organiser.importLog(run.id, "{}").await())
+    }
 }

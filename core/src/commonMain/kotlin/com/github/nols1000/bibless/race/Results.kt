@@ -4,7 +4,8 @@ import kotlinx.serialization.Serializable
 
 /**
  * One finish position. [elapsedMs] is null when no time was recorded for it, [athleteEventId] when
- * nobody was; a finisher recorded without an athlete ID is unknown.
+ * nobody was; a finisher recorded without an athlete ID is unknown, and [name] is what they told
+ * the scanner, if anything.
  */
 @Serializable
 data class ResultRow(
@@ -13,6 +14,7 @@ data class ResultRow(
     val athleteId: String? = null,
     val timeEventId: String? = null,
     val athleteEventId: String? = null,
+    val name: String? = null,
 )
 
 /** Something for the organiser to check before publishing. */
@@ -21,7 +23,7 @@ sealed interface ResultIssue {
     data class MissingAthlete(val position: Int) : ResultIssue
     data class DuplicateAthlete(val athleteId: String, val positions: List<Int>) : ResultIssue
 
-    /** Several finishers for one position; the earliest recorded is used. */
+    /** In token mode, several finishers for one position; the earliest recorded is used. */
     data class DuplicatePosition(val position: Int, val eventIds: List<String>) : ResultIssue
 
     /** In token mode, a finisher recorded without a token. */
@@ -46,9 +48,11 @@ data class Results(val timerChain: String?, val rows: List<ResultRow>, val issue
  * times the organiser recorded in the run's own chain; elapsed time is measured from that
  * session's start, and the n-th time is position n.
  *
- * Finishers with a position take it. In [TimingMode.SCAN_ORDER] the others fill the remaining
- * positions in the order they were recorded, so an organiser can insert a missed finisher at a
- * position and everyone after moves down one.
+ * In [TimingMode.TOKENS] finishers take their token's position. In [TimingMode.SCAN_ORDER]
+ * finishers without a position line up in the order they were recorded; then each one with a
+ * position is put in at that position, in the order they were recorded. So an organiser can insert
+ * a missed finisher or move one, everyone between shifts by one, and later corrections build on
+ * earlier ones.
  */
 fun combineResults(state: RunState, timerChain: String? = null): Results {
     val issues = mutableListOf<ResultIssue>()
@@ -68,24 +72,27 @@ fun combineResults(state: RunState, timerChain: String? = null): Results {
             .sortedWith(compareBy({ it.second }, { it.first.eventId }))
     }
 
-    val placed = state.athletes.filter { it.position != null && it.position > 0 }
-    val unplaced = state.athletes.filter { it.position == null || it.position <= 0 }
+    val placed = state.athletes.filter { it.position != null && it.position > 0 }.sortedWith(recordOrder)
+    val unplaced = state.athletes.filter { it.position == null || it.position <= 0 }.sortedWith(recordOrder)
     val byPosition = mutableMapOf<Int, AthleteRecord>()
-    placed.groupBy { it.position!! }.entries.sortedBy { it.key }.forEach { (position, records) ->
-        val sorted = records.sortedWith(recordOrder)
-        if (sorted.size > 1) issues += ResultIssue.DuplicatePosition(position, sorted.map { it.eventId })
-        byPosition[position] = sorted.first()
-    }
     when (state.format) {
-        TimingMode.TOKENS -> unplaced.sortedWith(recordOrder).forEach { issues += ResultIssue.MissingPosition(it.eventId) }
+        TimingMode.TOKENS -> {
+            placed.groupBy { it.position!! }.entries.sortedBy { it.key }.forEach { (position, records) ->
+                if (records.size > 1) issues += ResultIssue.DuplicatePosition(position, records.map { it.eventId })
+                byPosition[position] = records.first()
+            }
+            unplaced.forEach { issues += ResultIssue.MissingPosition(it.eventId) }
+        }
         TimingMode.SCAN_ORDER -> {
             val scanners = unplaced.map { it.chain }.filter { it != state.run }.distinct().sorted()
             if (scanners.size > 1) issues += ResultIssue.SeveralScannersInScanOrder(scanners)
-            var position = 1
-            for (record in unplaced.sortedWith(recordOrder)) {
-                while (position in byPosition) position++
-                byPosition[position] = record
+            val order = unplaced.toMutableList<AthleteRecord?>()
+            for (record in placed) {
+                val index = record.position!! - 1
+                while (order.size < index) order += null
+                order.add(index, record)
             }
+            order.forEachIndexed { index, record -> if (record != null) byPosition[index + 1] = record }
             if (times.size != byPosition.size) issues += ResultIssue.CountMismatch(times.size, byPosition.size)
         }
     }
@@ -96,7 +103,7 @@ fun combineResults(state: RunState, timerChain: String? = null): Results {
         val athlete = byPosition[position]
         if (time == null) issues += ResultIssue.MissingTime(position)
         if (athlete == null) issues += ResultIssue.MissingAthlete(position)
-        ResultRow(position, time?.second, athlete?.athleteId, time?.first?.eventId, athlete?.eventId)
+        ResultRow(position, time?.second, athlete?.athleteId, time?.first?.eventId, athlete?.eventId, athlete?.name)
     }
     rows.filter { it.athleteId != null }.groupBy { it.athleteId!! }.entries.sortedBy { it.key }.forEach { (athleteId, found) ->
         if (found.size > 1) issues += ResultIssue.DuplicateAthlete(athleteId, found.map { it.position })

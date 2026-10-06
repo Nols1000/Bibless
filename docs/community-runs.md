@@ -56,6 +56,15 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    "Recorded sessions": a `RunLog` JSON file of its signed events (lossless; `source` names the
    device) and a CSV for people. Once there is a server, invite links (#34) carry the same hint
    and uploads (#28) send the same signed events.
+   **Combining results** happens on the run's Results page in the browser: importing a `RunLog`
+   merges it into the run and certifies sessions that joined the run straight away. The organiser
+   includes other sessions by hand, after which their newer exports are certified too.
+   Certificates can't be withdrawn, so a session is never included without either the join or
+   that click. With several timers, the one with the most times is used until the organiser picks
+   another. Fixes are signed events in the run's own chain: an added time counts from the used
+   timer's start, and editing a finisher removes the record and records a new one. In scan order
+   a finisher with a position is moved there, in the order the fixes were made, so moves build
+   on each other and nobody is dropped. With tokens, a clash on a token stays a conflict to resolve.
 7. **On device:** a repository in `sharedLogic`, built like `BarcodeRepository`, signs and persists
    every event immediately. Finish times are the session start plus elapsed time from a monotonic
    clock, so changing the device clock mid-run can't move them. The monotonic clock starts over

@@ -25,7 +25,10 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SwipeToReveal
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.github.nols1000.bibless.Barcode
 
@@ -41,10 +44,15 @@ fun BarcodeListScreen(
     // Dragging is fiddly on a watch, so a long press offers to move a barcode to the top instead.
     var moving by remember { mutableStateOf<Barcode?>(null) }
     val listState = rememberTransformingLazyColumnState()
+    // Items shrink and morph at the top and bottom edges, so the rows fit the round screen.
+    val transformationSpec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
-                ListHeader { Text("Barcodes") }
+                ListHeader(
+                    modifier = Modifier.transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) { Text("Barcodes") }
             }
             if (barcodes.isEmpty()) {
                 item {
@@ -66,11 +74,12 @@ fun BarcodeListScreen(
                         )
                     },
                     onSwipePrimaryAction = { onDelete(barcode) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
                 ) {
                     Button(
                         onClick = { onOpen(barcode) },
                         modifier = Modifier.fillMaxWidth(),
+                        transformation = SurfaceTransformation(transformationSpec),
                         onLongClick = if (barcode != barcodes.first()) {
                             { moving = barcode }
                         } else {
@@ -85,7 +94,8 @@ fun BarcodeListScreen(
             item {
                 FilledTonalButton(
                     onClick = onAdd,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                     label = { Text("Add") },
                 )
@@ -93,7 +103,8 @@ fun BarcodeListScreen(
             item {
                 FilledTonalButton(
                     onClick = onSettings,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
                     label = { Text("Settings") },
                 )

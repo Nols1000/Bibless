@@ -121,7 +121,8 @@ jobs:
           target: ${{ matrix.target }}
           arch: x86_64
           profile: ${{ matrix.profile }}
-          disk-size: ${{ matrix.disk-size }}
+          # No disk-size: the AVD keeps the one it was created with, and setting it again appends
+          # it to the AVD's config, which then no longer matches the snapshot's and cold-boots
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true

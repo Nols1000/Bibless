@@ -19,8 +19,8 @@ import androidx.wear.protolayout.LayoutElementBuilders.Image
 import androidx.wear.protolayout.LayoutElementBuilders.Spacer
 import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.ModifiersBuilders
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.ResourceBuilders
-import androidx.wear.protolayout.ResourceBuilders.Resources
 import androidx.wear.protolayout.TimelineBuilders
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders.Tile
@@ -41,10 +41,7 @@ import kotlin.math.sqrt
  */
 class BarcodeTileService : TileService() {
     override fun onTileRequest(requestParams: RequestBuilders.TileRequest): ListenableFuture<Tile> =
-        immediate { TileContent.current(this, requestParams.deviceConfiguration).tile() }
-
-    override fun onTileResourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ListenableFuture<Resources> =
-        immediate { TileContent.current(this, requestParams.deviceConfiguration).resources() }
+        immediate { TileContent.current(this, requestParams.deviceConfiguration, requestParams.scope).tile() }
 
     companion object {
         /** Asks the system to fetch the tile again, after the first barcode or the format changed. */
@@ -57,12 +54,16 @@ class BarcodeTileService : TileService() {
 private fun <T : Any> immediate(block: () -> T): ListenableFuture<T> =
     CallbackToFutureAdapter.getFuture { it.set(block()) }
 
-/** What the tile shows for [barcode], sized for the watch in [device]. */
+/**
+ * What the tile shows for [barcode], sized for the watch in [device]. The code image goes into
+ * [scope], which hands it to the system along with the tile.
+ */
 internal class TileContent(
     private val context: Context,
     private val barcode: Barcode?,
     private val format: BarcodeFormat,
     device: DeviceParameters,
+    private val scope: ProtoLayoutScope,
 ) {
     // Like the detail screen: on round screens the code stays inside the largest square that fits
     // in the circle, square screens get a smaller margin.
@@ -99,8 +100,8 @@ internal class TileContent(
                     .addContent(label(barcode.name, argb(BLACK), sideDp))
                     .addContent(Spacer.Builder().setHeight(dp(2f)).build())
                     .addContent(
-                        Image.Builder()
-                            .setResourceId(IMAGE_ID)
+                        Image.Builder(scope)
+                            .setImageResource(imageResource(bitmap), IMAGE_ID)
                             .setWidth(dp(bitmap.width / density))
                             .setHeight(dp(bitmap.height / density))
                             .build(),
@@ -112,28 +113,20 @@ internal class TileContent(
             .build()
     }
 
-    fun resources(): Resources {
-        val builder = Resources.Builder().setVersion(version)
-        if (barcode != null) {
-            val bitmap = bitmap(barcode)
-            val png = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-            builder.addIdToImageMapping(
-                IMAGE_ID,
-                ResourceBuilders.ImageResource.Builder()
-                    .setInlineResource(
-                        ResourceBuilders.InlineImageResource.Builder()
-                            .setData(png.toByteArray())
-                            // Undefined means encoded data (here PNG), which the renderer decodes.
-                            .setFormat(ResourceBuilders.IMAGE_FORMAT_UNDEFINED)
-                            // Needed for encoded data too: the renderer scales the image to them.
-                            .setWidthPx(bitmap.width)
-                            .setHeightPx(bitmap.height)
-                            .build(),
-                    )
+    private fun imageResource(bitmap: Bitmap): ResourceBuilders.ImageResource {
+        val png = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        return ResourceBuilders.ImageResource.Builder()
+            .setInlineResource(
+                ResourceBuilders.InlineImageResource.Builder()
+                    .setData(png.toByteArray())
+                    // Undefined means encoded data (here PNG), which the renderer decodes.
+                    .setFormat(ResourceBuilders.IMAGE_FORMAT_UNDEFINED)
+                    // Needed for encoded data too: the renderer scales the image to them.
+                    .setWidthPx(bitmap.width)
+                    .setHeightPx(bitmap.height)
                     .build(),
             )
-        }
-        return builder.build()
+            .build()
     }
 
     // Drawn at the screen's own resolution, so the renderer shows each module crisp, unscaled.
@@ -171,7 +164,7 @@ internal class TileContent(
                 Text.Builder()
                     .setText(text)
                     .setMaxLines(1)
-                    .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE_END)
+                    .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE)
                     .setFontStyle(FontStyle.Builder().setColor(color).setSize(sp(13f)).build())
                     .build(),
             )
@@ -183,9 +176,9 @@ internal class TileContent(
         private const val BLACK = 0xFF000000.toInt()
 
         /** The first barcode in the list, in the watch's format. */
-        fun current(context: Context, device: DeviceParameters): TileContent {
+        fun current(context: Context, device: DeviceParameters, scope: ProtoLayoutScope): TileContent {
             val state = Bibless.repository(context).state.value
-            return TileContent(context, state.barcodes.firstOrNull(), state.format, device)
+            return TileContent(context, state.barcodes.firstOrNull(), state.format, device, scope)
         }
     }
 }

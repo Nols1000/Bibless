@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,10 +34,11 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
                 )
             }
             composable("detail/{id}") { entry ->
-                val barcode = entry.savedStateHandle.get<String>("id")?.let(repository::find)
                 BarcodeDetailScreen(
-                    barcode = barcode,
+                    barcodes = state.barcodes,
+                    startId = entry.savedStateHandle.get<String>("id"),
                     format = state.format,
+                    onShown = { repository.shownBarcodeId = it.id },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -67,7 +69,17 @@ fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
             LaunchedEffect(Unit) { onClose() }
             return@BiblessTheme
         }
-        BarcodeDetailScreen(barcode = barcode, format = state.format, onBack = onClose)
+        // Just this one: the other barcodes stay behind the lock, but the other format is a swipe away.
+        // Starts over when another barcode comes first, which would otherwise read as deleted.
+        key(barcode.id) {
+            BarcodeDetailScreen(
+                barcodes = listOf(barcode),
+                startId = barcode.id,
+                format = state.format,
+                onShown = {},
+                onBack = onClose,
+            )
+        }
     }
 }
 

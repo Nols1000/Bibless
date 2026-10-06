@@ -140,14 +140,25 @@ private struct SettingsView: View {
     }
 }
 
-/// Shows one page per barcode, starting on the one opened; swiping or turning the crown moves to
-/// the next, so runners scanning for several people needn't go back to the list.
+/// Shows one page per barcode, starting on the one opened; swiping up or turning the crown moves to
+/// the next, so runners scanning for several people needn't go back to the list. Swiping sideways
+/// switches between the formats, for when the scanner reads only the other one.
 private struct BarcodeDetailView: View {
     @EnvironmentObject private var store: BarcodeStore
     @State private var shownId: String?
+    /// The format swiped to, kept while paging through the barcodes but not saved as the default.
+    @State private var swipedFormat: BarcodeFormat?
 
     init(id: String) {
         _shownId = State(initialValue: id)
+    }
+
+    private var format: Binding<BarcodeFormat?> {
+        Binding(
+            get: { swipedFormat ?? store.format },
+            // Mid-swipe the scroll position can briefly have no page
+            set: { if let format = $0 { swipedFormat = format } }
+        )
     }
 
     var body: some View {
@@ -156,7 +167,7 @@ private struct BarcodeDetailView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(store.barcodes) { barcode in
-                        BarcodePage(barcode: barcode)
+                        FormatPager(barcode: barcode, format: format)
                             .containerRelativeFrame([.horizontal, .vertical])
                     }
                 }
@@ -170,41 +181,78 @@ private struct BarcodeDetailView: View {
             .overlay(alignment: .trailing) {
                 if store.barcodes.count > 1 {
                     PageIndicator(count: store.barcodes.count, current: store.barcodes.firstIndex { $0.id == shownId })
+                        .accessibilityValue(shownIndex.map { "Barcode \($0 + 1) of \(store.barcodes.count)" } ?? "")
                 }
             }
             .ignoresSafeArea()
             .toolbar(.hidden, for: .navigationBar)
             .onChange(of: shownId) { store.shownBarcodeId = shownId }
+            // Changing the default switches the code, as before.
+            .onChange(of: store.format) { swipedFormat = nil }
         } else {
             Text("Barcode deleted")
         }
     }
+
+    private var shownIndex: Int? { store.barcodes.firstIndex { $0.id == shownId } }
 }
 
-/// Dots along the edge by the crown, one per barcode, like the system's vertical page indicator.
+/// The code of one barcode, a page per format; every page follows `format`, so the next barcode
+/// comes up in the format the scanner just read.
+private struct FormatPager: View {
+    @Environment(\.dismiss) private var dismiss
+    let barcode: Barcode
+    @Binding var format: BarcodeFormat?
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(spacing: 0) {
+                ForEach(BarcodeFormat.entries, id: \.self) { format in
+                    BarcodePage(barcode: barcode, format: format)
+                        .containerRelativeFrame([.horizontal, .vertical])
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $format)
+        .scrollIndicators(.hidden)
+        .background(.white)
+        .overlay(alignment: .bottom) {
+            PageIndicator(count: BarcodeFormat.entries.count, current: format.flatMap { BarcodeFormat.entries.firstIndex(of: $0) }, axis: .horizontal)
+                .accessibilityValue(format?.label ?? "")
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { dismiss() }
+        .accessibilityHint("Tap to close")
+    }
+}
+
+/// A dot per page, like the system's page indicators: barcodes down the edge by the crown
+/// (`.vertical`), formats along the bottom (`.horizontal`).
 private struct PageIndicator: View {
     let count: Int
     let current: Int?
+    var axis: Axis = .vertical
 
     var body: some View {
-        VStack(spacing: 4) {
+        let layout = axis == .vertical ? AnyLayout(VStackLayout(spacing: 4)) : AnyLayout(HStackLayout(spacing: 4))
+        layout {
             ForEach(0..<count, id: \.self) { index in
                 Circle()
                     .fill(index == current ? Color.black : Color.gray.opacity(0.5))
                     .frame(width: 6, height: 6)
             }
         }
-        .padding(.trailing, 3)
+        .padding(axis == .vertical ? .trailing : .bottom, 3)
         .accessibilityElement()
-        .accessibilityValue(current.map { "Barcode \($0 + 1) of \(count)" } ?? "")
     }
 }
 
 /// Shows the code alone on a white screen, as large as fits, so scanners pick it up easily.
 private struct BarcodePage: View {
-    @EnvironmentObject private var store: BarcodeStore
-    @Environment(\.dismiss) private var dismiss
     let barcode: Barcode
+    let format: BarcodeFormat
 
     var body: some View {
         // Centered on the whole display, not the safe area, so the clock doesn't push it down.
@@ -214,16 +262,13 @@ private struct BarcodePage: View {
             VStack(spacing: 2) {
                 caption(barcode.name)
                 // Small inset keeps the code clear of the display's rounded corners.
-                BarcodeImageView(text: barcode.athleteId, format: store.format)
+                BarcodeImageView(text: barcode.athleteId, format: format)
                     .padding(.horizontal, 6)
                     .layoutPriority(1)
                 caption(barcode.athleteId)
                     .monospacedDigit()
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture { dismiss() }
-        .accessibilityHint("Tap to close")
     }
 
     private func caption(_ text: String) -> some View {

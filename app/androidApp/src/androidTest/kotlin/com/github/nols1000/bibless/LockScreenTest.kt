@@ -10,8 +10,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
+import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -83,6 +85,23 @@ class LockScreenTest {
         // Not the list: that stays behind the lock
         assertFalse(device.hasObject(By.text("Jamie (junior)")))
         assertTrue(keyguard.isKeyguardLocked)
+    }
+
+    @Test
+    fun swipesToTheOtherFormatButNotToTheOtherBarcodes() {
+        repository.setDefaultFormat(Device.PHONE, BarcodeFormat.CODE128)
+        context.startActivity(LockScreenActivity.intent(context))
+
+        val barcode = By.desc("Barcode for A0123456")
+        check(device.wait(Until.hasObject(barcode), TIMEOUT)) { "The first barcode was not shown" }
+        device.findObject(barcode).swipe(Direction.LEFT, 0.8f)
+        val qrCode = By.desc("QR code for A0123456")
+        check(device.wait(Until.hasObject(qrCode), TIMEOUT)) { "The QR code was not shown" }
+
+        device.findObject(qrCode).swipe(Direction.UP, 0.8f)
+        // The others stay behind the lock
+        assertFalse(device.wait(Until.hasObject(By.text("A0246802")), 2_000L))
+        assertTrue(device.hasObject(qrCode))
     }
 
     @Test

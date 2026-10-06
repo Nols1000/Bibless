@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.nols1000.bibless.barcode.layout
 import kotlin.math.floor
@@ -25,7 +27,12 @@ fun BarcodeImage(text: String, format: BarcodeFormat, modifier: Modifier = Modif
     val columns = layout.columns
     val rows = layout.rows
 
-    Canvas(modifier.aspectRatio(layout.aspectRatio).background(Color.White)) {
+    Canvas(
+        modifier
+            .aspectRatio(layout.aspectRatio)
+            .background(Color.White)
+            .semantics { contentDescription = "${format.label} for $text" },
+    ) {
         // Whole-pixel modules keep bar edges crisp, which matters on small watch screens.
         val module = floor(size.width / columns).coerceAtLeast(1f)
         val left = (size.width - module * columns) / 2 + quiet * module

@@ -70,6 +70,14 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    clock, so changing the device clock mid-run can't move them. The monotonic clock starts over
    when the phone restarts (told apart by Android's boot count and Apple's boot session UUID); the
    timer then carries on from the wall clock.
+   **Watches** run the same timer and sign with their own key. They can't scan a run's QR code,
+   so their sessions record without a run and the organiser includes them by hand. A stopped
+   session goes to the paired phone as a file the OS delivers once the phone is in reach (a Data
+   Layer asset on Wear OS, a WatchConnectivity file transfer on watchOS). The phone keeps the part
+   that verifies (`ReceivedSessions`) and shares it from "Recorded sessions" under the watch's name.
+   While timing, the Wear OS screen stays on and the app stays up in ambient mode. watchOS returns
+   to the clock after its "Return to Clock" delay (2 minutes by default), so the timer screen
+   suggests setting it to an hour.
 8. **Athlete IDs:** scanners accept parkrun `A…` IDs from day one; Bibless IDs (#31) get a distinct
    prefix.
 9. **Finish tokens** read `P` and the position, like parkrun's (`P0042`), as Code 128 or QR. The

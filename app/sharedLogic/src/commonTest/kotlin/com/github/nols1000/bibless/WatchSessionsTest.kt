@@ -19,8 +19,8 @@ class WatchSessionsTest {
     private fun TestScope.watchTimer() = TimerRepository(RaceDevice(watchStore, clock, backgroundScope))
 
     private fun sender(timer: TimerRepository, fail: Boolean = false) = WatchSessionSender(timer, watchStore, "Pixel Watch 3") { id, json ->
-        if (fail) error("Not connected")
-        sent += id to json
+        if (!fail) sent += id to json
+        !fail
     }
 
     private suspend fun TestScope.recordSession(timer: TimerRepository, vararg elapsed: Long): String {

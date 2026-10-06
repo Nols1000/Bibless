@@ -38,6 +38,7 @@ class WearApplication : Application() {
         val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)?.takeIf { it.isNotBlank() } ?: Build.MODEL
         val sender = WatchSessionSender(timer, SharedPreferencesStore(this, "bibless.race", durable = true), name) { id, json ->
             DataLayerSessions.send(this, id, json)
+            true
         }
         var running: String? = null
         timer.observe { state ->

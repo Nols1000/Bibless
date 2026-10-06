@@ -243,6 +243,7 @@ private struct BarcodeDetailView: View {
         .environmentObject(TimerStore(device: makeRaceDevice()))
         .environmentObject(ScannerStore(device: makeRaceDevice()))
         .environmentObject(RunStore(device: makeRaceDevice()))
+        .environmentObject(ReceivedStore())
 }
 
 /// Turns the screen to full brightness while the view is visible and the app is active, so scanners

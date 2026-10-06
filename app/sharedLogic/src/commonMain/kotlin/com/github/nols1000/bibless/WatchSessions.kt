@@ -16,14 +16,14 @@ import kotlin.coroutines.cancellation.CancellationException
 /**
  * Hands the watch's stopped timer sessions to the phone, each once. [send] gives the session's
  * signed events to the platform's transfer, which delivers them whenever the phone is in reach,
- * and throws if it can't take them; the session is then offered again next time.
+ * and returns false if it can't take them; the session is then offered again next time.
  */
 class WatchSessionSender(
     private val timer: TimerRepository,
     private val store: KeyValueStore,
     /** The watch's name, so the organiser can tell its files apart. */
     private val source: String,
-    private val send: (id: String, json: String) -> Unit,
+    private val send: (id: String, json: String) -> Boolean,
 ) {
     /** Offers every stopped session the phone hasn't been sent yet. */
     @Throws(CancellationException::class)
@@ -33,7 +33,7 @@ class WatchSessionSender(
         for (id in timer.sessionIds()) {
             if (id == running || id in sent) continue
             val log = timer.log(id) ?: continue
-            runCatching { send(id, log.copy(source = source).toJson()) }.onSuccess {
+            if (runCatching { send(id, log.copy(source = source).toJson()) }.getOrDefault(false)) {
                 sent = sent + id
                 store.put(KEY_SENT, Json.encodeToString(sent))
             }

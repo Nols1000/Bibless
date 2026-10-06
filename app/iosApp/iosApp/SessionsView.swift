@@ -8,12 +8,13 @@ struct SessionsView: View {
     @EnvironmentObject private var timer: TimerStore
     @EnvironmentObject private var scanner: ScannerStore
     @EnvironmentObject private var runs: RunStore
+    @EnvironmentObject private var received: ReceivedStore
     @Environment(\.dismiss) private var dismiss
     @State private var sessions: [RecordedSession] = []
     @State private var sharing: SharedFiles?
 
     private var exporter: SessionExporter {
-        SessionExporter(timer: timer.repository, scanner: scanner.repository)
+        SessionExporter(timer: timer.repository, scanner: scanner.repository, received: received.sessions)
     }
 
     var body: some View {
@@ -60,6 +61,8 @@ struct SessionsView: View {
                 }
             }
             .onAppear { sessions = exporter.sessions() }
+            // A session from the watch can arrive while the list is open
+            .onChange(of: received.version) { sessions = exporter.sessions() }
             .sheet(item: $sharing) { files in
                 ShareSheet(items: files.urls)
             }
@@ -88,10 +91,11 @@ struct SessionsView: View {
     }
 
     private func title(_ session: RecordedSession) -> String {
-        switch session.kind {
+        let title = switch session.kind {
         case .timer: "Timer"
         default: session.mode == .scanOrder ? "Scanner, Scan Order" : "Scanner"
         }
+        return session.source.map { "\(title) on \($0)" } ?? title
     }
 
     private func details(_ session: RecordedSession) -> String {

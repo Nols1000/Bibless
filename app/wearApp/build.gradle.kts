@@ -17,6 +17,8 @@ dependencies {
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.navigation)
+    // AmbientLifecycleObserver, so the timer stays on screen with the wrist down
+    implementation(libs.wear)
     implementation(libs.wear.input)
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
@@ -27,6 +29,7 @@ dependencies {
     implementation(libs.wear.toolingPreview)
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.compose.uiTest.manifest)
 
     // Store screenshots via fastlane screengrab (ScreenshotTest)
     androidTestImplementation(libs.fastlane.screengrab)
@@ -34,6 +37,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(libs.androidx.uiautomator)
+    androidTestImplementation(libs.compose.uiTest.junit4)
     // Answers the system text input with the demo entry
     androidTestImplementation(libs.androidx.espresso.intents)
 }

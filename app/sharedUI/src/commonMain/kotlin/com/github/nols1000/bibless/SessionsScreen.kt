@@ -104,7 +104,7 @@ fun SessionsScreen(
 private fun sessionTitle(session: RecordedSession) = when (session.kind) {
     SessionKind.TIMER -> "Timer"
     SessionKind.SCANNER -> if (session.mode == TimingMode.SCAN_ORDER) "Scanner, scan order" else "Scanner"
-}
+} + session.source?.let { " on $it" }.orEmpty()
 
 private fun sessionDetails(session: RecordedSession, joinedRun: RunHint?): String = listOfNotNull(
     when (session.kind) {

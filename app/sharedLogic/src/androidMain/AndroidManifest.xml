@@ -11,6 +11,10 @@
                     android:host="*"
                     android:pathPrefix="/barcodes"
                     android:scheme="wear" />
+                <data
+                    android:host="*"
+                    android:pathPrefix="/timer-sessions"
+                    android:scheme="wear" />
             </intent-filter>
         </service>
     </application>

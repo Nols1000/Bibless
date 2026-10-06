@@ -18,45 +18,58 @@ data class RecordedSession(
     val running: Boolean,
     /** For scanner sessions, how positions are given. */
     val mode: TimingMode? = null,
+    /** The paired watch it was recorded on; null for this device. */
+    val source: String? = null,
 )
 
 /** One file to share. */
 data class ExportFile(val name: String, val mimeType: String, val content: String)
 
 /**
- * Turns this device's recorded sessions into files for the organiser: a CSV per session for
- * people, and the session's signed events as a JSON bundle that imports without loss.
+ * Turns this device's recorded sessions, and those its watch sent, into files for the organiser:
+ * a CSV per session for people, and the session's signed events as a JSON bundle that imports
+ * without loss.
  */
-class SessionExporter(private val timer: TimerRepository, private val scanner: ScannerRepository) {
+class SessionExporter(
+    private val timer: TimerRepository,
+    private val scanner: ScannerRepository,
+    private val received: ReceivedSessions? = null,
+) {
 
-    /** Every session on this device, newest first. */
-    fun sessions(): List<RecordedSession> = (timer.recordedSessions() + scanner.recordedSessions())
-        .sortedByDescending { it.startedAt }
+    /** Every session on this device or from its watch, newest first. */
+    fun sessions(): List<RecordedSession> =
+        (timer.recordedSessions() + scanner.recordedSessions() + received?.sessions().orEmpty())
+            .distinctBy { it.kind to it.id }
+            .sortedByDescending { it.startedAt }
 
     /**
-     * The files for session [id]: CSV and JSON bundle. Names carry [deviceName] and the start time
-     * in local time, which is UTC plus [utcOffsetMinutes]. Null for an unknown session.
+     * The files for session [id]: CSV and JSON bundle. Names carry [deviceName], or the watch's
+     * name for a session from the watch, and the start time in local time, which is UTC plus
+     * [utcOffsetMinutes]. Null for an unknown session.
      */
     suspend fun export(kind: SessionKind, id: String, deviceName: String, utcOffsetMinutes: Int): List<ExportFile>? {
         val session = sessions().firstOrNull { it.kind == kind && it.id == id } ?: return null
-        val log = when (kind) {
-            SessionKind.TIMER -> timer.log(id)
-            SessionKind.SCANNER -> scanner.log(id)
+        val fromWatch = session.source != null
+        val log = when {
+            fromWatch -> received?.log(id)
+            kind == SessionKind.TIMER -> timer.log(id)
+            else -> scanner.log(id)
         } ?: return null
+        val source = session.source ?: deviceName
         val offset = utcOffsetMinutes * 60_000L
         val base = listOf(
             "bibless",
             if (kind == SessionKind.TIMER) "timer" else "scanner",
             localDateTime(session.startedAt + offset).replace(":", "").replace("T", "-").dropLast(2),
-            deviceName,
+            source,
         ).joinToString("-") { part -> part.replace(Regex("[^A-Za-z0-9]+"), "-").trim('-') }
         val csv = when (kind) {
-            SessionKind.TIMER -> timerCsv(timer.recordedTimes(id).orEmpty())
+            SessionKind.TIMER -> timerCsv((if (fromWatch) received?.times(id) else timer.recordedTimes(id)).orEmpty())
             SessionKind.SCANNER -> scannerCsv(scanner.recordedFinishers(id).orEmpty(), offset)
         }
         return listOf(
             ExportFile("$base.csv", "text/csv", csv),
-            ExportFile("$base.json", "application/json", log.copy(source = deviceName).toJson()),
+            ExportFile("$base.json", "application/json", log.copy(source = source).toJson()),
         )
     }
 

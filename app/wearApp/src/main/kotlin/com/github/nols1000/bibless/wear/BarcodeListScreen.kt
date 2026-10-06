@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +38,9 @@ fun BarcodeListScreen(
     onDelete: (Barcode) -> Unit,
     onMoveToTop: (Barcode) -> Unit,
     onSettings: () -> Unit,
+    /** Opens the stopwatch for timekeepers; [timerRunning] says it is recording. */
+    onTimer: () -> Unit = {},
+    timerRunning: Boolean = false,
 ) {
     // Dragging is fiddly on a watch, so a long press offers to move a barcode to the top instead.
     var moving by remember { mutableStateOf<Barcode?>(null) }
@@ -88,6 +92,19 @@ fun BarcodeListScreen(
                     modifier = Modifier.fillMaxWidth(),
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
                     label = { Text("Add") },
+                )
+            }
+            item {
+                FilledTonalButton(
+                    onClick = onTimer,
+                    modifier = Modifier.fillMaxWidth(),
+                    icon = { Icon(Icons.Filled.PlayArrow, contentDescription = null) },
+                    label = { Text("Timer") },
+                    secondaryLabel = if (timerRunning) {
+                        { Text("Recording") }
+                    } else {
+                        null
+                    },
                 )
             }
             item {

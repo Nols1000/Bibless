@@ -18,6 +18,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.github.nols1000.bibless.race.RunLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,8 +47,10 @@ class SessionsTest {
     @After
     fun tearDown() = Intents.release()
 
+    private val received = ReceivedSessions(InMemoryStore())
+
     private fun showApp(share: ((List<ExportFile>) -> Unit)? = null) = compose.setContent {
-        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer, scanner, device, shareFiles = share)
+        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer, scanner, device, shareFiles = share, received = received)
     }
 
     private fun recordATimerSession() {
@@ -95,6 +98,29 @@ class SessionsTest {
         val resolver = InstrumentationRegistry.getInstrumentation().targetContext.contentResolver
         val csv = resolver.openInputStream(uris.first { it.path!!.endsWith(".csv") })!!.bufferedReader().readText()
         assertTrue(csv, csv.startsWith("position,time,elapsed_ms\n1,"))
+    }
+
+    @Test
+    fun sessionsFromTheWatchShowUpAndShareUnderItsName() {
+        var shared: List<ExportFile>? = null
+        showApp { shared = it }
+        compose.onNodeWithContentDescription("Timer").performClick()
+        compose.onNodeWithText("Recorded sessions").performClick()
+
+        // Arrives while the list is open, as the Data Layer delivers it
+        val watch = TimerRepository(RaceDevice(InMemoryStore(), AndroidRaceClock(InstrumentationRegistry.getInstrumentation().targetContext)))
+        watch.start()
+        watch.tap()
+        watch.stop()
+        val id = watch.sessionIds().single()
+        runBlocking { received.receive(watch.log(id)!!.copy(source = "Pixel Watch 3").toJson()) }
+
+        compose.onNodeWithText("Timer on Pixel Watch 3").assertExists()
+        compose.onNodeWithText("1 finish time · no run").assertExists()
+        compose.onNodeWithTag("share-$id").performClick()
+        compose.waitUntil(5_000) { shared != null }
+        assertTrue(shared!![1].name, shared!![1].name.endsWith("-Pixel-Watch-3.json"))
+        assertEquals("Pixel Watch 3", RunLog.fromJson(shared!![1].content).source)
     }
 
     @Test

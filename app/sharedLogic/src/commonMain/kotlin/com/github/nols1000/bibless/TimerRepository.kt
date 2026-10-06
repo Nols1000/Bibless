@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.serialization.Serializable
 
 /** A recorded finish: [position] counts the finishes still in effect, in order. */
+@Serializable
 data class FinishTime(val eventId: String, val position: Int, val elapsedMs: Long)
 
 /** The timer session that is running, or null when the timer is stopped. */

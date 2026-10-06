@@ -24,6 +24,15 @@ object Bibless {
     /** The finish scanner, signing with the same device key as [timer]. */
     fun scanner(context: Context): ScannerRepository = raceWiring(context).third
 
+    @Volatile
+    private var received: ReceivedSessions? = null
+
+    /** On the phone, the timer sessions its watch sent. */
+    fun receivedSessions(context: Context): ReceivedSessions = received ?: synchronized(this) {
+        received ?: ReceivedSessions(SharedPreferencesStore(context.applicationContext, "bibless.race", durable = true))
+            .also { received = it }
+    }
+
     private fun raceWiring(context: Context) = race ?: synchronized(this) {
         race ?: context.applicationContext.let {
             val device = RaceDevice(SharedPreferencesStore(it, "bibless.race", durable = true), AndroidRaceClock(it))

@@ -15,6 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 
 /**
@@ -29,13 +30,16 @@ fun App(
     device: RaceDevice,
     openRequests: Flow<String> = emptyFlow(),
     shareFiles: ((List<ExportFile>) -> Unit)? = null,
+    /** On the phone, the timer sessions its watch sent; they are shared like the phone's own. */
+    received: ReceivedSessions? = null,
 ) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
         val timerState by timer.state.collectAsStateWithLifecycle()
         val scannerState by scanner.state.collectAsStateWithLifecycle()
         val joinedRun by device.joinedRun.collectAsStateWithLifecycle()
-        val exporter = remember(timer, scanner) { SessionExporter(timer, scanner) }
+        val exporter = remember(timer, scanner, received) { SessionExporter(timer, scanner, received) }
+        val receivedCount by remember(received) { received?.received ?: MutableStateFlow(0) }.collectAsStateWithLifecycle()
         val share = shareFiles ?: rememberShareFiles()
         val deviceName = rememberDeviceName()
         val scope = rememberCoroutineScope()
@@ -86,7 +90,7 @@ fun App(
                 )
             }
             composable("sessions") {
-                val sessions = remember(timerState, scannerState) { exporter.sessions() }
+                val sessions = remember(timerState, scannerState, receivedCount) { exporter.sessions() }
                 SessionsScreen(
                     sessions = sessions,
                     joinedRun = joinedRun,

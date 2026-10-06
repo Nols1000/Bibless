@@ -10,6 +10,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import com.github.nols1000.bibless.barcode.BarcodeFormat
+import com.github.nols1000.bibless.barcode.layout
 import kotlin.math.floor
 
 /**
@@ -17,13 +18,14 @@ import kotlin.math.floor
  */
 @Composable
 fun BarcodeImage(text: String, format: BarcodeFormat, modifier: Modifier = Modifier) {
-    val matrix = remember(text, format) { format.encode(text) }
-    val isLinear = matrix.height == 1
-    val quiet = if (isLinear) 10 else 4
-    val columns = matrix.width + 2 * quiet
-    val rows = if (isLinear) columns * 0.4f else (matrix.height + 2 * quiet).toFloat()
+    val layout = remember(text, format) { format.layout(text) }
+    val matrix = layout.matrix
+    val isLinear = layout.isLinear
+    val quiet = layout.quiet
+    val columns = layout.columns
+    val rows = layout.rows
 
-    Canvas(modifier.aspectRatio(columns / rows).background(Color.White)) {
+    Canvas(modifier.aspectRatio(layout.aspectRatio).background(Color.White)) {
         // Whole-pixel modules keep bar edges crisp, which matters on small watch screens.
         val module = floor(size.width / columns).coerceAtLeast(1f)
         val left = (size.width - module * columns) / 2 + quiet * module

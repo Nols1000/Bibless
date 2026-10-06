@@ -3,6 +3,7 @@ package com.github.nols1000.bibless
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.github.nols1000.bibless.barcode.BarcodeFormat
+import com.github.nols1000.bibless.barcode.layout
 
 /**
  * Draws [text] like [BarcodeImage] does, for surfaces outside Compose such as tiles and widgets:
@@ -10,13 +11,13 @@ import com.github.nols1000.bibless.barcode.BarcodeFormat
  * the bitmap can be at most [maxWidthPx] wide but is usually a little narrower.
  */
 fun barcodeBitmap(text: String, format: BarcodeFormat, maxWidthPx: Int): Bitmap {
-    val matrix = format.encode(text)
-    val isLinear = matrix.height == 1
-    val quiet = if (isLinear) 10 else 4
-    val columns = matrix.width + 2 * quiet
-    val module = (maxWidthPx / columns).coerceAtLeast(1)
-    val width = columns * module
-    val height = if (isLinear) (width * 0.4f).toInt() else (matrix.height + 2 * quiet) * module
+    val layout = format.layout(text)
+    val matrix = layout.matrix
+    val isLinear = layout.isLinear
+    val quiet = layout.quiet
+    val module = (maxWidthPx / layout.columns).coerceAtLeast(1)
+    val width = layout.columns * module
+    val height = (layout.rows * module).toInt()
 
     val pixels = IntArray(width * height) { Color.WHITE }
     for (x in 0 until matrix.width) {

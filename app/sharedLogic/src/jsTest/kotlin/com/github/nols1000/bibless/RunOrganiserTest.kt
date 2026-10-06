@@ -69,4 +69,15 @@ class RunOrganiserTest {
         assertTrue(runCatching { organiser.importLog(run.id, "position,time").await() }.isFailure)
         assertEquals(0, organiser.importLog(run.id, "{}").await())
     }
+
+    @Test
+    fun tokensCarryTheirTextAndBars() {
+        val tokens = RunOrganiser.create().tokens(9, 11)
+
+        assertEquals(listOf("P0009", "P0010", "P0011"), tokens.map { it.text })
+        // Code 128 always starts with a 2-module bar and ends with the stop pattern's 2-module bar
+        assertTrue(tokens[0].path.startsWith("M0 0h2v1h-2z"), tokens[0].path)
+        assertTrue(tokens[0].path.endsWith("M${tokens[0].width - 2} 0h2v1h-2z"), tokens[0].path)
+        assertTrue(runCatching { RunOrganiser.create().tokens(5, 4) }.isFailure)
+    }
 }

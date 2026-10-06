@@ -1,5 +1,6 @@
 package com.github.nols1000.bibless
 
+import com.github.nols1000.bibless.barcode.encodeCode128
 import com.github.nols1000.bibless.barcode.encodeQr
 import com.github.nols1000.bibless.race.AthleteRecord
 import com.github.nols1000.bibless.race.ResultIssue
@@ -17,6 +18,10 @@ class RunInfo(val id: String, val name: String, val date: String?, val format: S
 /** A QR code as one SVG path over a [size] × [size] grid of modules, without the quiet zone. */
 @JsExport
 class QrPath(val size: Int, val path: String)
+
+/** A finish token: its [text] and its Code 128 bars as one SVG path, [width] modules by 1, without the quiet zone. */
+@JsExport
+class TokenCode(val position: Int, val text: String, val width: Int, val path: String)
 
 /** A session in a run's data. [kind] is `"TIMER"`, `"SCANNER"` or null; [run] is the run it joined. */
 @JsExport
@@ -119,6 +124,12 @@ class RunOrganiser internal constructor(private val repository: RunRepository) {
 
     fun resultsCsv(id: String): Promise<String?> = GlobalScope.promise { repository.resultsCsv(id) }
 
+    /** Finish tokens [from] to [to] for printing; throws if the range is outside 1–99999. */
+    fun tokens(from: Int, to: Int): Array<TokenCode> {
+        require(from in 1..MAX_TOKEN && to in from..MAX_TOKEN) { "Tokens run from 1 to $MAX_TOKEN" }
+        return (from..to).map { tokenCode(it) }.toTypedArray()
+    }
+
     companion object {
         /** An organiser whose runs and key are kept in this browser's local storage. */
         @JsStatic
@@ -171,3 +182,21 @@ private fun AthleteRecord.info() = FinisherInfo(eventId, athleteId, name, positi
 
 private fun ResultRow.info() =
     RowInfo(position, elapsedMs?.toDouble(), elapsedMs?.let { formatElapsed(it) }, athleteId, name, timeEventId, athleteEventId)
+
+internal fun tokenCode(position: Int): TokenCode {
+    val text = finishToken(position)
+    val bars = encodeCode128(text)
+    val path = buildString {
+        var x = 0
+        while (x < bars.width) {
+            if (!bars[x, 0]) {
+                x++
+                continue
+            }
+            val start = x
+            while (x < bars.width && bars[x, 0]) x++
+            append("M$start 0h${x - start}v1h-${x - start}z")
+        }
+    }
+    return TokenCode(position, text, bars.width, path)
+}

@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -241,5 +242,16 @@ class ScannerRepositoryTest {
         val reopened = ScannerRepository(device())
         assertEquals(TimingMode.SCAN_ORDER, reopened.state.value.session!!.mode)
         assertEquals(listOf("A111111" to 1), reopened.records())
+    }
+
+    @Test
+    fun printedTokensScanBack() {
+        assertEquals("P0042", finishToken(42))
+        assertEquals("P12345", finishToken(12_345))
+        for (position in listOf(1, 42, 300, 9_999, 10_000, MAX_TOKEN)) {
+            assertEquals(ScannedCode.Token(position), parseScannedCode(finishToken(position)))
+        }
+        assertFailsWith<IllegalArgumentException> { finishToken(0) }
+        assertFailsWith<IllegalArgumentException> { finishToken(MAX_TOKEN + 1) }
     }
 }

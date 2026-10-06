@@ -21,6 +21,15 @@ sealed interface ScannedCode {
 
 private val tokenPattern = Regex("""P0*([1-9][0-9]{0,4})""", RegexOption.IGNORE_CASE)
 
+/** The highest position a finish token can carry. */
+const val MAX_TOKEN = 99_999
+
+/** What finish token [position] reads, zero-padded like parkrun's: `P0042`. */
+fun finishToken(position: Int): String {
+    require(position in 1..MAX_TOKEN) { "Tokens run from 1 to $MAX_TOKEN" }
+    return "P" + position.toString().padStart(4, '0')
+}
+
 /** Finish tokens read `P` and the position, like parkrun's (`P0042`); athlete IDs as in [normalizeAthleteId]. */
 fun parseScannedCode(text: String): ScannedCode {
     val trimmed = text.trim()

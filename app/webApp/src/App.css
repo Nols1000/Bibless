@@ -363,6 +363,64 @@ figcaption {
   gap: 0 16px;
 }
 
+.token-options {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  align-items: end;
+  margin: 16px 0;
+}
+
+.token-options p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.field select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.token-sheet {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  background: #fff;
+  color: #000;
+}
+
+.token-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  aspect-ratio: 63 / 50;
+  box-sizing: border-box;
+  padding: 8px;
+  border: 1px dashed #999;
+  break-inside: avoid;
+  min-width: 0;
+}
+
+.token-number {
+  font-size: clamp(1.5rem, 8vw, 3rem);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.token-bars {
+  width: 90%;
+  height: 22%;
+}
+
+.token-text {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
 @media print {
   :root {
     --bg: #ffffff;
@@ -393,5 +451,22 @@ figcaption {
 
   figcaption {
     max-width: 8cm;
+  }
+
+  .token-card {
+    aspect-ratio: auto;
+    height: 50mm;
+  }
+
+  .token-number {
+    font-size: 18mm;
+  }
+
+  .token-bars {
+    height: 12mm;
+  }
+
+  .token-text {
+    font-size: 9pt;
   }
 }

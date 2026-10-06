@@ -5,6 +5,7 @@ import { RunForm } from './runs/RunForm.tsx';
 import { RunList } from './runs/RunList.tsx';
 import { ResultsPage } from './runs/ResultsPage.tsx';
 import { RunPage } from './runs/RunPage.tsx';
+import { TokensPage } from './runs/TokensPage.tsx';
 import { useHashRoute } from './useHashRoute.ts';
 
 export function App({ organiser }: { organiser: Organiser }) {
@@ -20,6 +21,7 @@ export function App({ organiser }: { organiser: Organiser }) {
         {route.page === 'new' && <RunForm organiser={organiser} />}
         {route.page === 'run' && <RunPage key={route.id} organiser={organiser} id={route.id} />}
         {route.page === 'results' && <ResultsPage key={route.id} organiser={organiser} id={route.id} />}
+        {route.page === 'tokens' && <TokensPage key={route.id} organiser={organiser} id={route.id} />}
       </main>
     </div>
   );

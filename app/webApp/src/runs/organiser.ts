@@ -14,6 +14,14 @@ export interface Qr {
   readonly path: string;
 }
 
+/** A finish token: its text (`P0042`) and Code 128 bars as one SVG path, width modules by 1. */
+export interface Token {
+  readonly position: number;
+  readonly text: string;
+  readonly width: number;
+  readonly path: string;
+}
+
 /** A timer or scanner session imported into a run. `run` is the run its volunteer joined. */
 export interface Session {
   readonly id: string;
@@ -97,6 +105,8 @@ export interface Organiser {
   ): Promise<void>;
   removeFinisher(id: string, athleteEventId: string): Promise<void>;
   resultsCsv(id: string): Promise<string | null | undefined>;
+  /** Finish tokens from–to; throws outside 1–99999. */
+  tokens(from: number, to: number): Array<Token>;
 }
 
 export const modeNames: Record<TimingMode, string> = {

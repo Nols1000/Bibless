@@ -45,6 +45,9 @@ export function RunPage({ organiser, id }: { organiser: Organiser; id: string })
         <div className="row">
           <button type="button" className="button danger" onClick={remove}>Delete run</button>
           <button type="button" className="button" onClick={() => window.print()}>Print run sheet</button>
+          {run.format === 'TOKENS' && (
+            <a href={`#/runs/${encodeURIComponent(id)}/tokens`} className="button">Print tokens</a>
+          )}
           <a href={`#/runs/${encodeURIComponent(id)}/results`} className="button primary">Results</a>
         </div>
       </div>

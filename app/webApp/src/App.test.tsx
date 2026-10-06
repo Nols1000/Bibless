@@ -137,6 +137,7 @@ describe('routes', () => {
     expect(parseRoute('#/new')).toEqual({ page: 'new' });
     expect(parseRoute('#/runs/a%20b')).toEqual({ page: 'run', id: 'a b' });
     expect(parseRoute('#/runs/a%20b/results')).toEqual({ page: 'results', id: 'a b' });
+    expect(parseRoute('#/runs/a/tokens')).toEqual({ page: 'tokens', id: 'a' });
     expect(parseRoute('#/unknown')).toEqual({ page: 'runs' });
   });
 });

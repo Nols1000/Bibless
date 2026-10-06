@@ -1,4 +1,4 @@
-import type { Organiser, Qr, Review, Run, TimingMode } from '../runs/organiser.ts';
+import type { Organiser, Qr, Review, Run, TimingMode, Token } from '../runs/organiser.ts';
 
 /** An in-memory organiser, so screens can be tested without the Kotlin library. */
 export class FakeOrganiser implements Organiser {
@@ -61,6 +61,13 @@ export class FakeOrganiser implements Organiser {
 
   async resultsCsv(id: string) {
     return this.reviews[id] ? this.csv : null;
+  }
+
+  tokens(from: number, to: number): Token[] {
+    return Array.from({ length: to - from + 1 }, (_, i) => {
+      const position = from + i;
+      return { position, text: `P${String(position).padStart(4, '0')}`, width: 4, path: 'M0 0h2v1h-2z' };
+    });
   }
 
   private async record(method: string, ...args: unknown[]) {

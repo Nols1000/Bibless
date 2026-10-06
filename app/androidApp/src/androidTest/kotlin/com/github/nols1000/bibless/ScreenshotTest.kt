@@ -32,6 +32,7 @@ class ScreenshotTest {
         check(Build.HARDWARE == "ranchu") { "Screenshot tests only run on an emulator (they replace saved barcodes)" }
         Screengrab.setDefaultScreenshotStrategy(UiAutomatorScreenshotStrategy())
         DemoData.load(repository)
+        dismissSystemDialogs()
     }
 
     /**
@@ -42,7 +43,9 @@ class ScreenshotTest {
     fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
             // A cold emulator can take a while to render the first frame
-            val me = checkNotNull(device.wait(Until.findObject(By.text("Me")), TIMEOUT)) { "Demo barcode list did not appear" }
+            val me = checkNotNull(device.wait(Until.findObject(By.text("Me")), FIRST_FRAME_TIMEOUT)) {
+                "Demo barcode list did not appear; the screen shows ${shownTexts()}"
+            }
             capture("list")
 
             me.click()
@@ -64,6 +67,20 @@ class ScreenshotTest {
         device.executeShellCommand("cmd uimode night yes")
         captureOnLaunch("barcode-dark")
     }
+
+    /**
+     * Answers the "isn't responding" dialog that the system UI or launcher can raise on a freshly
+     * booted CI emulator, and closes any other system dialog, so none covers the app.
+     */
+    private fun dismissSystemDialogs() {
+        device.findObject(By.text("Wait"))?.takeIf { device.hasObject(By.textContains("isn't responding")) }?.click()
+        device.executeShellCommand("am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS")
+        device.waitForIdle()
+    }
+
+    /** The texts on screen, for failure messages: the fastlane log shows those but no logcat. */
+    private fun shownTexts(): List<String> =
+        device.findObjects(By.textContains("")).mapNotNull { it.text?.takeIf(String::isNotBlank) }
 
     /**
      * Captures the screen as [name]. The emulator can still hand out the previous frame right after
@@ -92,6 +109,8 @@ class ScreenshotTest {
 
     companion object {
         private const val TIMEOUT = 30_000L
+        /** A freshly booted emulator keeps busy for minutes; later screens come quickly. */
+        private const val FIRST_FRAME_TIMEOUT = 90_000L
         private const val SETTLE_MILLIS = 1_000L
 
         @get:ClassRule

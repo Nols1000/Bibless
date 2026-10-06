@@ -75,10 +75,13 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-v2-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.profile }}-${{ matrix.disk-size }}
+          key: avd-v3-${{ matrix.api-level }}-${{ matrix.target }}-${{ matrix.profile }}-${{ matrix.disk-size }}
       - name: Create the emulator snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
+        env:
+          # The emulator saves its snapshot as it quits, which can take longer than the default 20 s
+          ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL: 120
         with:
           api-level: ${{ matrix.api-level }}
           target: ${{ matrix.target }}
@@ -89,8 +92,21 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Created the emulator snapshot"
-      - name: Save the emulator
+      # The step above returns while the emulator is still writing the snapshot; caching then
+      # would keep an emulator that cold-boots every time. Without a snapshot, save nothing and
+      # let the next run try again.
+      - name: Wait for the snapshot
+        id: snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
+        run: |
+          timeout 150 sh -c 'while pgrep -f qemu-system > /dev/null; do sleep 1; done' || echo "::warning::The emulator was still running"
+          if [ -f ~/.android/avd/test.avd/snapshots/default_boot/snapshot.pb ]; then
+            echo "saved=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No emulator snapshot was saved, so the emulator isn't cached"
+          fi
+      - name: Save the emulator
+        if: steps.snapshot.outputs.saved == 'true'
         uses: actions/cache/save@v6
         with:
           path: |

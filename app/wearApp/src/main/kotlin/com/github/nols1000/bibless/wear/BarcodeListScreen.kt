@@ -6,9 +6,12 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +34,7 @@ import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.github.nols1000.bibless.Barcode
+import kotlinx.coroutines.delay
 
 @Composable
 fun BarcodeListScreen(
@@ -43,6 +47,25 @@ fun BarcodeListScreen(
 ) {
     // Dragging is fiddly on a watch, so a long press offers to move a barcode to the top instead.
     var moving by remember { mutableStateOf<Barcode?>(null) }
+
+    // A deleted barcode keeps its row, with an undo button, for a moment before it's gone for good
+    // on both devices. Deleting another one or leaving the list ends that moment early.
+    var pendingDelete by remember { mutableStateOf<Barcode?>(null) }
+    val currentOnDelete by rememberUpdatedState(onDelete)
+    val delete = { barcode: Barcode ->
+        pendingDelete?.takeIf { it.id != barcode.id }?.let(currentOnDelete)
+        pendingDelete = barcode
+    }
+    LaunchedEffect(pendingDelete) {
+        val barcode = pendingDelete ?: return@LaunchedEffect
+        delay(UNDO_MILLIS)
+        pendingDelete = null
+        currentOnDelete(barcode)
+    }
+    DisposableEffect(Unit) {
+        onDispose { pendingDelete?.let(currentOnDelete) }
+    }
+
     val listState = rememberTransformingLazyColumnState()
     // Items shrink and morph at the top and bottom edges, so the rows fit the round screen.
     val transformationSpec = rememberTransformationSpec()
@@ -68,12 +91,18 @@ fun BarcodeListScreen(
                 SwipeToReveal(
                     primaryAction = {
                         PrimaryActionButton(
-                            onClick = { onDelete(barcode) },
+                            onClick = { delete(barcode) },
                             icon = { Icon(Icons.Filled.Delete, contentDescription = null) },
                             text = { Text("Delete") },
                         )
                     },
-                    onSwipePrimaryAction = { onDelete(barcode) },
+                    onSwipePrimaryAction = { delete(barcode) },
+                    undoPrimaryAction = {
+                        UndoActionButton(
+                            onClick = { pendingDelete = null },
+                            text = { Text("Undo") },
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
                 ) {
                     Button(
@@ -131,6 +160,9 @@ fun BarcodeListScreen(
         },
     )
 }
+
+/** How long the undo button stays after a delete. */
+internal const val UNDO_MILLIS = 5_000L
 
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable

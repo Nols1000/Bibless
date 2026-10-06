@@ -7,20 +7,15 @@ This is a Kotlin Multiplatform project targeting Android, Wear OS, iOS, watchOS,
   iOS Xcode project, is embedded in the iOS app as its companion, and uses the `SharedLogic` framework.
 
 * [/app/wearApp](./app/wearApp/src/main/kotlin) contains a Wear OS application built with Compose for Wear OS.
-  It shares the phone app's `applicationId` and depends on [sharedLogic](./app/sharedLogic).
+  It shares the phone app's `applicationId` and depends on [sharedUI](./app/sharedUI) and [sharedLogic](./app/sharedLogic).
 
 * [/app/sharedLogic](./app/sharedLogic/src) is for the code that will be shared between app targets in the project.
   The most important subfolder is [commonMain](./app/sharedLogic/src/commonMain/kotlin). If preferred, you
   can add code to the platform-specific folders here too.
 
-* [/app/sharedUI](./app/sharedUI/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./app/sharedUI/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./app/sharedUI/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./app/sharedUI/src/jvmMain/kotlin)
-    folder is the appropriate location.
+* [/app/sharedUI](./app/sharedUI/src) holds the Compose code the phone and watch apps share: the barcode
+  image and bitmap, full screen brightness and opening the start barcode. It has no Material dependency; each
+  app brings its own components (Material 3 on the phone, Wear Material 3 on the watch).
 
 * [/app/webApp](./app/webApp) contains a React web application. It uses the Kotlin/JS library produced
   by the [sharedLogic](./app/sharedLogic) module.

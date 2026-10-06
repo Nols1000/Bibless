@@ -16,6 +16,10 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.glance.appwidget)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.materialIconsCore)
+    implementation(libs.androidx.lifecycle.runtimeCompose)
+    implementation(libs.navigation.compose)
 
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)

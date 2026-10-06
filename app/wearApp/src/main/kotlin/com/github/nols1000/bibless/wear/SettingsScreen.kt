@@ -12,7 +12,10 @@ import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import com.github.nols1000.bibless.LaunchScreen
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.nols1000.bibless.label
@@ -29,17 +32,22 @@ fun SettingsScreen(
     onOpenOnLaunchChange: (LaunchScreen) -> Unit,
 ) {
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
     ScreenScaffold(scrollState = listState) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             // First, since skipping the list is what matters most on the wrist
             item {
-                ListHeader { Text("Open on launch") }
+                ListHeader(
+                    modifier = Modifier.transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) { Text("Open on launch") }
             }
             items(LaunchScreen.entries) { screen ->
                 RadioButton(
                     selected = screen == openOnLaunch,
                     onSelect = { onOpenOnLaunchChange(screen) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     label = { Text(screen.label) },
                 )
             }
@@ -52,13 +60,17 @@ fun SettingsScreen(
                 )
             }
             item {
-                ListHeader { Text("Default format") }
+                ListHeader(
+                    modifier = Modifier.transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) { Text("Default format") }
             }
             items(BarcodeFormat.entries) { option ->
                 RadioButton(
                     selected = option == format,
                     onSelect = { onFormatChange(option) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    transformation = SurfaceTransformation(transformationSpec),
                     label = { Text(option.label) },
                 )
             }

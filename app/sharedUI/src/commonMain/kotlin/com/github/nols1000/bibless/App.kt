@@ -16,13 +16,19 @@ import kotlinx.coroutines.flow.emptyFlow
 
 /**
  * The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode].
- * While [timer] runs, the app starts on it.
+ * While [timer] or [scanner] runs, the app starts on it.
  */
 @Composable
-fun App(repository: BarcodeRepository, timer: TimerRepository, openRequests: Flow<String> = emptyFlow()) {
+fun App(
+    repository: BarcodeRepository,
+    timer: TimerRepository,
+    scanner: ScannerRepository,
+    openRequests: Flow<String> = emptyFlow(),
+) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
         val timerState by timer.state.collectAsStateWithLifecycle()
+        val scannerState by scanner.state.collectAsStateWithLifecycle()
         val navController = rememberNavController()
 
         NavHost(navController, startDestination = "list") {
@@ -35,6 +41,7 @@ fun App(repository: BarcodeRepository, timer: TimerRepository, openRequests: Flo
                     onReorder = { order -> repository.setOrder(order.map { it.id }) },
                     onSettings = { navController.navigate("settings") },
                     onTimer = { navController.navigate("timer") },
+                    onScanner = { navController.navigate("scanner") },
                 )
             }
             composable("timer") {
@@ -45,6 +52,17 @@ fun App(repository: BarcodeRepository, timer: TimerRepository, openRequests: Flo
                     onFinish = { timer.tap() },
                     onUndo = timer::undo,
                     onStop = timer::stop,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("scanner") {
+                ScannerScreen(
+                    session = scannerState.session,
+                    onStart = scanner::start,
+                    onScan = scanner::scan,
+                    onEnter = scanner::enter,
+                    onUndo = scanner::undo,
+                    onStop = scanner::stop,
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -66,7 +84,11 @@ fun App(repository: BarcodeRepository, timer: TimerRepository, openRequests: Flo
                 )
             }
         }
-        OpenStartBarcode(navController, repository, openRequests, startRoute = "timer".takeIf { timerState.session != null })
+        OpenStartBarcode(navController, repository, openRequests, startRoute = when {
+            timerState.session != null -> "timer"
+            scannerState.session != null -> "scanner"
+            else -> null
+        })
     }
 }
 

@@ -16,5 +16,7 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>The finish scanner reads runners' barcodes and finish tokens with the camera.</string>
 </dict>
 </plist>

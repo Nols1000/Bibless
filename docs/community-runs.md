@@ -59,6 +59,8 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    timer then carries on from the wall clock.
 8. **Athlete IDs:** scanners accept parkrun `A…` IDs from day one; Bibless IDs (#31) get a distinct
    prefix.
+9. **Finish tokens** read `P` and the position, like parkrun's (`P0042`), as Code 128 or QR. The
+   scanner pairs one with an athlete barcode in either order; codes that won't scan can be typed.
 
 ### Threat model
 

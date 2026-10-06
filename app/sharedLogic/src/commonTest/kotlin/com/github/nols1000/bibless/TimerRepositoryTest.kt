@@ -27,7 +27,7 @@ class TimerRepositoryTest {
     private val store = InMemoryStore()
     private val clock = FakeClock()
 
-    private fun TestScope.timer() = TimerRepository(store, clock, backgroundScope)
+    private fun TestScope.timer() = TimerRepository(RaceDevice(store, clock, backgroundScope))
 
     @Test
     fun tapsRecordPositionsWithElapsedTime() = runTest {
@@ -123,7 +123,7 @@ class TimerRepositoryTest {
     @Test
     fun unsignedTapsAreSignedOnTheNextLaunch() = runTest {
         // The app dies before signing: the taps are only in the session record
-        val killed = TimerRepository(store, clock, TestScope())
+        val killed = TimerRepository(RaceDevice(store, clock, TestScope()))
         killed.start()
         clock.advance(1_000)
         killed.tap()

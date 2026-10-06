@@ -5,6 +5,7 @@ android-minSdk = "24"
 android-wear-minSdk = "30"
 android-targetSdk = "37"
 androidx-activity = "1.13.0"
+androidx-camera = "1.6.2"
 androidx-appcompat = "1.8.0"
 androidx-core = "1.19.0"
 androidx-espresso = "3.7.0"
@@ -34,8 +35,15 @@ logback = "1.6.3"
 material3 = "1.12.0-alpha03"
 wear-compose = "1.7.0"
 wear-toolingPreview = "1.0.0"
+mlkit-barcodeScanning = "17.3.0"
 
 [libraries]
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "androidx-camera" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidx-camera" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "androidx-camera" }
+androidx-camera-mlkitVision = { module = "androidx.camera:camera-mlkit-vision", version.ref = "androidx-camera" }
+# Bundled model: scans offline and without Google Play services
+mlkit-barcodeScanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "mlkit-barcodeScanning" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-testJunit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { module = "junit:junit", version.ref = "junit" }

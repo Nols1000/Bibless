@@ -31,10 +31,11 @@ class TimerTest {
         override fun monotonicMillis() = now
         override fun bootId() = "boot"
     }
-    private val timer = TimerRepository(InMemoryStore(), clock, CoroutineScope(Dispatchers.Default))
+    private val device = RaceDevice(InMemoryStore(), clock, CoroutineScope(Dispatchers.Default))
+    private val timer = TimerRepository(device)
 
     private fun showApp() = compose.setContent {
-        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer)
+        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer, ScannerRepository(device))
     }
 
     @Test

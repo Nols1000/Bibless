@@ -9,12 +9,8 @@ final class TimerStore: ObservableObject {
     private let repository: TimerRepository
     private var observation: KotlinAutoCloseable?
 
-    init() {
-        // Store screenshots and UI tests start without a saved session
-        let store: KeyValueStore = ProcessInfo.processInfo.arguments.contains(DemoData.shared.LAUNCH_ARGUMENT)
-            ? InMemoryStore()
-            : UserDefaultsStore()
-        repository = TimerRepository(store: store, clock: AppleRaceClock())
+    init(device: RaceDevice) {
+        repository = TimerRepository(device: device)
         observation = repository.observe { [weak self] state in
             if Thread.isMainThread {
                 MainActor.assumeIsolated { self?.session = state.session }
@@ -43,6 +39,16 @@ final class TimerStore: ObservableObject {
     func undo() { repository.undo() }
 
     func stop() { repository.stop() }
+}
+
+/// What the timer and scanner record with; they share it so they sign with the same key.
+@MainActor
+func makeRaceDevice() -> RaceDevice {
+    // Store screenshots and UI tests start without saved sessions
+    let store: KeyValueStore = ProcessInfo.processInfo.arguments.contains(DemoData.shared.LAUNCH_ARGUMENT)
+        ? InMemoryStore()
+        : UserDefaultsStore()
+    return RaceDevice(store: store, clock: AppleRaceClock())
 }
 
 /// Elapsed time the way results show it: `m:ss`, or `h:mm:ss` from an hour on.

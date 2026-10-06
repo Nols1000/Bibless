@@ -28,6 +28,7 @@ dependencies {
     androidTestImplementation(libs.androidx.uiautomator)
     androidTestImplementation(libs.glance.appwidget.testing)
     androidTestImplementation(libs.compose.uiTest.junit4)
+    androidTestImplementation(libs.compose.foundation)
     // Compose UI tests bring Espresso 3.5, which can't inject input on current Android versions
     androidTestImplementation(libs.androidx.espresso.core)
     debugImplementation(libs.compose.uiTest.manifest)

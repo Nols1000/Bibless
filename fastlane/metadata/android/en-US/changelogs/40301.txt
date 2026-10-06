@@ -1,0 +1,5 @@
+• Follows your watch's system colors
+• Names curve along the edge of round screens
+• Lists shrink smoothly into the edge of the screen
+• Undo after swiping a barcode away
+• Much smaller download

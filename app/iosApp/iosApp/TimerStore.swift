@@ -6,7 +6,7 @@ import SharedLogic
 final class TimerStore: ObservableObject {
     @Published private(set) var session: TimerSession?
 
-    private let repository: TimerRepository
+    let repository: TimerRepository
     private var observation: KotlinAutoCloseable?
 
     init(device: RaceDevice) {

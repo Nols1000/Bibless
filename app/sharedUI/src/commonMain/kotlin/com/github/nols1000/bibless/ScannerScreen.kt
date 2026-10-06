@@ -71,6 +71,7 @@ fun ScannerScreen(
     joinedRun: RunHint?,
     onJoin: () -> Unit,
     onLeave: () -> Unit,
+    onSessions: () -> Unit,
     onStart: (TimingMode) -> Unit,
     onScan: (String) -> ScanOutcome,
     onEnter: (String) -> ScanOutcome,
@@ -117,6 +118,7 @@ fun ScannerScreen(
                     Text("Start", fontSize = 40.sp)
                 }
                 Spacer(Modifier.weight(1f))
+                TextButton(onClick = onSessions) { Text("Recorded sessions") }
             } else {
                 runLine(session.run, joinedRun)?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
                 Scanning(session, onScan, onEnter, onUnknown, onUndo, camera)

@@ -7,6 +7,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -25,12 +28,17 @@ fun App(
     scanner: ScannerRepository,
     device: RaceDevice,
     openRequests: Flow<String> = emptyFlow(),
+    shareFiles: ((List<ExportFile>) -> Unit)? = null,
 ) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
         val timerState by timer.state.collectAsStateWithLifecycle()
         val scannerState by scanner.state.collectAsStateWithLifecycle()
         val joinedRun by device.joinedRun.collectAsStateWithLifecycle()
+        val exporter = remember(timer, scanner) { SessionExporter(timer, scanner) }
+        val share = shareFiles ?: rememberShareFiles()
+        val deviceName = rememberDeviceName()
+        val scope = rememberCoroutineScope()
         val navController = rememberNavController()
 
         NavHost(navController, startDestination = "list") {
@@ -52,6 +60,7 @@ fun App(
                     joinedRun = joinedRun,
                     onJoin = { navController.navigate("join") },
                     onLeave = device::leave,
+                    onSessions = { navController.navigate("sessions") },
                     elapsedMs = timer::elapsedMs,
                     onStart = timer::start,
                     onFinish = { timer.tap() },
@@ -66,12 +75,26 @@ fun App(
                     joinedRun = joinedRun,
                     onJoin = { navController.navigate("join") },
                     onLeave = device::leave,
+                    onSessions = { navController.navigate("sessions") },
                     onStart = scanner::start,
                     onScan = scanner::scan,
                     onEnter = scanner::enter,
                     onUnknown = scanner::addUnknown,
                     onUndo = scanner::undo,
                     onStop = scanner::stop,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("sessions") {
+                val sessions = remember(timerState, scannerState) { exporter.sessions() }
+                SessionsScreen(
+                    sessions = sessions,
+                    joinedRun = joinedRun,
+                    onShare = { session ->
+                        scope.launch {
+                            exporter.export(session.kind, session.id, deviceName, utcOffsetMinutes(session.startedAt))?.let(share)
+                        }
+                    },
                     onBack = { navController.popBackStack() },
                 )
             }

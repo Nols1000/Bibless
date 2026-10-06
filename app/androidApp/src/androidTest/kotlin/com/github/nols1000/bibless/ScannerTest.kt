@@ -53,6 +53,7 @@ class ScannerTest {
             joinedRun = null,
             onJoin = {},
             onLeave = {},
+            onSessions = {},
             onStart = scanner::start,
             onScan = scanner::scan,
             onEnter = scanner::enter,
@@ -209,7 +210,7 @@ class ScannerTest {
             val state by scanner.state.collectAsState()
             val joined by device.joinedRun.collectAsState()
             ScannerScreen(
-                session = state.session, joinedRun = joined, onJoin = {}, onLeave = {},
+                session = state.session, joinedRun = joined, onJoin = {}, onLeave = {}, onSessions = {},
                 onStart = scanner::start, onScan = scanner::scan, onEnter = scanner::enter,
                 onUnknown = scanner::addUnknown, onUndo = scanner::undo, onStop = scanner::stop, onBack = {},
                 camera = { _, modifier -> Box(modifier) },

@@ -10,7 +10,7 @@ final class ScannerStore: ObservableObject {
     /// What the last scan did, shown under the camera.
     @Published private(set) var message: ScanMessage?
 
-    private let repository: ScannerRepository
+    let repository: ScannerRepository
     private var observation: KotlinAutoCloseable?
 
     init(device: RaceDevice) {

@@ -15,12 +15,18 @@ data class RunLog(
     val events: List<SignedEvent> = emptyList(),
     val certificates: List<SignedCertificate> = emptyList(),
     val results: List<SignedRunResult> = emptyList(),
+    /**
+     * The device a volunteer exported this from, so organisers can tell files apart. It isn't
+     * signed and says nothing about who recorded what; the events' authors do.
+     */
+    val source: String? = null,
 ) {
     fun merge(other: RunLog) = RunLog(
         version = maxOf(version, other.version),
         events = (events + other.events).distinctBy { it.json }.sortedBy { it.json },
         certificates = (certificates + other.certificates).distinctBy { it.json }.sortedBy { it.json },
         results = (results + other.results).distinctBy { it.json }.sortedBy { it.json },
+        source = source.takeIf { it == other.source },
     )
 
     fun toJson(): String = raceJson.encodeToString(serializer(), this)

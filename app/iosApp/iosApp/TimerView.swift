@@ -9,6 +9,7 @@ struct TimerView: View {
     @EnvironmentObject private var timer: TimerStore
     @Environment(\.dismiss) private var dismiss
     @State private var isConfirmingStop = false
+    @State private var isShowingSessions = false
 
     var body: some View {
         NavigationStack {
@@ -58,7 +59,9 @@ struct TimerView: View {
             }
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 24))
+            Button("Recorded Sessions") { isShowingSessions = true }
         }
+        .sheet(isPresented: $isShowingSessions) { SessionsView() }
     }
 
     private var running: some View {

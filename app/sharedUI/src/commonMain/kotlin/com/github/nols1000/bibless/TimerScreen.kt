@@ -62,6 +62,7 @@ fun TimerScreen(
     joinedRun: RunHint?,
     onJoin: () -> Unit,
     onLeave: () -> Unit,
+    onSessions: () -> Unit,
     elapsedMs: () -> Long?,
     onStart: () -> Unit,
     onFinish: () -> Unit,
@@ -94,6 +95,7 @@ fun TimerScreen(
             if (session == null) {
                 JoinedRunCard(joinedRun, onJoin, onLeave)
                 NotStarted(onStart)
+                TextButton(onClick = onSessions) { Text("Recorded sessions") }
             } else {
                 runLine(session.run, joinedRun)?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
                 Running(session, elapsedMs, onFinish, onUndo)

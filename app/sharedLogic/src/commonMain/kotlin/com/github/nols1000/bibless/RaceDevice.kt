@@ -158,6 +158,10 @@ internal class SessionLog(private val device: RaceDevice, private val kind: Stri
         onChange()
     }
 
+    /** Session [id] as stored, running or not. */
+    fun record(id: String): SessionRecord? =
+        store.get(sessionKey(id))?.let { runCatching { json.decodeFromString<SessionRecord>(it) }.getOrNull() }
+
     fun sessionIds(): List<String> =
         store.get("$kind.sessions")?.let { runCatching { json.decodeFromString<List<String>>(it) }.getOrNull() }.orEmpty()
 

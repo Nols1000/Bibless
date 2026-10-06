@@ -196,6 +196,21 @@ class ScannerRepository(private val device: RaceDevice) {
 
     suspend fun log(id: String): RunLog? = sessions.log(id)
 
+    /** Every scanner session on this device, for export. */
+    fun recordedSessions(): List<RecordedSession> = sessionIds().mapNotNull { id ->
+        sessions.record(id)?.let { record ->
+            val mode = record.mode ?: TimingMode.TOKENS
+            RecordedSession(SessionKind.SCANNER, id, record.startedAt, record.run, records(record).size, sessions.current?.id == id, mode)
+        }
+    }
+
+    /** The finishers of session [id] with the time each was recorded, running or not. */
+    fun recordedFinishers(id: String): List<Pair<ScanRecord, Long>>? {
+        val record = sessions.record(id) ?: return null
+        val times = record.events.associate { it.id to it.timestamp }
+        return records(record).map { it to times.getValue(it.eventId) }
+    }
+
     fun observe(listener: (ScannerState) -> Unit): AutoCloseable {
         listeners.update { it + listener }
         listener(_state.value)
@@ -232,15 +247,19 @@ class ScannerRepository(private val device: RaceDevice) {
 
     private fun currentSession(): ScannerSession? {
         val record = sessions.current ?: return null
+        val mode = record.mode ?: TimingMode.TOKENS
+        return ScannerSession(record.id, record.startedAt, records(record), pendingAthleteId, pendingPosition, record.run, mode)
+    }
+
+    private fun records(record: SessionRecord): List<ScanRecord> {
         val removed = record.events.filterIsInstance<RemoveAthleteEvent>().map { it.recordAthleteEventId }.toSet()
         val mode = record.mode ?: TimingMode.TOKENS
-        val records = record.events.filterIsInstance<RecordAthleteEvent>()
+        return record.events.filterIsInstance<RecordAthleteEvent>()
             .filter { it.id !in removed }
             .mapIndexed { index, event ->
                 val position = if (mode == TimingMode.SCAN_ORDER) index + 1 else event.position
                 ScanRecord(event.id, event.athleteId, position, event.name)
             }
-        return ScannerSession(record.id, record.startedAt, records, pendingAthleteId, pendingPosition, record.run, mode)
     }
 
     private companion object {

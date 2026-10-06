@@ -52,8 +52,9 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    (`RunHint`: run ID, organiser key, name, timing mode, date); volunteers scan it from the timer
    or scanner to join, and their sessions' `StartEvent`s name the run. That is only a claim; the
    organiser's certificate decides. Without the code, volunteers record without a run and the
-   organiser adds their sessions when combining results. Data comes back as a `RunLog` file
-   (lossless) or CSV (for people). Once there is a server, invite links (#34) carry the same hint
+   organiser adds their sessions when combining results. Data comes back per session, shared from
+   "Recorded sessions": a `RunLog` JSON file of its signed events (lossless; `source` names the
+   device) and a CSV for people. Once there is a server, invite links (#34) carry the same hint
    and uploads (#28) send the same signed events.
 7. **On device:** a repository in `sharedLogic`, built like `BarcodeRepository`, signs and persists
    every event immediately. Finish times are the session start plus elapsed time from a monotonic

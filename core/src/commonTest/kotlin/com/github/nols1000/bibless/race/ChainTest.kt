@@ -114,4 +114,12 @@ class ChainTest {
         // Version 11 is 61 modules wide: 1.3 mm per module on an 8 cm print
         assertTrue(encodeQr(hint.toJson()).width <= 61, "QR code is ${encodeQr(hint.toJson()).width} modules wide")
     }
+
+    @Test
+    fun mergingKeepsTheSourceOnlyIfBothAgree() {
+        val pixel = RunLog(source = "Pixel 10")
+        assertEquals("Pixel 10", pixel.merge(pixel).source)
+        assertEquals(null, pixel.merge(RunLog(source = "iPhone")).source)
+        assertEquals("Pixel 10", RunLog.fromJson(pixel.toJson()).source)
+    }
 }

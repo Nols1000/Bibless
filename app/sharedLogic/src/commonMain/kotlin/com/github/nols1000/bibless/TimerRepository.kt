@@ -64,6 +64,16 @@ class TimerRepository(device: RaceDevice) {
     /** The signed events of session [id], for export. Events not signed yet are signed first. */
     suspend fun log(id: String): RunLog? = sessions.log(id)
 
+    /** Every timer session on this device, for export. */
+    fun recordedSessions(): List<RecordedSession> = sessionIds().mapNotNull { id ->
+        sessions.record(id)?.let { record ->
+            RecordedSession(SessionKind.TIMER, id, record.startedAt, record.run, record.session().times.size, sessions.current?.id == id)
+        }
+    }
+
+    /** The finish times of session [id], running or not. */
+    fun recordedTimes(id: String): List<FinishTime>? = sessions.record(id)?.session()?.times
+
     fun observe(listener: (TimerState) -> Unit): AutoCloseable {
         listeners.update { it + listener }
         listener(_state.value)

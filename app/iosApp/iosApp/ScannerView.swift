@@ -13,6 +13,7 @@ struct ScannerView: View {
     @State private var isTyping = false
     @State private var typedCode = ""
     @State private var isAddingUnknown = false
+    @State private var isShowingSessions = false
     @State private var unknownName = ""
     @State private var chosenMode: TimingMode = .tokens
     @EnvironmentObject private var runs: RunStore
@@ -102,7 +103,9 @@ struct ScannerView: View {
             .buttonStyle(.borderedProminent)
             .buttonBorderShape(.roundedRectangle(radius: 24))
             Spacer()
+            Button("Recorded Sessions") { isShowingSessions = true }
         }
+        .sheet(isPresented: $isShowingSessions) { SessionsView() }
     }
 
     private func scanning(_ session: ScannerSession) -> some View {

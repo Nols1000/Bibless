@@ -19,20 +19,23 @@ import kotlinx.coroutines.flow.emptyFlow
  * Each ID from [openRequests] (a tile, widget or shortcut tapped while the app runs) opens that
  * barcode on top of the list, closing whatever was open. To start on one, set
  * [BarcodeRepository.shownBarcodeId] before the first composition instead.
+ *
+ * A [startRoute] opens instead of the start barcode, e.g. the timer while it runs.
  */
 @Composable
 fun OpenStartBarcode(
     navController: NavHostController,
     repository: BarcodeRepository,
     openRequests: Flow<String> = emptyFlow(),
+    startRoute: String? = null,
 ) {
     // Saved across configuration changes, where the restored back stack is already right.
     var started by rememberSaveable { mutableStateOf(false) }
     if (!started) {
         // Read before the effect below records the list as the open screen.
-        val startId = repository.startBarcodeId()
+        val start = startRoute ?: repository.startBarcodeId()?.let { "detail/$it" }
         LaunchedEffect(Unit) {
-            startId?.let { navController.navigate("detail/$it") }
+            start?.let { navController.navigate(it) }
             started = true
         }
     }

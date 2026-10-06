@@ -14,6 +14,7 @@ kotlin {
         watchosDeviceArm64(),
         watchosSimulatorArm64()
     ).forEach { appleTarget ->
+        appleTarget.compilations.getByName("main").cinterops.create("sysctl")
         appleTarget.binaries.framework {
             baseName = "SharedLogic"
             isStatic = true

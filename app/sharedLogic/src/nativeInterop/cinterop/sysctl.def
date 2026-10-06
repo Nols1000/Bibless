@@ -1,0 +1,10 @@
+# The boot session ID from sysctl, which the iOS and watchOS platform libraries leave out.
+package = com.github.nols1000.bibless.sysctl
+---
+#include <sys/sysctl.h>
+
+/** Writes the UUID of the current boot session into buffer; returns 0 on success. */
+static inline int bibless_boot_session_uuid(char *buffer, int capacity) {
+    size_t size = (size_t) capacity;
+    return sysctlbyname("kern.bootsessionuuid", buffer, &size, NULL, 0);
+}

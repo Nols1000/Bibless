@@ -54,7 +54,9 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
    (#34) carry the same hint and uploads (#28) send the same signed events.
 7. **On device:** a repository in `sharedLogic`, built like `BarcodeRepository`, signs and persists
    every event immediately. Finish times are the session start plus elapsed time from a monotonic
-   clock, so changing the device clock mid-run can't move them.
+   clock, so changing the device clock mid-run can't move them. The monotonic clock starts over
+   when the phone restarts (told apart by Android's boot count and Apple's boot session UUID); the
+   timer then carries on from the wall clock.
 8. **Athlete IDs:** scanners accept parkrun `A…` IDs from day one; Bibless IDs (#31) get a distinct
    prefix.
 

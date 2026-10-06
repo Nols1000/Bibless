@@ -14,11 +14,15 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
-/** The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
+/**
+ * The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode].
+ * While [timer] runs, the app starts on it.
+ */
 @Composable
-fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
+fun App(repository: BarcodeRepository, timer: TimerRepository, openRequests: Flow<String> = emptyFlow()) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
+        val timerState by timer.state.collectAsStateWithLifecycle()
         val navController = rememberNavController()
 
         NavHost(navController, startDestination = "list") {
@@ -30,6 +34,18 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
                     onDelete = { repository.delete(it.id) },
                     onReorder = { order -> repository.setOrder(order.map { it.id }) },
                     onSettings = { navController.navigate("settings") },
+                    onTimer = { navController.navigate("timer") },
+                )
+            }
+            composable("timer") {
+                TimerScreen(
+                    session = timerState.session,
+                    elapsedMs = timer::elapsedMs,
+                    onStart = timer::start,
+                    onFinish = { timer.tap() },
+                    onUndo = timer::undo,
+                    onStop = timer::stop,
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable("detail/{id}") { entry ->
@@ -50,7 +66,7 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
                 )
             }
         }
-        OpenStartBarcode(navController, repository, openRequests)
+        OpenStartBarcode(navController, repository, openRequests, startRoute = "timer".takeIf { timerState.session != null })
     }
 }
 

@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         // Starts on the barcode asked for, the way the app would reopen on it after a restart.
         if (savedInstanceState == null) BarcodeLink.barcodeId(intent)?.let { repository.shownBarcodeId = it }
         setContent {
-            App(repository, openRequestFlow)
+            App(repository, Bibless.timer(this), openRequestFlow)
         }
     }
 

@@ -31,7 +31,7 @@ class RunOrganiserTest {
         val run = organiser.createRun("Riverside 5k", null, "TOKENS").await()
         val qr = organiser.runQr(run.id).await()!!
 
-        assertTrue(qr.size in 21..57, "QR code is ${qr.size} modules wide")
+        assertTrue(qr.size in 21..61, "QR code is ${qr.size} modules wide")
         assertTrue(qr.path.startsWith("M0 0h1v1h-1z"), "finder pattern starts at the top left")
         assertNull(organiser.runQr("unknown").await())
     }

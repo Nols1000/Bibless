@@ -42,6 +42,8 @@ data class ScannerSession(
     /** The half of a pair scanned so far: an athlete waiting for a token, or a token for an athlete. */
     val pendingAthleteId: String?,
     val pendingPosition: Int?,
+    /** The run the session records for, or null for none. */
+    val run: String? = null,
 )
 
 enum class ScanWarning {
@@ -188,7 +190,7 @@ class ScannerRepository(private val device: RaceDevice) {
         val records = record.events.filterIsInstance<RecordAthleteEvent>()
             .filter { it.id !in removed }
             .map { ScanRecord(it.id, it.athleteId, it.position) }
-        return ScannerSession(record.id, record.startedAt, records, pendingAthleteId, pendingPosition)
+        return ScannerSession(record.id, record.startedAt, records, pendingAthleteId, pendingPosition, record.run)
     }
 
     private companion object {

@@ -37,10 +37,14 @@ data class CreatedEvent(
     val date: String? = null,
 ) : Event
 
-/** A timer or scanner session starts; finish times are measured from its [timestamp]. */
+/**
+ * A timer or scanner session starts; finish times are measured from its [timestamp]. [run] is the
+ * run the device joined, if any. It only says what the device meant to record for: the organiser
+ * still decides by certifying the chain.
+ */
 @Serializable
 @SerialName("start")
-data class StartEvent(override val id: String, override val timestamp: Long) : Event
+data class StartEvent(override val id: String, override val timestamp: Long, val run: String? = null) : Event
 
 /**
  * A runner finishes. [timestamp] must be the session's start plus elapsed time from a monotonic

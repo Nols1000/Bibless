@@ -45,6 +45,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.nols1000.bibless.race.RunHint
 import kotlinx.coroutines.delay
 
 /** How many of the latest finishes stay on screen. */
@@ -58,6 +59,9 @@ private const val RECENT_FINISHES = 5
 @Composable
 fun TimerScreen(
     session: TimerSession?,
+    joinedRun: RunHint?,
+    onJoin: () -> Unit,
+    onLeave: () -> Unit,
     elapsedMs: () -> Long?,
     onStart: () -> Unit,
     onFinish: () -> Unit,
@@ -88,8 +92,10 @@ fun TimerScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (session == null) {
+                JoinedRunCard(joinedRun, onJoin, onLeave)
                 NotStarted(onStart)
             } else {
+                runLine(session.run, joinedRun)?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
                 Running(session, elapsedMs, onFinish, onUndo)
             }
         }

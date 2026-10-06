@@ -2,6 +2,7 @@ package com.github.nols1000.bibless
 
 import com.github.nols1000.bibless.race.ChainWriter
 import com.github.nols1000.bibless.race.Event
+import com.github.nols1000.bibless.race.RunHint
 import com.github.nols1000.bibless.race.RunLog
 import com.github.nols1000.bibless.race.SignedEvent
 import com.github.nols1000.bibless.race.StartEvent
@@ -10,6 +11,10 @@ import com.github.nols1000.bibless.race.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -35,6 +40,41 @@ class RaceDevice(
     private val keyLock = Mutex()
     private var key: DeviceKey? = null
 
+    private val _joinedRun = MutableStateFlow(store.get(KEY_JOINED_RUN)?.takeIf { it.isNotEmpty() }?.let { RunHint.fromJson(it) })
+
+    /** The run this device records for, from the run's QR code; null records without a run. */
+    val joinedRun: StateFlow<RunHint?> = _joinedRun.asStateFlow()
+
+    private val runListeners = MutableStateFlow(emptyList<(RunHint?) -> Unit>())
+
+    /**
+     * Joins the run whose QR code reads [text]. Sessions started from now on record for it;
+     * running ones keep their run. Returns null, and changes nothing, if [text] isn't a run code.
+     */
+    fun join(text: String): RunHint? {
+        val hint = RunHint.fromJson(text.trim())?.takeIf { it.run.isNotBlank() && it.root.length == ROOT_LENGTH } ?: return null
+        store.put(KEY_JOINED_RUN, hint.toJson())
+        setJoinedRun(hint)
+        return hint
+    }
+
+    /** Records without a run from now on. */
+    fun leave() {
+        store.put(KEY_JOINED_RUN, "")
+        setJoinedRun(null)
+    }
+
+    fun observeJoinedRun(listener: (RunHint?) -> Unit): AutoCloseable {
+        runListeners.update { it + listener }
+        listener(_joinedRun.value)
+        return AutoCloseable { runListeners.update { it - listener } }
+    }
+
+    private fun setJoinedRun(hint: RunHint?) {
+        _joinedRun.value = hint
+        runListeners.value.forEach { it(hint) }
+    }
+
     internal suspend fun key(): DeviceKey = keyLock.withLock {
         key ?: (
             store.get(KEY_DEVICE)?.takeIf { it.isNotEmpty() }?.let { DeviceKey.import(it) }
@@ -44,6 +84,10 @@ class RaceDevice(
 
     private companion object {
         const val KEY_DEVICE = "device.key"
+        const val KEY_JOINED_RUN = "run.joined"
+
+        /** An organiser key: base64url of an uncompressed P-256 point. */
+        const val ROOT_LENGTH = 87
     }
 }
 
@@ -54,7 +98,10 @@ internal data class SessionRecord(
     val startedAt: Long,
     val anchor: ClockAnchor,
     val events: List<Event>,
-)
+) {
+    /** The run the session records for, from its [StartEvent]. */
+    val run: String? get() = (events.firstOrNull() as? StartEvent)?.run
+}
 
 /**
  * The sessions of one kind (timer or scanner) on a [device]. Every event is saved before
@@ -86,7 +133,7 @@ internal class SessionLog(private val device: RaceDevice, private val kind: Stri
     fun start() {
         if (current != null) return
         val startedAt = clock.wallMillis()
-        val start = StartEvent(Uuid.random().toString(), startedAt)
+        val start = StartEvent(Uuid.random().toString(), startedAt, device.joinedRun.value?.run)
         save(SessionRecord(start.id, startedAt, ClockAnchor(clock.bootId(), clock.monotonicMillis(), 0), listOf(start)))
         store.put("$kind.sessions", json.encodeToString(sessionIds() + start.id))
     }

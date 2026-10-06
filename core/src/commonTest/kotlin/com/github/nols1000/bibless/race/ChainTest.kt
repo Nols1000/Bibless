@@ -109,9 +109,9 @@ class ChainTest {
     @Test
     fun runHintFitsASmallQrCode() = runTest {
         val run = TestRun.create(name = "Riverside Park Saturday 5k")
-        val hint = RunHint("0f8fad5b-d9cb-469f-a165-70867728950e", run.organiser.author, "Riverside Park Saturday 5k", TimingMode.SCAN_ORDER)
+        val hint = RunHint("0f8fad5b-d9cb-469f-a165-70867728950e", run.organiser.author, "Riverside Park Saturday 5k", TimingMode.SCAN_ORDER, "2026-10-10")
         assertEquals(hint, RunHint.fromJson(hint.toJson()))
-        // Version 10 is 57 modules wide
-        assertTrue(encodeQr(hint.toJson()).width <= 57, "QR code is ${encodeQr(hint.toJson()).width} modules wide")
+        // Version 11 is 61 modules wide: 1.3 mm per module on an 8 cm print
+        assertTrue(encodeQr(hint.toJson()).width <= 61, "QR code is ${encodeQr(hint.toJson()).width} modules wide")
     }
 }

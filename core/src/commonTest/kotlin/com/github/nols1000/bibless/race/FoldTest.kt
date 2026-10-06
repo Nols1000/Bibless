@@ -107,6 +107,12 @@ class FoldTest {
     }
 
     @Test
+    fun sessionsWithoutRunStillRead() {
+        val json = """{"type":"start","id":"s","timestamp":1}"""
+        assertEquals(StartEvent("s", 1), raceJson.decodeFromString(Event.serializer(), json))
+    }
+
+    @Test
     fun unknownRunHasNoState() = runTest {
         val run = TestRun.create()
         assertNull(foldRun(run.log(), "other"))

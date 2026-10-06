@@ -47,6 +47,7 @@ struct TimerView: View {
 
     private var notStarted: some View {
         VStack(spacing: 16) {
+            JoinedRunCard()
             Spacer()
             Text("Tap Start on the start signal, then Finish each time a runner crosses the line.")
                 .font(.body)
@@ -62,6 +63,7 @@ struct TimerView: View {
 
     private var running: some View {
         VStack(spacing: 16) {
+            SessionRunLine(run: timer.session?.run)
             // The runners' clock, readable at arm's length
             TimelineView(.periodic(from: .now, by: 0.1)) { _ in
                 Text(formatElapsed(timer.elapsedMs ?? 0))

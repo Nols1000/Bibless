@@ -62,6 +62,7 @@ struct ScannerView: View {
 
     private var notStarted: some View {
         VStack(spacing: 16) {
+            JoinedRunCard()
             Spacer()
             Text("Scan each runner's barcode and their finish token, in either order. Tap Start when the first runners come in.")
             Button(action: scanner.start) {
@@ -77,6 +78,7 @@ struct ScannerView: View {
 
     private func scanning(_ session: ScannerSession) -> some View {
         VStack(spacing: 12) {
+            SessionRunLine(run: session.run)
             CameraScannerView(onCode: scanner.scan)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.black)
@@ -127,7 +129,7 @@ struct ScannerView: View {
 }
 
 /// The live camera, reporting every Code 128 and QR code it recognises.
-private struct CameraScannerView: View {
+struct CameraScannerView: View {
     let onCode: (String) -> Void
 
     var body: some View {

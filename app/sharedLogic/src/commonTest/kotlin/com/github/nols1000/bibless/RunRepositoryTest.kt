@@ -42,6 +42,7 @@ class RunRepositoryTest {
         assertEquals(repository.organiserKey().author, hint.root)
         assertEquals(run.id, hint.run)
         assertEquals(TimingMode.SCAN_ORDER, hint.format)
+        assertEquals("2026-10-10", hint.date)
     }
 
     @Test

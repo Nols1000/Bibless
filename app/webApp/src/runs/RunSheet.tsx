@@ -24,10 +24,10 @@ interface Role {
 }
 
 function roles(format: string): Role[] {
-  const join = 'Open Bibless, tap "Join run" and scan this code.';
+  const join = (tool: string) => `Open the ${tool} in Bibless, tap "Join run" and scan this code.`;
   const timekeeper: Role = {
     title: 'Timekeeper',
-    steps: [join, 'Start the stopwatch on the start signal.', 'Tap once for every finisher as they cross the line.'],
+    steps: [join('Timer'), 'Start the stopwatch on the start signal.', 'Tap once for every finisher as they cross the line.'],
   };
   if (format === 'SCAN_ORDER') {
     return [
@@ -35,7 +35,7 @@ function roles(format: string): Role[] {
       {
         title: 'Scanner',
         steps: [
-          join,
+          join('Scanner'),
           'Scan each finisher\'s barcode in the order they leave the funnel.',
           'Someone without a barcode? Record an unknown finisher so nobody behind them moves up.',
         ],
@@ -55,7 +55,7 @@ function roles(format: string): Role[] {
     {
       title: 'Scanner',
       steps: [
-        join,
+        join('Scanner'),
         'Scan the finisher\'s barcode, then their finish token.',
         'No barcode? Scan the token and record an unknown finisher.',
       ],

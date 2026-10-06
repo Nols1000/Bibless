@@ -23,12 +23,14 @@ fun App(
     repository: BarcodeRepository,
     timer: TimerRepository,
     scanner: ScannerRepository,
+    device: RaceDevice,
     openRequests: Flow<String> = emptyFlow(),
 ) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
         val timerState by timer.state.collectAsStateWithLifecycle()
         val scannerState by scanner.state.collectAsStateWithLifecycle()
+        val joinedRun by device.joinedRun.collectAsStateWithLifecycle()
         val navController = rememberNavController()
 
         NavHost(navController, startDestination = "list") {
@@ -47,6 +49,9 @@ fun App(
             composable("timer") {
                 TimerScreen(
                     session = timerState.session,
+                    joinedRun = joinedRun,
+                    onJoin = { navController.navigate("join") },
+                    onLeave = device::leave,
                     elapsedMs = timer::elapsedMs,
                     onStart = timer::start,
                     onFinish = { timer.tap() },
@@ -58,11 +63,21 @@ fun App(
             composable("scanner") {
                 ScannerScreen(
                     session = scannerState.session,
+                    joinedRun = joinedRun,
+                    onJoin = { navController.navigate("join") },
+                    onLeave = device::leave,
                     onStart = scanner::start,
                     onScan = scanner::scan,
                     onEnter = scanner::enter,
                     onUndo = scanner::undo,
                     onStop = scanner::stop,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("join") {
+                JoinRunScreen(
+                    onCode = device::join,
+                    onJoined = { navController.popBackStack() },
                     onBack = { navController.popBackStack() },
                 )
             }

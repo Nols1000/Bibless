@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.github.nols1000.bibless.race.RunHint
 
 /** How many of the latest finishers stay on screen. */
 private const val RECENT_RECORDS = 5
@@ -61,6 +62,9 @@ private const val RECENT_RECORDS = 5
 @Composable
 fun ScannerScreen(
     session: ScannerSession?,
+    joinedRun: RunHint?,
+    onJoin: () -> Unit,
+    onLeave: () -> Unit,
     onStart: () -> Unit,
     onScan: (String) -> ScanOutcome,
     onEnter: (String) -> ScanOutcome,
@@ -92,6 +96,7 @@ fun ScannerScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (session == null) {
+                JoinedRunCard(joinedRun, onJoin, onLeave)
                 Spacer(Modifier.weight(1f))
                 Text(
                     "Scan each runner's barcode and their finish token, in either order. " +
@@ -103,6 +108,7 @@ fun ScannerScreen(
                 }
                 Spacer(Modifier.weight(1f))
             } else {
+                runLine(session.run, joinedRun)?.let { Text(it, style = MaterialTheme.typography.titleSmall) }
                 Scanning(session, onScan, onEnter, onUndo, camera)
             }
         }

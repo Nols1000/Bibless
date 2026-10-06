@@ -41,13 +41,17 @@ class ScannerTest {
         override fun monotonicMillis() = now
         override fun bootId() = "boot"
     }
-    private val scanner = ScannerRepository(RaceDevice(InMemoryStore(), clock, CoroutineScope(Dispatchers.Default)))
+    private val device = RaceDevice(InMemoryStore(), clock, CoroutineScope(Dispatchers.Default))
+    private val scanner = ScannerRepository(device)
     private var onCode: ((String) -> Unit)? = null
 
     private fun showScanner() = compose.setContent {
         val state by scanner.state.collectAsState()
         ScannerScreen(
             session = state.session,
+            joinedRun = null,
+            onJoin = {},
+            onLeave = {},
             onStart = scanner::start,
             onScan = scanner::scan,
             onEnter = scanner::enter,
@@ -141,7 +145,7 @@ class ScannerTest {
     @Test
     fun opensFromTheBarcodeList() {
         compose.setContent {
-            App(BarcodeRepository(InMemoryStore(), Device.PHONE), TimerRepository(RaceDevice(InMemoryStore(), clock)), scanner)
+            App(BarcodeRepository(InMemoryStore(), Device.PHONE), TimerRepository(device), scanner, device)
         }
         compose.onNodeWithContentDescription("Scanner").performClick()
         compose.onNodeWithText("Start").performClick()

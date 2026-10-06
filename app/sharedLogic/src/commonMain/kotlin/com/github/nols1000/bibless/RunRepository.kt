@@ -63,14 +63,11 @@ class RunRepository(
     fun log(id: String): RunLog? =
         store.get(runKey(id))?.takeIf { it.isNotEmpty() }?.let { runCatching { RunLog.fromJson(it) }.getOrNull() }
 
-    /**
-     * What the run QR code carries, so volunteers' devices can join [id]. It leaves out the date,
-     * which joining doesn't need, to keep the code small enough to scan from paper.
-     */
+    /** What the run QR code carries, so volunteers' devices can join [id]. */
     suspend fun hint(id: String): RunHint? {
         val genesis = genesis(id) ?: return null
         val created = genesis.event as CreatedEvent
-        return RunHint(id, genesis.author, created.name, created.format)
+        return RunHint(id, genesis.author, created.name, created.format, created.date)
     }
 
     fun delete(id: String) {

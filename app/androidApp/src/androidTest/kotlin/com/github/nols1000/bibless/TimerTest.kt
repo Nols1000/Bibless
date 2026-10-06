@@ -35,7 +35,7 @@ class TimerTest {
     private val timer = TimerRepository(device)
 
     private fun showApp() = compose.setContent {
-        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer, ScannerRepository(device))
+        App(BarcodeRepository(InMemoryStore(), Device.PHONE), timer, ScannerRepository(device), device)
     }
 
     @Test

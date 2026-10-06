@@ -22,6 +22,8 @@ data class TimerSession(
     val startedAt: Long,
     /** Finishes in order, without undone ones. */
     val times: List<FinishTime>,
+    /** The run the session records for, or null for none. */
+    val run: String? = null,
 )
 
 /**
@@ -80,6 +82,6 @@ class TimerRepository(device: RaceDevice) {
             .filter { it.id !in removed }
             .sortedBy { it.timestamp }
             .mapIndexed { index, event -> FinishTime(event.id, index + 1, event.timestamp - startedAt) }
-        return TimerSession(id, startedAt, times)
+        return TimerSession(id, startedAt, times, run)
     }
 }

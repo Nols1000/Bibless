@@ -95,6 +95,18 @@ class FoldTest {
     }
 
     @Test
+    fun runDateIsOptional() = runTest {
+        assertEquals("2026-10-10", TestRun.create(date = "2026-10-10").state().date)
+        assertNull(TestRun.create().state().date)
+    }
+
+    @Test
+    fun logsWithoutDateStillRead() {
+        val json = """{"type":"created","id":"r","timestamp":1,"name":"Old run","format":"TOKENS"}"""
+        assertEquals(CreatedEvent("r", 1, "Old run", TimingMode.TOKENS), raceJson.decodeFromString(Event.serializer(), json))
+    }
+
+    @Test
     fun unknownRunHasNoState() = runTest {
         val run = TestRun.create()
         assertNull(foldRun(run.log(), "other"))

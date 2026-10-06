@@ -43,6 +43,8 @@ data class RunState(
     val root: String,
     val name: String,
     val format: TimingMode,
+    /** The day of the run (ISO `yyyy-MM-dd`), if set. */
+    val date: String?,
     /** Session start per chain that has a [StartEvent]. */
     val starts: Map<String, Long>,
     val times: List<TimeRecord>,
@@ -142,6 +144,7 @@ suspend fun foldRun(log: RunLog, run: String, certificates: Set<String>? = null)
         root = root,
         name = created.name,
         format = created.format,
+        date = created.date,
         starts = starts,
         times = times,
         athletes = athletes,

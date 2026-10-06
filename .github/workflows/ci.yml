@@ -38,6 +38,7 @@ jobs:
       - run: npm run build:shared
       - run: npm install
       - run: npm run build -w webApp
+      - run: npm test -w webApp
 
   apple:
     name: iOS + watchOS

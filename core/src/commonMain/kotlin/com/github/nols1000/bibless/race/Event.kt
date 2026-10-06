@@ -23,7 +23,10 @@ sealed interface Event {
     val timestamp: Long
 }
 
-/** The organiser creates a run. Its [id] is the run ID, and its author is the run's root key. */
+/**
+ * The organiser creates a run. Its [id] is the run ID, and its author is the run's root key.
+ * [date] is the day the run takes place (ISO `yyyy-MM-dd`), if the organiser set one.
+ */
 @Serializable
 @SerialName("created")
 data class CreatedEvent(
@@ -31,6 +34,7 @@ data class CreatedEvent(
     override val timestamp: Long,
     val name: String,
     val format: TimingMode,
+    val date: String? = null,
 ) : Event
 
 /** A timer or scanner session starts; finish times are measured from its [timestamp]. */

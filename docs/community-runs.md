@@ -63,7 +63,9 @@ The race-day model lives in `core/.../race`, which reaches every target, includi
 - Signatures and chains make changes in transit, and after the fact, visible, and they tie
   published results to exactly the data behind them.
 - A device can still record false data; the organiser vouches for a chain by certifying it.
-- In Phase 1 keys are stored like other app data. Accounts take over the root of trust in Phase 2.
+- In Phase 1 keys are stored like other app data. The organiser's key lives in the browser's local
+  storage (`RunRepository`), so a run is organised from the browser that created it. Accounts take
+  over the root of trust in Phase 2.
 
 ## Phases
 

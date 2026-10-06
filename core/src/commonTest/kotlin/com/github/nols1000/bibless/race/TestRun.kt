@@ -45,9 +45,9 @@ internal class TestRun private constructor(val organiser: DeviceKey, val run: St
     private var ids = 0
 
     companion object {
-        suspend fun create(format: TimingMode = TimingMode.TOKENS, name: String = "Riverside 5k"): TestRun {
+        suspend fun create(format: TimingMode = TimingMode.TOKENS, name: String = "Riverside 5k", date: String? = null): TestRun {
             val organiser = DeviceKey.generate()
-            val created = CreatedEvent("run-1", START, name, format)
+            val created = CreatedEvent("run-1", START, name, format, date)
             val run = TestRun(organiser, created.id, ChainWriter.start(organiser, created))
             run.organiserEvent(created)
             return run

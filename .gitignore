@@ -27,3 +27,4 @@ fastlane/metadata/android/*/images/*Screenshots/
 *.ipa
 *.dSYM.zip
 vendor/bundle
+app/webApp/dist/

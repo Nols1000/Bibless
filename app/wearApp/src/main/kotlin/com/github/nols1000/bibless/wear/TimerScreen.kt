@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,10 +30,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.Button
 import androidx.wear.compose.material3.CompactButton
+import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.Icon
+import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
@@ -64,19 +71,28 @@ fun TimerScreen(
 
 @Composable
 private fun Stopped(onStart: () -> Unit) {
-    ScreenScaffold {
-        Column(
-            Modifier.fillMaxSize().padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text("Timer", style = MaterialTheme.typography.titleMedium)
-            Button(onClick = onStart, label = { Text("Start") })
-            Text(
-                "Times go to your phone when you stop, or later if it isn't nearby.",
-                style = MaterialTheme.typography.bodySmall,
-                textAlign = TextAlign.Center,
-            )
+    val listState = rememberTransformingLazyColumnState()
+    ScreenScaffold(
+        scrollState = listState,
+        edgeButton = {
+            EdgeButton(onClick = onStart) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                Text("Start")
+            }
+        },
+    ) { contentPadding ->
+        TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
+            item {
+                ListHeader { Text("Timer") }
+            }
+            item {
+                Text(
+                    "Times go to your phone when you stop, or later if it isn't nearby.",
+                    modifier = Modifier.fillMaxWidth(),
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }

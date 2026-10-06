@@ -20,6 +20,7 @@ import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
@@ -45,7 +46,16 @@ fun BarcodeListScreen(
     // Dragging is fiddly on a watch, so a long press offers to move a barcode to the top instead.
     var moving by remember { mutableStateOf<Barcode?>(null) }
     val listState = rememberTransformingLazyColumnState()
-    ScreenScaffold(scrollState = listState) { contentPadding ->
+    ScreenScaffold(
+        scrollState = listState,
+        // Adding is the screen's main action, so it sits on the edge below the list
+        edgeButton = {
+            EdgeButton(onClick = onAdd) {
+                Icon(Icons.Filled.Add, contentDescription = null)
+                Text("Add")
+            }
+        },
+    ) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
                 ListHeader { Text("Barcodes") }
@@ -85,14 +95,6 @@ fun BarcodeListScreen(
                         secondaryLabel = { Text(barcode.athleteId) },
                     )
                 }
-            }
-            item {
-                FilledTonalButton(
-                    onClick = onAdd,
-                    modifier = Modifier.fillMaxWidth(),
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    label = { Text("Add") },
-                )
             }
             item {
                 FilledTonalButton(

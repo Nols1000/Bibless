@@ -13,7 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
-import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
@@ -31,7 +31,14 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     val idInput = rememberTextInput("Athlete ID") { athleteId = it }
 
     val listState = rememberTransformingLazyColumnState()
-    ScreenScaffold(scrollState = listState) { contentPadding ->
+    ScreenScaffold(
+        scrollState = listState,
+        edgeButton = {
+            EdgeButton(onClick = { onSave(name, athleteId) }, enabled = normalized != null) {
+                Text("Save")
+            }
+        },
+    ) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
                 ListHeader { Text("Add barcode") }
@@ -58,14 +65,6 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
                             },
                         )
                     },
-                )
-            }
-            item {
-                Button(
-                    onClick = { onSave(name, athleteId) },
-                    enabled = normalized != null,
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Save") },
                 )
             }
         }

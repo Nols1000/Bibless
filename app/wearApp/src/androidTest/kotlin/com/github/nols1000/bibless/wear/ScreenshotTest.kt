@@ -87,13 +87,13 @@ class ScreenshotTest {
             // The code's pager scrolls too, so let it close before looking for the list
             waitFor(By.text("Sam")) { "List did not return" }
             scrollTo(By.text("Add")).click()
-            val addHeader = waitFor(By.text("Add barcode")) { "Add screen did not open" }
+            waitFor(By.text("Add barcode")) { "Add screen did not open" }
             device.waitForIdle()
             val (name, athleteId) = DemoData.newBarcode
             enterText("Name", name)
             enterText("Athlete ID", athleteId)
-            // Show the enabled Save button below the filled fields
-            nudgeIntoView(By.text("Save"), addHeader)
+            // The Save edge button only grows in at the end of the list
+            scrollTo(By.text("Save").enabled(true))
             capture("04-add")
 
             device.pressBack()
@@ -141,10 +141,14 @@ class ScreenshotTest {
         waitFor(By.text(text)) { "$label was not entered" }
     }
 
-    /** Scrolls the screen's list down until an object matching [selector] shows up. */
+    /**
+     * Scrolls the screen's list down until an object matching [selector] shows up. An edge button
+     * only grows in once the list stops at its end, so that gets a moment longer.
+     */
     private fun scrollTo(selector: BySelector): UiObject2 {
         val list = waitFor(By.scrollable(true)) { "No list to scroll" }
-        return checkNotNull(list.scrollUntil(Direction.DOWN, Until.findObject(selector))) { "$selector not found" }
+        return list.scrollUntil(Direction.DOWN, Until.findObject(selector))
+            ?: waitFor(selector) { "$selector not found" }
     }
 
     /**

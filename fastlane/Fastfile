@@ -28,11 +28,6 @@ def play_track_version_codes(track)
   codes || google_play_track_version_codes(track: track)
 end
 
-# Puts the headlines from fastlane/screenshots/captions.json on phone screenshots (tools/screenshots/frame.py)
-def frame_screenshots(platform_flag, directory)
-  Dir.chdir("..") { sh("python3", "tools/screenshots/frame.py", platform_flag, directory) }
-end
-
 platform :android do
   desc "Capture the Play phone and Wear OS screenshots with Robolectric and Roborazzi (demo data, see ScreenshotTest); " \
        "no emulator needed"
@@ -44,8 +39,6 @@ platform :android do
       task: %w[androidApp wearApp].map { |m| ":app:#{m}:testDebugUnitTest --tests '*.ScreenshotTest'" }.join(" "),
       flags: "-PstoreScreenshots"
     )
-    # Headlines on the phone screenshots; Wear OS screenshots show the app alone
-    frame_screenshots("--android", "fastlane/metadata/android/en-US/images/phoneScreenshots")
   end
 
   desc "Upload one bundle to a Play track: form:phone or form:wear (to the Wear OS form factor's track), " \
@@ -200,8 +193,6 @@ platform :ios do
     capture_ios_screenshots(**common, scheme: "iosApp", only_testing: ["iosAppUITests/ScreenshotTests"],
                             devices: ["iPhone 17 Pro Max"], override_status_bar: true,
                             clear_previous_screenshots: true)
-    # Headlines on the iPhone screenshots; the App Store shows watch screenshots in its own frame
-    frame_screenshots("--ios", "fastlane/screenshots/ios/en-US")
     # Apple Watch Ultra slot (422x514)
     capture_ios_screenshots(**common, scheme: "watchApp", only_testing: ["watchAppUITests"],
                             devices: ["Apple Watch Ultra 3 (49mm)"])

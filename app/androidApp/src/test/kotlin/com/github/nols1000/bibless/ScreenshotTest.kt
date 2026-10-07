@@ -22,11 +22,15 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * The Play Store phone screenshots, on a Pixel 7's screen. Every run walks through the screens;
- * with `-PstoreScreenshots` Roborazzi also writes them for fastlane (`bundle exec fastlane android screenshots`).
+ * The Play Store phone screenshots, 1080x2160: Google Play takes none longer than twice its width.
+ * Every run walks through the screens; with `-PstoreScreenshots` Roborazzi also writes them for
+ * fastlane (`bundle exec fastlane android screenshots`), which uploads them as they are.
+ *
+ * The file names set the store order: the code in both formats, in dark mode, the list, then the
+ * launch setting.
  */
 @RunWith(AndroidJUnit4::class)
-@Config(qualifiers = "w411dp-h914dp-port-420dpi")
+@Config(qualifiers = "w432dp-h864dp-port-400dpi")
 class ScreenshotTest {
     @get:Rule
     val compose = createEmptyComposeRule()
@@ -38,33 +42,29 @@ class ScreenshotTest {
         DemoData.load(repository)
     }
 
-    /**
-     * Captures the screens that tools/screenshots/frame.py builds the store screenshots from, as
-     * listed in fastlane/screenshots/captions.json.
-     */
     @Test
     fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
             compose.onNodeWithText("Me").assertExists()
-            capture("list")
+            capture("04-list")
 
             compose.onNodeWithText("Me").performClick()
             compose.onNodeWithText("Sam").assertDoesNotExist()
-            capture("barcode")
+            capture("01-barcode")
 
             pressBack()
             // Set in the repository rather than tapped, so the screen draws with it already selected
             repository.setOpenOnLaunch(LaunchScreen.FIRST_BARCODE)
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNode(isSelected() and hasText("First barcode")).assertExists()
-            capture("settings")
+            capture("05-settings")
         }
 
         // The other format, in light and dark mode; relaunching opens straight on the first barcode, Me
         repository.setDefaultFormat(Device.PHONE, BarcodeFormat.CODE128)
-        captureOnLaunch("barcode-code128")
+        captureOnLaunch("02-barcode-code128")
         RuntimeEnvironment.setQualifiers("+night")
-        captureOnLaunch("barcode-dark")
+        captureOnLaunch("03-barcode-dark")
     }
 
     @OptIn(ExperimentalRoborazziApi::class)

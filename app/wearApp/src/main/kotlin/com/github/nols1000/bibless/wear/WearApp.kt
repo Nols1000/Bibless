@@ -8,6 +8,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.MotionScheme
 import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
@@ -24,7 +25,10 @@ fun WearApp(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlo
     // Takes on the watch's system colors where it has them (Wear OS 6 on), the defaults otherwise.
     val context = LocalContext.current
     val colorScheme = remember(context) { dynamicColorScheme(context) ?: ColorScheme() }
-    MaterialTheme(colorScheme = colorScheme) {
+    MaterialTheme(
+        colorScheme = colorScheme,
+        motionScheme = MotionScheme.standard(),
+    ) {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
             val navController = rememberSwipeDismissableNavController()

@@ -9,27 +9,26 @@ import androidx.wear.protolayout.ColorBuilders.argb
 import androidx.wear.protolayout.DeviceParametersBuilders.DeviceParameters
 import androidx.wear.protolayout.DeviceParametersBuilders.SCREEN_SHAPE_ROUND
 import androidx.wear.protolayout.DimensionBuilders.dp
-import androidx.wear.protolayout.DimensionBuilders.expand
-import androidx.wear.protolayout.DimensionBuilders.sp
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
-import androidx.wear.protolayout.LayoutElementBuilders.Column
-import androidx.wear.protolayout.LayoutElementBuilders.FontStyle
 import androidx.wear.protolayout.LayoutElementBuilders.Image
-import androidx.wear.protolayout.LayoutElementBuilders.Spacer
-import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.protolayout.ResourceBuilders
 import androidx.wear.protolayout.TimelineBuilders
+import androidx.wear.protolayout.material3.materialScope
+import androidx.wear.protolayout.material3.primaryLayout
+import androidx.wear.protolayout.material3.text
+import androidx.wear.protolayout.material3.textEdgeButton
+import androidx.wear.protolayout.types.layoutString
 import androidx.wear.tiles.RequestBuilders
 import androidx.wear.tiles.TileBuilders.Tile
 import androidx.wear.tiles.TileService
 import com.github.nols1000.bibless.Barcode
 import com.github.nols1000.bibless.BarcodeLink
 import com.github.nols1000.bibless.Bibless
-import com.github.nols1000.bibless.barcodeBitmap
 import com.github.nols1000.bibless.barcode.BarcodeFormat
+import com.github.nols1000.bibless.barcodeBitmap
 import com.google.common.util.concurrent.ListenableFuture
 import java.io.ByteArrayOutputStream
 import kotlin.math.sqrt
@@ -62,7 +61,7 @@ internal class TileContent(
     private val context: Context,
     private val barcode: Barcode?,
     private val format: BarcodeFormat,
-    device: DeviceParameters,
+    private val device: DeviceParameters,
     private val scope: ProtoLayoutScope,
 ) {
     // Like the detail screen: on round screens the code stays inside the largest square that fits
@@ -79,26 +78,22 @@ internal class TileContent(
         .setTileTimeline(TimelineBuilders.Timeline.fromLayoutElement(layout()))
         .build()
 
-    private fun layout(): LayoutElementBuilders.LayoutElement {
+    private fun layout(): LayoutElementBuilders.LayoutElement = materialScope(context, device) {
         if (barcode == null) {
-            return Box.Builder()
-                .setWidth(expand())
-                .setHeight(expand())
-                .setModifiers(modifiers(background = null))
-                .addContent(label("Add a barcode in Bibless", argb(WHITE), sideDp))
-                .build()
+            return@materialScope primaryLayout(
+                titleSlot = { text("Bibless".layoutString) },
+                mainSlot = { text("Add a barcode in Bibless".layoutString) },
+                onClick = openClickable(),
+            )
         }
         val bitmap = bitmap(barcode)
-        return Box.Builder()
-            .setWidth(expand())
-            .setHeight(expand())
-            // White behind everything, like the detail screen, so scanners find the code easily.
-            .setModifiers(modifiers(background = argb(WHITE)))
-            .addContent(
-                Column.Builder()
-                    .setWidth(dp(sideDp))
-                    .addContent(label(barcode.name, argb(BLACK), sideDp))
-                    .addContent(Spacer.Builder().setHeight(dp(2f)).build())
+        primaryLayout(
+            titleSlot = { text(barcode.name.layoutString) },
+            mainSlot = {
+                Box.Builder()
+                    .setWidth(dp(bitmap.width / density))
+                    .setHeight(dp(bitmap.height / density))
+                    .setModifiers(modifiers(background = argb(WHITE)))
                     .addContent(
                         Image.Builder(scope)
                             .setImageResource(imageResource(bitmap), IMAGE_ID)
@@ -106,12 +101,22 @@ internal class TileContent(
                             .setHeight(dp(bitmap.height / density))
                             .build(),
                     )
-                    .addContent(Spacer.Builder().setHeight(dp(2f)).build())
-                    .addContent(label(barcode.athleteId, argb(BLACK), sideDp))
-                    .build(),
-            )
-            .build()
+                    .build()
+            },
+            bottomSlot = {
+                textEdgeButton(
+                    onClick = openClickable(),
+                    labelContent = { text(barcode.athleteId.layoutString) },
+                )
+            },
+            onClick = openClickable(),
+        )
     }
+
+    private fun openClickable() = ModifiersBuilders.Clickable.Builder()
+        .setId("open")
+        .setOnClick(ActionBuilders.LaunchAction.Builder().setAndroidActivity(openActivity()).build())
+        .build()
 
     private fun imageResource(bitmap: Bitmap): ResourceBuilders.ImageResource {
         val png = ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -134,12 +139,7 @@ internal class TileContent(
 
     private fun modifiers(background: ColorProp?) =
         ModifiersBuilders.Modifiers.Builder()
-            .setClickable(
-                ModifiersBuilders.Clickable.Builder()
-                    .setId("open")
-                    .setOnClick(ActionBuilders.LaunchAction.Builder().setAndroidActivity(openActivity()).build())
-                    .build(),
-            )
+            .setClickable(openClickable())
             .apply { background?.let { setBackground(ModifiersBuilders.Background.Builder().setColor(it).build()) } }
             .build()
 
@@ -157,23 +157,9 @@ internal class TileContent(
         }
         .build()
 
-    private fun label(text: String, color: ColorProp, widthDp: Float) =
-        Box.Builder()
-            .setWidth(dp(widthDp))
-            .addContent(
-                Text.Builder()
-                    .setText(text)
-                    .setMaxLines(1)
-                    .setOverflow(LayoutElementBuilders.TEXT_OVERFLOW_ELLIPSIZE)
-                    .setFontStyle(FontStyle.Builder().setColor(color).setSize(sp(13f)).build())
-                    .build(),
-            )
-            .build()
-
     companion object {
         const val IMAGE_ID = "barcode"
         private const val WHITE = 0xFFFFFFFF.toInt()
-        private const val BLACK = 0xFF000000.toInt()
 
         /** The first barcode in the list, in the watch's format. */
         fun current(context: Context, device: DeviceParameters, scope: ProtoLayoutScope): TileContent {

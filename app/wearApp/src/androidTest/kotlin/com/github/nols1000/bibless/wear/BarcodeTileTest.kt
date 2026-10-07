@@ -8,6 +8,7 @@ import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Row
 import androidx.wear.protolayout.LayoutElementBuilders.Text
 import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.tiles.TileBuilders.Tile
@@ -94,7 +95,13 @@ class BarcodeTileTest {
 
     /** The barcode the tap opens; null if it opens the app on its usual screen. */
     private fun Tile.linkedBarcodeId(): String? {
-        val action = (root() as Box).modifiers?.clickable?.onClick as ActionBuilders.LaunchAction
+        val clickable = root().descendants().mapNotNull {
+            when (it) {
+                is Box -> it.modifiers?.clickable
+                else -> null
+            }
+        }.firstOrNull { it.onClick is ActionBuilders.LaunchAction } ?: (root() as? Box)?.modifiers?.clickable
+        val action = clickable?.onClick as? ActionBuilders.LaunchAction ?: return null
         val activity = checkNotNull(action.androidActivity)
         assertEquals(MainActivity::class.java.name, activity.className)
         return (activity.keyToExtraMapping[BarcodeLink.EXTRA_BARCODE_ID] as ActionBuilders.AndroidStringExtra?)?.value
@@ -105,6 +112,7 @@ class BarcodeTileTest {
         val children = when (val element = this@descendants) {
             is Box -> element.contents
             is Column -> element.contents
+            is Row -> element.contents
             else -> emptyList()
         }
         children.forEach { yieldAll(it.descendants()) }

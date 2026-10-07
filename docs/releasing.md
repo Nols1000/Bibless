@@ -61,7 +61,7 @@ bundle exec fastlane android screenshots
 
 The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `test` sources. The Android ones run with the other unit tests too, but only write images with `-PstoreScreenshots`, which the lane passes. Robolectric draws no system bars, so the Android screenshots have no status bar.
 
-The stores get the screens as captured, with no headlines or device frames. The file names set the store order (`01-barcode`, `02-barcode-code128`, …). Play phone screenshots are 1080x2160, since Google Play takes none longer than twice its width.
+The stores get the screens as captured, with no headlines or device frames; the landing page (`app/webApp/src/landing`) frames them instead. The file names set the store order (`01-barcode`, `02-barcode-code128`, …). Play phone screenshots are 1080x2160, since Google Play takes none longer than twice its width.
 
 The images are not committed (they are git-ignored). `screenshots.yml` captures them on CI, the Play ones in one Robolectric job and the App Store ones on simulators, and keeps them as workflow artifacts for review. Releases start it alongside the builds and push the listing (`store-metadata.yml`) after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run `screenshots.yml` on `main` without uploading. To update a listing between releases, run `gh workflow run store-metadata.yml`, which captures the screenshots first. The local commands above are for previewing.
 
@@ -89,7 +89,7 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
 
 ## One-time setup
 
-1. **GitHub Pages**: *Settings → Pages → Source: GitHub Actions*. The web app is served at `https://<owner>.github.io/<repo>/`.
+1. **GitHub Pages**: *Settings → Pages → Source: GitHub Actions*. The landing page is served at `https://<owner>.github.io/<repo>/`, the organiser web app at `…/<repo>/organise/`.
 2. **Android upload key**:
    `keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
    Keep it outside the repo and back it up. Use Play App Signing.

@@ -1,12 +1,16 @@
 name: GitHub Pages
 
-# Deploys the web app together with the static pages in app/webApp/public (e.g. the privacy
-# policies at /privacy/android/ and /privacy/apple/) from main.
+# Deploys the landing page (/), the organiser web app (/organise/) and the static pages in
+# app/webApp/public (e.g. the privacy policies at /privacy/android/ and /privacy/apple/) from main.
+# The landing page's phone and watch screens are captured fresh with Robolectric (SiteScreenshotTest).
 on:
   push:
     branches: [main]
     paths:
       - 'app/webApp/**'
+      - 'app/androidApp/**'
+      - 'app/wearApp/**'
+      - 'app/sharedUI/**'
       - 'app/sharedLogic/**'
       - 'core/**'
       - '.github/workflows/pages.yml'
@@ -26,6 +30,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Capture the landing page screens
+        run: ./gradlew :app:androidApp:testDebugUnitTest :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest' -PsiteScreenshots
       - run: npm run build:shared
       - run: npm install
       - run: npm run build -w webApp

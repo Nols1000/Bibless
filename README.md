@@ -40,9 +40,13 @@ Use the run configurations provided by the run widget in your IDE's toolbar. You
 - Android app: `./gradlew :app:androidApp:assembleDebug`
 - Wear OS app: `./gradlew :app:wearApp:assembleDebug`
 - Server: `./gradlew :server:run`
-- Web app:
+- Web app (the landing page at `/`, the organiser at `/organise/`):
   1. Install [Node.js](https://nodejs.org/en/download) (which includes `npm`)
-  2. Build and run the web application:
+  2. Capture the phone and watch screens the landing page shows (git-ignored):
+     ```shell
+     ./gradlew :app:androidApp:testDebugUnitTest :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest' -PsiteScreenshots
+     ```
+  3. Build and run the web application:
      ```shell
      npm run build:shared
      npm install

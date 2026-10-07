@@ -6,7 +6,9 @@ plugins {
 }
 
 val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
+val siteScreenshots = providers.gradleProperty("siteScreenshots").isPresent
 val screenshotDir = rootProject.file("fastlane/metadata/android/en-US/images/phoneScreenshots").path
+val siteScreenshotDir = rootProject.file("app/webApp/public/screens/phone").path
 
 kotlin {
     compilerOptions {
@@ -96,6 +98,12 @@ android {
                 if (storeScreenshots) {
                     test.systemProperty("roborazzi.test.record", "true")
                     test.systemProperty("screenshotDir", screenshotDir)
+                    test.outputs.upToDateWhen { false }
+                }
+                // -PsiteScreenshots: SiteScreenshotTest writes the landing page's screens
+                if (siteScreenshots) {
+                    test.systemProperty("roborazzi.test.record", "true")
+                    test.systemProperty("siteScreenshotDir", siteScreenshotDir)
                     test.outputs.upToDateWhen { false }
                 }
             }

@@ -3,20 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bibless</title>
-    <meta name="color-scheme" content="light dark">
+    <title>Bibless: your parkrun barcode on your phone and watch</title>
+    <meta name="description" content="Bibless keeps your parkrun barcode on your phone and your Wear OS watch, so you get scanned at the finish without a printout. No account, no ads, no tracking.">
+    <meta name="color-scheme" content="dark light">
+    <meta name="theme-color" content="#000000">
 </head>
-<body>
-    <div id="root">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 50 50" role="presentation">
-            <circle cx="25" cy="25" r="20" stroke="#ccc" stroke-width="4" fill="none"/>
-            <circle cx="25" cy="25" r="20" stroke="#333" stroke-width="4" fill="none" stroke-linecap="round"
-                    stroke-dasharray="90 125">
-                <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s"
-                                  repeatCount="indefinite"/>
-            </circle>
-        </svg>
+<body class="landing">
+<a class="skip" href="#features">Skip to the features</a>
+
+<header class="topbar">
+    <a class="brand" href="#top" aria-label="Bibless, back to the top">
+        <span class="brand-mark" aria-hidden="true"></span>Bibless
+    </a>
+    <nav aria-label="Sections">
+        <a href="#features">Features</a>
+        <a href="#runs">Community runs</a>
+        <a class="cta cta-small" href="https://play.google.com/store/apps/details?id=com.github.nols1000.bibless">Get the app</a>
+    </nav>
+</header>
+
+<main id="top" class="story">
+    <div class="stage-col">
+        <div class="stage" data-step="hero" aria-label="Bibless on a phone and a watch">
+            <div class="devices"></div>
+            <ul class="privacy-chips" aria-hidden="true">
+                <li>No account</li>
+                <li>No ads</li>
+                <li>No tracking</li>
+            </ul>
+        </div>
     </div>
-    <script type="module" src="/src/index.tsx"></script>
+
+    <div class="steps">
+        <section class="step step-hero" data-step="hero" aria-labelledby="hero-title">
+            <p class="eyebrow">For parkrunners who forget their printout</p>
+            <h1 id="hero-title">Your parkrun barcode, <span class="volt">on your phone and watch.</span></h1>
+            <p class="lead">No printout needed. Bibless opens straight to your barcode at full brightness, so you get
+                scanned at the finish and get on with your coffee.</p>
+            <div class="actions">
+                <a class="cta" href="https://play.google.com/store/apps/details?id=com.github.nols1000.bibless">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2.5v19l10-9.5zM15.5 13.5 18 16l3.5-2a1.2 1.2 0 0 0 0-2L18 10l-2.5 2.5z" fill="currentColor"/></svg>
+                    Get it on Google Play
+                </a>
+                <a class="cta cta-ghost" href="#features">See how it works</a>
+            </div>
+            <p class="fine">For Android phones and Wear OS watches. Independent, and not affiliated with parkrun.</p>
+        </section>
+
+        <section id="features" class="step" data-step="formats" aria-labelledby="formats-title">
+            <p class="eyebrow">01 · Ready to scan</p>
+            <h2 id="formats-title">Barcode or QR code. Your call, per device.</h2>
+            <p>Add your athlete ID once and the code is ready. Pick whichever your volunteers' scanner reads best,
+                separately for the phone and the watch.</p>
+            <div class="controls">
+                <fieldset class="segmented">
+                    <legend>Phone</legend>
+                    <label><input type="radio" name="phoneFormat" data-choice="phoneFormat" value="qr" checked><span>QR code</span></label>
+                    <label><input type="radio" name="phoneFormat" data-choice="phoneFormat" value="code128"><span>Barcode</span></label>
+                </fieldset>
+                <fieldset class="segmented">
+                    <legend>Watch</legend>
+                    <label><input type="radio" name="watchFormat" data-choice="watchFormat" value="qr" checked><span>QR code</span></label>
+                    <label><input type="radio" name="watchFormat" data-choice="watchFormat" value="code128"><span>Barcode</span></label>
+                </fieldset>
+            </div>
+        </section>
+
+        <section class="step" data-step="themes" aria-labelledby="themes-title">
+            <p class="eyebrow">02 · Always scannable</p>
+            <h2 id="themes-title">Light or dark. The code stays black on white.</h2>
+            <p>Dark mode or not, the code card never changes colour, so scanners read it first time. Bibless turns
+                the brightness up to full and keeps the screen on until you've been scanned.</p>
+            <div class="controls">
+                <fieldset class="segmented">
+                    <legend>Theme</legend>
+                    <label><input type="radio" name="theme" data-choice="theme" value="light" checked><span>Light</span></label>
+                    <label><input type="radio" name="theme" data-choice="theme" value="dark"><span>Dark</span></label>
+                </fieldset>
+            </div>
+        </section>
+
+        <section class="step" data-step="family" aria-labelledby="family-title">
+            <p class="eyebrow">03 · The whole family</p>
+            <h2 id="family-title">Everyone you run with, one tap apart.</h2>
+            <p>Save barcodes for the whole family, drag them into your order, and swipe between them on your watch.
+                Tap <strong>Me</strong> on the phone to open it.</p>
+            <div class="controls">
+                <button type="button" class="chip-button" data-family>Open “Me”</button>
+            </div>
+        </section>
+
+        <section class="step" data-step="sync" aria-labelledby="sync-title">
+            <p class="eyebrow">04 · In sync</p>
+            <h2 id="sync-title">Add it on either device. It shows up on both.</h2>
+            <p>Type a new athlete ID on your phone, or straight on your watch, and it appears on the other by itself.
+                Leave the phone at home on run day.</p>
+            <div class="controls">
+                <button type="button" class="chip-button" data-replay-sync>Sync again</button>
+            </div>
+        </section>
+
+        <section class="step" data-step="faster" aria-labelledby="faster-title">
+            <p class="eyebrow">05 · Faster than a printout</p>
+            <h2 id="faster-title">Opens straight to your barcode.</h2>
+            <p>Have the app open on your first barcode, or skip the app altogether:</p>
+            <ul class="chips">
+                <li><span class="chip-icon" aria-hidden="true">▦</span>Home screen widget</li>
+                <li><span class="chip-icon" aria-hidden="true">◐</span>Quick Settings tile, even on the lock screen</li>
+                <li><span class="chip-icon" aria-hidden="true">↗</span>App shortcuts</li>
+                <li><span class="chip-icon" aria-hidden="true">◯</span>Watch tile, one swipe from the watch face</li>
+            </ul>
+        </section>
+
+        <section class="step" data-step="privacy" aria-labelledby="privacy-title">
+            <p class="eyebrow">06 · Yours alone</p>
+            <h2 id="privacy-title">No account. No ads. No tracking.</h2>
+            <p>Your barcodes stay on your devices. There's nothing to sign up for and nothing to sell. Read the
+                privacy policy for <a href="./privacy/android/">Android</a> or <a href="./privacy/apple/">Apple</a>.</p>
+        </section>
+
+        <section id="runs" class="step step-runs" data-step="runs" aria-labelledby="runs-title">
+            <p class="eyebrow"><span class="badge">Coming soon</span> Community runs</p>
+            <h2 id="runs-title">Time your own run, from the same app.</h2>
+            <p>Bibless is growing into a toolkit for free, timed community runs: a stopwatch on the phone and the
+                watch, a scanner for barcodes and finish tokens, and a web app that combines everything into results.
+                It all works offline, and every record is signed.</p>
+            <div class="controls">
+                <fieldset class="segmented">
+                    <legend>Phone</legend>
+                    <label><input type="radio" name="runs" data-choice="runs" value="timer" checked><span>Timer</span></label>
+                    <label><input type="radio" name="runs" data-choice="runs" value="scanner"><span>Scanner</span></label>
+                    <label><input type="radio" name="runs" data-choice="runs" value="sessions"><span>Sessions</span></label>
+                </fieldset>
+            </div>
+            <p><a class="link-arrow" href="./organise/">Try the organiser preview</a></p>
+        </section>
+    </div>
+</main>
+
+<footer class="footer">
+    <p class="footer-brand"><span class="brand-mark" aria-hidden="true"></span>Bibless</p>
+    <nav aria-label="Footer">
+        <a href="./privacy/android/">Privacy (Android)</a>
+        <a href="./privacy/apple/">Privacy (Apple)</a>
+        <a href="https://github.com/Nols1000/Bibless">Source on GitHub</a>
+    </nav>
+    <p class="fine">Bibless is an independent app and is not affiliated with or endorsed by parkrun.</p>
+</footer>
+
+<script type="module" src="/src/landing/main.ts"></script>
 </body>
 </html>

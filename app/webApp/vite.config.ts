@@ -1,6 +1,7 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { resolve } from 'node:path';
 
 export default defineConfig({
   root: '.',
@@ -10,6 +11,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // The landing page at the root, the organiser at organise/
+    rollupOptions: {
+      input: {
+        main: resolve(import.meta.dirname, 'index.html'),
+        organise: resolve(import.meta.dirname, 'organise/index.html'),
+      },
+    },
   },
   server: { port: 8080 },
   test: {

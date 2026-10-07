@@ -28,3 +28,5 @@ fastlane/metadata/android/*/images/*Screenshots/
 *.dSYM.zip
 vendor/bundle
 app/webApp/dist/
+# The landing page's screens are captured in CI (pages.yml), not committed
+app/webApp/public/screens/

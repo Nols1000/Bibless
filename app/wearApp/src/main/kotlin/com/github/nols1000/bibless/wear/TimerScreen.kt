@@ -35,6 +35,7 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.EdgeButton
@@ -174,12 +175,14 @@ private fun Running(
                         modifier = Modifier.animateWidth(undoInteraction),
                         enabled = last != null,
                         interactionSource = undoInteraction,
+                        colors = ButtonDefaults.filledTonalButtonColors(),
                         label = { Text("Undo", Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                     )
                     CompactButton(
                         onClick = { confirmStop = true },
                         modifier = Modifier.animateWidth(stopInteraction),
                         interactionSource = stopInteraction,
+                        colors = ButtonDefaults.filledTonalButtonColors(),
                         label = { Text("Stop", Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                     )
                 }

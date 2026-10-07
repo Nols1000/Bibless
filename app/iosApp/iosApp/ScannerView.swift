@@ -101,6 +101,7 @@ struct ScannerView: View {
                     .frame(maxWidth: .infinity, minHeight: 120)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(Color("OnAccentColor"))
             .buttonBorderShape(.roundedRectangle(radius: 24))
             Spacer()
             Button("Recorded Sessions") { isShowingSessions = true }

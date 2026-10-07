@@ -25,6 +25,7 @@ struct TimerView: View {
             VStack(spacing: 8) {
                 Button("Start") { timer.start() }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(Color("OnAccentColor"))
                 Text("Times go to your iPhone when you stop, or later if it isn't nearby.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
@@ -61,6 +62,7 @@ struct TimerView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
+                    .foregroundStyle(Color("OnAccentColor"))
                     .accessibilityIdentifier("finish")
                     HStack {
                         Button("Undo") {

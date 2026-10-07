@@ -115,6 +115,7 @@ fun BarcodeListScreen(
                             null
                         },
                         onLongClickLabel = "Move to top",
+                        colors = ButtonDefaults.filledVariantButtonColors(),
                         label = { Text(barcode.name) },
                         secondaryLabel = { Text(barcode.athleteId) },
                     )

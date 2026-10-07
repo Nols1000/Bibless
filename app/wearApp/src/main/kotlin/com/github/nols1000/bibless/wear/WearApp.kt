@@ -10,14 +10,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.navigation.currentBackStackEntryAsState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ColorScheme
+import com.github.nols1000.bibless.BiblessColors
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
-import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
@@ -42,10 +41,7 @@ fun WearApp(
     openRequests: Flow<String> = emptyFlow(),
     ambient: Ambient = Ambient(),
 ) {
-    val context = LocalContext.current
-    // Colors from the watch face on Wear OS 6 and later, like the system apps; the defaults before
-    val colorScheme = remember(context) { dynamicColorScheme(context) } ?: ColorScheme()
-    MaterialTheme(colorScheme = colorScheme) {
+    MaterialTheme(colorScheme = BiblessWearColors) {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
             val timerState by timer.state.collectAsStateWithLifecycle()
@@ -117,3 +113,31 @@ fun WearApp(
         }
     }
 }
+
+/** The Bibless palette on the watch's black canvas: Volt actions with black labels, Carbon surfaces. */
+private val BiblessWearColors = ColorScheme().copy(
+    primary = BiblessColors.Volt,
+    primaryDim = Color(0xFFAACC00),
+    primaryContainer = Color(0xFF2E3800),
+    onPrimary = BiblessColors.Black,
+    onPrimaryContainer = Color(0xFFE6FF80),
+    secondary = BiblessColors.Cyan,
+    secondaryDim = Color(0xFF00B8CC),
+    secondaryContainer = Color(0xFF003A42),
+    onSecondary = BiblessColors.Black,
+    onSecondaryContainer = Color(0xFFA6F4FF),
+    tertiary = BiblessColors.Cyan,
+    tertiaryDim = Color(0xFF00B8CC),
+    tertiaryContainer = Color(0xFF003A42),
+    onTertiary = BiblessColors.Black,
+    onTertiaryContainer = Color(0xFFA6F4FF),
+    surfaceContainerLow = Color(0xFF0B0C0E),
+    surfaceContainer = BiblessColors.Carbon,
+    surfaceContainerHigh = Color(0xFF23262B),
+    onSurface = BiblessColors.SoftWhite,
+    onSurfaceVariant = Color(0xFFA8ADB5),
+    outline = Color(0xFF6B7078),
+    outlineVariant = Color(0xFF2E3136),
+    background = BiblessColors.Black,
+    onBackground = BiblessColors.SoftWhite,
+)

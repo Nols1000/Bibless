@@ -58,6 +58,7 @@ struct TimerView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(Color("OnAccentColor"))
             .buttonBorderShape(.roundedRectangle(radius: 24))
             Button("Recorded Sessions") { isShowingSessions = true }
         }
@@ -105,6 +106,7 @@ struct TimerView: View {
                     .frame(maxWidth: .infinity, minHeight: 200)
             }
             .buttonStyle(.borderedProminent)
+            .foregroundStyle(Color("OnAccentColor"))
             .buttonBorderShape(.roundedRectangle(radius: 24))
             .sensoryFeedback(.impact, trigger: timer.times.count)
         }

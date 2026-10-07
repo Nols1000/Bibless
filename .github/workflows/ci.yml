@@ -20,6 +20,8 @@ jobs:
           ./gradlew
           :app:sharedUI:testAndroidHostTest
           :app:sharedLogic:testAndroidHostTest
+          :app:androidApp:testDebugUnitTest
+          :app:wearApp:testDebugUnitTest
           :app:androidApp:assembleDebug
           :app:wearApp:assembleDebug
           :app:androidApp:lintDebug

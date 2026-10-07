@@ -5,6 +5,9 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
+val screenshotDir = rootProject.file("fastlane/metadata/android/en-US/images/phoneScreenshots").path
+
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
@@ -20,18 +23,21 @@ dependencies {
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
 
-    // Store screenshots via fastlane screengrab (ScreenshotTest)
-    androidTestImplementation(libs.fastlane.screengrab)
-    androidTestImplementation(libs.androidx.testExt.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
-    androidTestImplementation(libs.androidx.uiautomator)
-    androidTestImplementation(libs.glance.appwidget.testing)
-    androidTestImplementation(libs.compose.uiTest.junit4)
-    androidTestImplementation(libs.compose.foundation)
-    // Compose UI tests bring Espresso 3.5, which can't inject input on current Android versions
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(libs.androidx.espresso.intents)
+    // UI tests run on the JVM with Robolectric; Roborazzi takes the store screenshots (ScreenshotTest)
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.testExt.junit)
+    testImplementation(libs.androidx.test.rules)
+    testImplementation(libs.glance.appwidget.testing)
+    // The scanner screens' camera preview needs ML Kit started, as the app does on a device
+    testImplementation(libs.mlkit.barcodeScanning)
+    testImplementation(libs.compose.uiTest.junit4)
+    testImplementation(libs.compose.foundation)
+    testImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.androidx.espresso.intents)
     debugImplementation(libs.compose.uiTest.manifest)
 }
 
@@ -45,7 +51,6 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 1
         versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         // Release signing is configured via env vars in CI; without them release builds stay unsigned.
@@ -79,5 +84,21 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { test ->
+                test.systemProperty("robolectric.graphicsMode", "NATIVE")
+                // Robolectric reaches into FileDescriptor through the JDK's internals
+                test.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+                // -PstoreScreenshots: ScreenshotTest writes the Play screenshots (fastlane android screenshots)
+                if (storeScreenshots) {
+                    test.systemProperty("roborazzi.test.record", "true")
+                    test.systemProperty("screenshotDir", screenshotDir)
+                    test.outputs.upToDateWhen { false }
+                }
+            }
+        }
     }
 }

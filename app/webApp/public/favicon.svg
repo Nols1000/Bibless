@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- The Bibless logo (tools/icon/logo.svg) in black on Hyper Volt -->
+  <clipPath id="tile"><rect width="512" height="512" rx="112"/></clipPath>
+  <rect width="512" height="512" rx="112" fill="#D4FF00"/>
+  <g clip-path="url(#tile)" fill="#000">
+    <path d="M0 0V512H95.957L102.328 478.545H224.001A127.273 127.273 0 0 0 351.273 351.273A127.273 127.273 0 0 0 310.103 257.545A127.273 127.273 0 0 0 354.764 160.728A127.273 127.273 0 0 0 227.491 33.455H187.083L193.453 0ZM174.896 97.455H227.491A63.273 63.273 0 0 1 290.764 160.728A63.273 63.273 0 0 1 227.491 224H150.799ZM138.612 288H224.001A63.273 63.273 0 0 1 287.273 351.273A63.273 63.273 0 0 1 224.001 414.545H114.515Z"/>
+    <rect x="400.607" width="111.393" height="512"/>
+    <rect width="512" height="512" rx="112" fill="none" stroke="#D4FF00" stroke-width="40"/>
+  </g>
+</svg>

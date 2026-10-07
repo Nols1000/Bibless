@@ -109,6 +109,14 @@ describe('landing page', () => {
     expect(document.querySelector('a[href="./organise/"]')).not.toBeNull();
   });
 
+  it('sends people to the Android testers group, not the closed Play listing', () => {
+    load();
+    const hero = document.querySelector<HTMLAnchorElement>('.step-hero .cta')!;
+    expect(hero.href).toBe('https://groups.google.com/g/bibless-testers');
+    expect(document.querySelector('.topbar .cta')!.getAttribute('href')).toBe('#beta');
+    expect(document.querySelector('#beta')!.textContent).toContain('iPhone and Apple Watch');
+  });
+
   it('hides the inactive screens from assistive tech', () => {
     load();
     const hidden = [...document.querySelectorAll('.captures img')].filter((img) => img.getAttribute('aria-hidden') === 'false');

@@ -131,15 +131,18 @@ a {
   margin: 0;
 }
 
-/* A finish line: the mark is a volt chip with a black tick, a bib without the bib */
+/* The Bibless logo, black on Hyper Volt (the #logo symbol in index.html) */
 .brand-mark {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, transparent 0 46%, #000 46% 54%, transparent 54%) center / 60% 60% no-repeat,
-    var(--volt);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) inset;
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.sr-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
 .topbar nav {
@@ -842,6 +845,69 @@ h2 {
 @keyframes rise {
   from { opacity: 0; transform: translateY(40px); }
   to { opacity: 1; transform: none; }
+}
+
+/* ---------- Beta ---------- */
+
+.beta {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 max(16px, 4vw) 12svh;
+}
+
+.beta-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 64px);
+  border-radius: 32px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--volt) 14%, transparent), transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.beta-card > p {
+  max-width: 640px;
+  color: var(--muted);
+  font-size: 1.08rem;
+}
+
+.beta-steps {
+  list-style: none;
+  margin: 24px 0 8px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.beta-steps li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.beta-n {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--volt);
+  color: #000;
+  font-weight: 780;
+}
+
+.badge-muted {
+  background: var(--surface-2);
+  color: var(--text);
+  margin-right: 6px;
 }
 
 /* ---------- Footer ---------- */

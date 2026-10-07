@@ -7,18 +7,33 @@
     <meta name="description" content="Bibless keeps your parkrun barcode on your phone and your Wear OS watch, so you get scanned at the finish without a printout. No account, no ads, no tracking.">
     <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#000000">
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 </head>
 <body class="landing">
+<svg width="0" height="0" class="sr-defs" aria-hidden="true">
+    <defs>
+        <clipPath id="logo-tile"><rect width="512" height="512" rx="112"/></clipPath>
+        <!-- The Bibless logo (tools/icon/logo.svg) in black on Hyper Volt -->
+        <symbol id="logo" viewBox="0 0 512 512">
+            <rect width="512" height="512" rx="112" fill="#D4FF00"/>
+            <g clip-path="url(#logo-tile)" fill="#000">
+                <path d="M0 0V512H95.957L102.328 478.545H224.001A127.273 127.273 0 0 0 351.273 351.273A127.273 127.273 0 0 0 310.103 257.545A127.273 127.273 0 0 0 354.764 160.728A127.273 127.273 0 0 0 227.491 33.455H187.083L193.453 0ZM174.896 97.455H227.491A63.273 63.273 0 0 1 290.764 160.728A63.273 63.273 0 0 1 227.491 224H150.799ZM138.612 288H224.001A63.273 63.273 0 0 1 287.273 351.273A63.273 63.273 0 0 1 224.001 414.545H114.515Z"/>
+                <rect x="400.607" width="111.393" height="512"/>
+                <rect width="512" height="512" rx="112" fill="none" stroke="#D4FF00" stroke-width="40"/>
+            </g>
+        </symbol>
+    </defs>
+</svg>
 <a class="skip" href="#features">Skip to the features</a>
 
 <header class="topbar">
     <a class="brand" href="#top" aria-label="Bibless, back to the top">
-        <span class="brand-mark" aria-hidden="true"></span>Bibless
+        <svg class="brand-mark" viewBox="0 0 512 512" aria-hidden="true"><use href="#logo"/></svg>Bibless
     </a>
     <nav aria-label="Sections">
         <a href="#features">Features</a>
         <a href="#runs">Community runs</a>
-        <a class="cta cta-small" href="https://play.google.com/store/apps/details?id=com.github.nols1000.bibless">Get the app</a>
+        <a class="cta cta-small" href="#beta">Join the beta</a>
     </nav>
 </header>
 
@@ -41,13 +56,13 @@
             <p class="lead">No printout needed. Bibless opens straight to your barcode at full brightness, so you get
                 scanned at the finish and get on with your coffee.</p>
             <div class="actions">
-                <a class="cta" href="https://play.google.com/store/apps/details?id=com.github.nols1000.bibless">
+                <a class="cta" href="https://groups.google.com/g/bibless-testers">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2.5v19l10-9.5zM15.5 13.5 18 16l3.5-2a1.2 1.2 0 0 0 0-2L18 10l-2.5 2.5z" fill="currentColor"/></svg>
-                    Get it on Google Play
+                    Join the Android beta
                 </a>
                 <a class="cta cta-ghost" href="#features">See how it works</a>
             </div>
-            <p class="fine">For Android phones and Wear OS watches. Independent, and not affiliated with parkrun.</p>
+            <p class="fine">Testing now on Android phones and Wear OS watches. iPhone and Apple Watch: coming soon. Independent, and not affiliated with parkrun.</p>
         </section>
 
         <section id="features" class="step" data-step="formats" aria-labelledby="formats-title">
@@ -141,8 +156,28 @@
     </div>
 </main>
 
+<section id="beta" class="beta" aria-labelledby="beta-title">
+    <div class="beta-card">
+        <p class="eyebrow">Android &amp; Wear OS beta</p>
+        <h2 id="beta-title">Be one of the first at the finish.</h2>
+        <p>Bibless is in closed testing on Google Play. Join the testers to get it on your phone and your Wear OS
+            watch, and tell us what works at your parkrun.</p>
+        <ol class="beta-steps">
+            <li><span class="beta-n">1</span><span><a href="https://groups.google.com/g/bibless-testers">Join bibless-testers</a> on Google Groups with
+                the Google account you use on Play.</span></li>
+            <li><span class="beta-n">2</span><span><a href="https://play.google.com/apps/testing/com.github.nols1000.bibless">Become a tester</a> on Google Play.</span></li>
+            <li><span class="beta-n">3</span><span><a href="https://play.google.com/store/apps/details?id=com.github.nols1000.bibless">Install Bibless</a> on your phone, then on your
+                watch from its Play Store.</span></li>
+        </ol>
+        <div class="actions">
+            <a class="cta" href="https://groups.google.com/g/bibless-testers">Join the testers group</a>
+        </div>
+        <p class="fine"><span class="badge badge-muted">Coming soon</span> iPhone and Apple Watch.</p>
+    </div>
+</section>
+
 <footer class="footer">
-    <p class="footer-brand"><span class="brand-mark" aria-hidden="true"></span>Bibless</p>
+    <p class="footer-brand"><svg class="brand-mark" viewBox="0 0 512 512" aria-hidden="true"><use href="#logo"/></svg>Bibless</p>
     <nav aria-label="Footer">
         <a href="./privacy/android/">Privacy (Android)</a>
         <a href="./privacy/apple/">Privacy (Apple)</a>

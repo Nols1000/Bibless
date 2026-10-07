@@ -20,6 +20,7 @@ dependencies {
     implementation(libs.wear.input)
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
+    implementation(libs.wear.protolayout.material3)
     implementation(libs.androidx.concurrent.futures)
     implementation(libs.compose.materialIconsCore)
     implementation(libs.androidx.lifecycle.runtimeCompose)

@@ -13,7 +13,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
-import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
@@ -36,7 +37,18 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     val listState = rememberTransformingLazyColumnState()
     // Items shrink and morph at the top and bottom edges, so the rows fit the round screen.
     val transformationSpec = rememberTransformationSpec()
-    ScreenScaffold(scrollState = listState) { contentPadding ->
+    ScreenScaffold(
+        scrollState = listState,
+        edgeButton = {
+            EdgeButton(
+                onClick = { onSave(name, athleteId) },
+                enabled = normalized != null,
+                buttonSize = EdgeButtonSize.Medium,
+            ) {
+                Text("Save")
+            }
+        },
+    ) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
                 ListHeader(
@@ -68,15 +80,6 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
                             },
                         )
                     },
-                )
-            }
-            item {
-                Button(
-                    onClick = { onSave(name, athleteId) },
-                    enabled = normalized != null,
-                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
-                    transformation = SurfaceTransformation(transformationSpec),
-                    label = { Text("Save") },
                 )
             }
         }

@@ -22,6 +22,7 @@ import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
 import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
@@ -121,22 +122,22 @@ fun BarcodeListScreen(
                 }
             }
             item {
-                FilledTonalButton(
-                    onClick = onAdd,
+                ButtonGroup(
                     modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
-                    transformation = SurfaceTransformation(transformationSpec),
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                    label = { Text("Add") },
-                )
-            }
-            item {
-                FilledTonalButton(
-                    onClick = onSettings,
-                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
-                    transformation = SurfaceTransformation(transformationSpec),
-                    icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                    label = { Text("Settings") },
-                )
+                ) {
+                    FilledTonalButton(
+                        onClick = onAdd,
+                        modifier = Modifier.weight(1f),
+                        icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                        label = { Text("Add") },
+                    )
+                    FilledTonalButton(
+                        onClick = onSettings,
+                        modifier = Modifier.weight(1f),
+                        icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                        label = { Text("Settings") },
+                    )
+                }
             }
         }
     }

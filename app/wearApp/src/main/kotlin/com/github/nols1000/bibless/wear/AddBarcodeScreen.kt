@@ -13,11 +13,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.input.RemoteInputIntentHelper
 import com.github.nols1000.bibless.normalizeAthleteId
 
@@ -31,6 +36,7 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     val idInput = rememberTextInput("Athlete ID") { athleteId = it }
 
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
     ScreenScaffold(
         scrollState = listState,
         edgeButton = {
@@ -41,12 +47,22 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     ) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
-                ListHeader { Text("Add barcode") }
+                ListHeader(
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ListHeaderDefaults.minimumTopListContentPadding,
+                            ListHeaderDefaults.minimumBottomListContentPadding,
+                        ),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) { Text("Add barcode") }
             }
             item {
                 FilledTonalButton(
                     onClick = nameInput,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
+                        .fillMaxWidth(),
+                    transformation = SurfaceTransformation(transformationSpec),
                     label = { Text("Name") },
                     secondaryLabel = { Text(name.ifEmpty { "Optional" }) },
                 )
@@ -54,7 +70,10 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
             item {
                 FilledTonalButton(
                     onClick = idInput,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
+                        .fillMaxWidth(),
+                    transformation = SurfaceTransformation(transformationSpec),
                     label = { Text("Athlete ID") },
                     secondaryLabel = {
                         Text(

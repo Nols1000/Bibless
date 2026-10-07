@@ -1,16 +1,16 @@
 package com.github.nols1000.bibless.wear
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.runtime.Composable
@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
@@ -34,14 +35,21 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.AlertDialog
 import androidx.wear.compose.material3.AlertDialogDefaults
-import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonGroup
 import androidx.wear.compose.material3.CompactButton
 import androidx.wear.compose.material3.EdgeButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TextButton
+import androidx.wear.compose.material3.TextButtonDefaults
+import androidx.wear.compose.material3.TextDefaults
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
 import androidx.wear.tooling.preview.devices.WearDevices
 import com.github.nols1000.bibless.FinishTime
 import com.github.nols1000.bibless.TimerSession
@@ -72,6 +80,7 @@ fun TimerScreen(
 @Composable
 private fun Stopped(onStart: () -> Unit) {
     val listState = rememberTransformingLazyColumnState()
+    val transformationSpec = rememberTransformationSpec()
     ScreenScaffold(
         scrollState = listState,
         edgeButton = {
@@ -83,12 +92,25 @@ private fun Stopped(onStart: () -> Unit) {
     ) { contentPadding ->
         TransformingLazyColumn(state = listState, contentPadding = contentPadding) {
             item {
-                ListHeader { Text("Timer") }
+                ListHeader(
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ListHeaderDefaults.minimumTopListContentPadding,
+                            ListHeaderDefaults.minimumBottomListContentPadding,
+                        ),
+                    transformation = SurfaceTransformation(transformationSpec),
+                ) { Text("Timer") }
             }
             item {
                 Text(
                     "Times go to your phone when you stop, or later if it isn't nearby.",
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            TextDefaults.minimumTopListContentPadding,
+                            TextDefaults.minimumBottomListContentPadding,
+                        )
+                        .graphicsLayer { with(transformationSpec) { applyContentTransformation(scrollProgress) } }
+                        .fillMaxWidth(),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
                 )
@@ -116,7 +138,8 @@ private fun Running(
     }
     val last = session.times.lastOrNull()
 
-    ScreenScaffold {
+    // The elapsed time takes the clock's place at the top
+    ScreenScaffold(timeText = {}) {
         BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             // As big as the round screen allows between the clock and the controls
             val finishSize = maxHeight * 0.48f
@@ -125,28 +148,40 @@ private fun Running(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(formatElapsed(elapsed), fontSize = 30.sp, style = MaterialTheme.typography.numeralSmall, modifier = Modifier.testTag("elapsed"))
-                Button(
+                // Squares up while pressed, so each finisher gets a visible as well as a felt response
+                TextButton(
                     onClick = {
                         if (onFinish() != null) haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     },
                     modifier = Modifier.size(finishSize),
-                    shape = CircleShape,
+                    shapes = TextButtonDefaults.animatedShapes(),
+                    colors = TextButtonDefaults.filledTextButtonColors(),
                 ) {
-                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Finish", style = MaterialTheme.typography.titleMedium)
                         Text("P${session.times.size + 1}", style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // The pressed button grows into its neighbour; wide enough that the other keeps its label
+                val undoInteraction = remember { MutableInteractionSource() }
+                val stopInteraction = remember { MutableInteractionSource() }
+                ButtonGroup(Modifier.width(finishSize * 1.8f)) {
                     CompactButton(
                         onClick = {
                             onUndo()
                             haptics.performHapticFeedback(HapticFeedbackType.Reject)
                         },
+                        modifier = Modifier.animateWidth(undoInteraction),
                         enabled = last != null,
-                        label = { Text("Undo") },
+                        interactionSource = undoInteraction,
+                        label = { Text("Undo", Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
                     )
-                    CompactButton(onClick = { confirmStop = true }, label = { Text("Stop") })
+                    CompactButton(
+                        onClick = { confirmStop = true },
+                        modifier = Modifier.animateWidth(stopInteraction),
+                        interactionSource = stopInteraction,
+                        label = { Text("Stop", Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+                    )
                 }
                 Text(
                     last?.let { "P${it.position} ${formatElapsed(it.elapsedMs)}" } ?: "No finishers yet",

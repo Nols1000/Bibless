@@ -6,8 +6,6 @@ ANDROID_AABS = [
   "app/wearApp/build/outputs/bundle/release/wearApp-release.aab",
 ].map { |p| File.expand_path("../#{p}", __dir__) }
 
-ANDROID_TEST_PACKAGE = "com.github.nols1000.bibless.test"
-
 # Play track releases go to: closed testing ("alpha"; the Wear OS bundle to "wear:alpha", which exists
 # once closed testing is set up for the Wear OS form factor in Play Console).
 # The listing sync attaches to the newest release on the same track.
@@ -36,45 +34,20 @@ def frame_screenshots(platform_flag, directory)
 end
 
 platform :android do
-  desc "Capture the Play phone and Wear OS screenshots on running emulators (demo data, see ScreenshotTest). " \
-       "Options: phone:<adb serial>, wear:<adb serial> (round watch), wear_square:<adb serial>; " \
-       "omit one to skip it. The square watch adds to the round one's screenshots, so capture it last"
-  lane :screenshots do |options|
-    # Module, screengrab device type, serial, whether to clear that device type's screenshots first
-    runs = [
-      ["androidApp", "phone", options[:phone], true],
-      ["wearApp", "wear", options[:wear], true],
-      ["wearApp", "wear", options[:wear_square], false],
-    ].select { |_, _, serial| serial }
-    UI.user_error!("Pass phone:, wear: and/or wear_square:<serial> (see `adb devices`)") if runs.empty?
-
-    modules = runs.map(&:first).uniq
-    gradle(tasks: modules.flat_map { |m| [":app:#{m}:assembleDebug", ":app:#{m}:assembleDebugAndroidTest"] })
-    runs.each do |mod, device_type, serial, clear|
-      capture_android_screenshots(
-        app_apk_path: "app/#{mod}/build/outputs/apk/debug/#{mod}-debug.apk",
-        tests_apk_path: "app/#{mod}/build/outputs/apk/androidTest/debug/#{mod}-debug-androidTest.apk",
-        app_package_name: "com.github.nols1000.bibless",
-        tests_package_name: ANDROID_TEST_PACKAGE,
-        test_instrumentation_runner: "androidx.test.runner.AndroidJUnitRunner",
-        # The other UI tests (e.g. BarcodeLinkTest) take no screenshots
-        use_tests_in_classes: [mod == "wearApp" ? "com.github.nols1000.bibless.wear.ScreenshotTest" : "com.github.nols1000.bibless.ScreenshotTest"],
-        specific_device: serial,
-        device_type: device_type,
-        locales: ["en-US"],
-        output_directory: "fastlane/metadata/android",
-        clear_previous_screenshots: clear,
-        exit_on_test_failure: true
-      )
-    end
-    # A reused emulator hands back empty files for screenshots an earlier run left on it
-    Dir.glob(File.join(__dir__, "metadata/android/*/images/*Screenshots/*.png"))
-       .select { |f| File.zero?(f) }
-       .each { |f| File.delete(f) }
+  desc "Capture the Play phone and Wear OS screenshots with Robolectric and Roborazzi (demo data, see ScreenshotTest); " \
+       "no emulator needed"
+  lane :screenshots do
+    # The ScreenshotTests write straight into fastlane/metadata/android/en-US/images (see the
+    # storeScreenshots property in the apps' build.gradle.kts), under fixed names
+    # --tests filters the task before it, so each test task gets its own
+    gradle(
+      task: %w[androidApp wearApp].map { |m| ":app:#{m}:testDebugUnitTest --tests '*.ScreenshotTest'" }.join(" "),
+      flags: "-PstoreScreenshots"
+    )
     # Headlines on the phone screenshots; Wear OS screenshots show the app alone
-    frame_screenshots("--android", "fastlane/metadata/android/en-US/images/phoneScreenshots") if options[:phone]
+    frame_screenshots("--android", "fastlane/metadata/android/en-US/images/phoneScreenshots")
     # A square watch's screenshots are below Google Play's minimum size
-    frame_screenshots("--wear", "fastlane/metadata/android/en-US/images/wearScreenshots") if options[:wear_square]
+    frame_screenshots("--wear", "fastlane/metadata/android/en-US/images/wearScreenshots")
   end
 
   desc "Upload one bundle to a Play track: form:phone or form:wear (to the Wear OS form factor's track), " \

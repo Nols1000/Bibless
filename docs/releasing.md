@@ -49,19 +49,19 @@ If a listing already exists in a store, pull it once before editing: `bundle exe
 
 ### Screenshots
 
-Screenshots are captured by UI tests through fastlane ([snapshot](https://docs.fastlane.tools/actions/snapshot/) and [screengrab](https://docs.fastlane.tools/actions/screengrab/)). The tests start the apps with sample barcodes from `DemoData` (`app/sharedLogic`), so no real codes appear in the stores.
+Screenshots are captured by UI tests: on iOS through fastlane [snapshot](https://docs.fastlane.tools/actions/snapshot/), on Android with [Robolectric](https://robolectric.org) and [Roborazzi](https://github.com/takahirom/roborazzi), which render the screens on the JVM. The tests start the apps with sample barcodes from `DemoData` (`app/sharedLogic`), so no real codes appear in the stores.
 
 ```sh
 # iPhone 17 Pro Max (6.9") and Apple Watch Ultra 3 simulators
 bundle exec fastlane ios screenshots
 
-# Running phone and Wear OS emulators, by their `adb devices` serials
-bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
+# Pixel 7, large round and square Wear OS screens; no emulator needed
+bundle exec fastlane android screenshots
 ```
 
-The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `androidTest` sources. The Android tests replace the app's saved barcodes, so they refuse to run on a real device.
+The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `test` sources. The Android ones run with the other unit tests too, but only write images with `-PstoreScreenshots`, which the lane passes. Robolectric draws no system bars, so the Android screenshots have no status bar.
 
-The images are not committed (they are git-ignored). `screenshots.yml` captures them on CI simulators and emulators, each device in its own job, and keeps them as workflow artifacts for review. Releases start it alongside the builds and push the listing (`store-metadata.yml`) after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run `screenshots.yml` on `main` without uploading. To update a listing between releases, run `gh workflow run store-metadata.yml`, which captures the screenshots first. The local commands above are for previewing.
+The images are not committed (they are git-ignored). `screenshots.yml` captures them on CI, the Play ones in one Robolectric job and the App Store ones on simulators, and keeps them as workflow artifacts for review. Releases start it alongside the builds and push the listing (`store-metadata.yml`) after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run `screenshots.yml` on `main` without uploading. To update a listing between releases, run `gh workflow run store-metadata.yml`, which captures the screenshots first. The local commands above are for previewing.
 
 ## Secrets
 

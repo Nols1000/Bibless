@@ -41,16 +41,14 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.robolectric.annotation.Config
 
 /**
- * The Play Store Wear OS screenshots, on a large round and a square watch. Every run walks through
- * the screens; with `-PstoreScreenshots` Roborazzi also writes them for fastlane
+ * The Play Store Wear OS screenshots, on a large round watch (see robolectric.properties). Every run
+ * walks through the screens; with `-PstoreScreenshots` Roborazzi also writes them for fastlane
  * (`bundle exec fastlane android screenshots`).
  *
  * The file names set the store order, as on the phones: the code in both formats, the list, adding
- * one, then the launch setting. The square watch adds its own take on the first three after the
- * round ones; Google Play takes 8 Wear OS screenshots at most.
+ * one, then the launch setting.
  */
 @RunWith(AndroidJUnit4::class)
 class ScreenshotTest {
@@ -71,9 +69,18 @@ class ScreenshotTest {
     }
 
     @Test
-    fun round() {
+    fun screenshots() {
         ActivityScenario.launch(MainActivity::class.java).use {
-            captureCodesAndList(list = "03-list", qr = "01-qr", barcode = "02-barcode")
+            compose.onNodeWithText("Me").assertExists()
+            capture("03-list")
+
+            compose.onNodeWithText("Me").performClick()
+            compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText("Sam").fetchSemanticsNodes().isEmpty() }
+            capture("01-qr")
+            // The open code follows the format setting
+            repository.setDefaultFormat(Device.WATCH, BarcodeFormat.CODE128)
+            capture("02-barcode")
+            repository.setDefaultFormat(Device.WATCH, BarcodeFormat.QR)
 
             pressBack()
             // The code's pager scrolls too, so let it close before looking for the list
@@ -99,27 +106,6 @@ class ScreenshotTest {
             compose.onNodeWithText("Open on launch").assertExists()
             capture("05-settings")
         }
-    }
-
-    @Test
-    @Config(qualifiers = "w180dp-h180dp-notround-watch-xhdpi")
-    fun square() {
-        ActivityScenario.launch(MainActivity::class.java).use {
-            captureCodesAndList(list = "08-square-list", qr = "06-square-qr", barcode = "07-square-barcode")
-        }
-    }
-
-    private fun captureCodesAndList(list: String, qr: String, barcode: String) {
-        compose.onNodeWithText("Me").assertExists()
-        capture(list)
-
-        compose.onNodeWithText("Me").performClick()
-        compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText("Sam").fetchSemanticsNodes().isEmpty() }
-        capture(qr)
-        // The open code follows the format setting
-        repository.setDefaultFormat(Device.WATCH, BarcodeFormat.CODE128)
-        capture(barcode)
-        repository.setDefaultFormat(Device.WATCH, BarcodeFormat.QR)
     }
 
     @OptIn(ExperimentalRoborazziApi::class)

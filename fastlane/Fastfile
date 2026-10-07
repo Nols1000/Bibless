@@ -46,8 +46,6 @@ platform :android do
     )
     # Headlines on the phone screenshots; Wear OS screenshots show the app alone
     frame_screenshots("--android", "fastlane/metadata/android/en-US/images/phoneScreenshots")
-    # A square watch's screenshots are below Google Play's minimum size
-    frame_screenshots("--wear", "fastlane/metadata/android/en-US/images/wearScreenshots")
   end
 
   desc "Upload one bundle to a Play track: form:phone or form:wear (to the Wear OS form factor's track), " \

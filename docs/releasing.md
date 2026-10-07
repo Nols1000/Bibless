@@ -55,7 +55,7 @@ Screenshots are captured by UI tests: on iOS through fastlane [snapshot](https:/
 # iPhone 17 Pro Max (6.9") and Apple Watch Ultra 3 simulators
 bundle exec fastlane ios screenshots
 
-# Pixel 7, large round and square Wear OS screens; no emulator needed
+# Pixel 7 and a large round Wear OS screen; no emulator needed
 bundle exec fastlane android screenshots
 ```
 

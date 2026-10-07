@@ -22,10 +22,9 @@ behind all the screenshots side by side; each gets its own slice, so the set flo
 in the store. Screens run off the bottom edge; the bottom of every screen is empty anyway.
 
 Watch screenshots get no headline: Google Play wants Wear OS screenshots to show the app alone, and
-the App Store's watch slot is the size of the display. With --wear, Wear OS screenshots below Google
-Play's 384x384 minimum (a square watch's 360x360) are only scaled up to the round watch's 454x454.
+the App Store's watch slot is the size of the display.
 
-Usage: python3 tools/screenshots/frame.py (--ios | --android | --wear) <screenshot dir>
+Usage: python3 tools/screenshots/frame.py (--ios | --android) <screenshot dir>
 Requires Pillow (pip install pillow).
 """
 from __future__ import annotations
@@ -43,8 +42,6 @@ FONT = Path(__file__).resolve().parent / "Inter.ttf"
 
 SIZES = {"ios": (1320, 2868), "android": (1080, 1920)}
 IOS_DEVICE = "iPhone"
-WEAR_MINIMUM = 384
-WEAR_SIZE = 454
 MARKER = "bibless-framed"
 
 TOP = (255, 140, 80)  # orange
@@ -209,30 +206,13 @@ def readable(path: Path) -> bool:
         return False
 
 
-def scale_up(directory: Path) -> None:
-    """Scales the Wear OS screenshots in [directory] that are below Google Play's minimum up to the
-    round watch's size."""
-    for path in sorted(directory.glob("*.png")):
-        with Image.open(path) as image:
-            if min(image.size) >= WEAR_MINIMUM:
-                continue
-            scaled = image.convert("RGB").resize((WEAR_SIZE, WEAR_SIZE), Image.LANCZOS)
-        scaled.save(path)
-        print(f"Scaled up {path.name}")
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     platform = parser.add_mutually_exclusive_group(required=True)
     platform.add_argument("--ios", action="store_const", const="ios", dest="mode")
     platform.add_argument("--android", action="store_const", const="android", dest="mode")
-    platform.add_argument("--wear", action="store_const", const="wear", dest="mode")
     parser.add_argument("directory", type=Path)
     args = parser.parse_args()
-    if args.mode == "wear":
-        scale_up(args.directory)
-        return
-
     screenshots: dict[str, dict] = json.loads(CAPTIONS.read_text())
     shots = {shot for entry in screenshots.values() for shot in entry["shots"]}
     found = {shot: captures(args.mode, args.directory, shot) for shot in shots}

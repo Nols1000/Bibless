@@ -1,5 +1,7 @@
 package com.github.nols1000.bibless
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.collectAsState
@@ -17,6 +19,7 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +50,17 @@ class SiteScreenshotTest {
 
     private fun showApp() = compose.setContent { App(repository, timer, scanner, device) }
 
+    /**
+     * The list, reached by opening a barcode and going back. Captured as the app's first screen, it
+     * sometimes came out blank when the watch's tests had run first in the same build.
+     */
+    private fun showList() {
+        showApp()
+        openMe()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText("Sam").fetchSemanticsNodes().isNotEmpty() }
+    }
+
     private fun openMe() {
         compose.onNodeWithText("Me").performClick()
         compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText("Sam").fetchSemanticsNodes().isEmpty() }
@@ -54,7 +68,7 @@ class SiteScreenshotTest {
 
     @Test
     fun list() {
-        showApp()
+        showList()
         compose.onNodeWithText("Jamie (junior)").assertExists()
         capture("list")
     }
@@ -64,7 +78,7 @@ class SiteScreenshotTest {
     fun listSynced() {
         val (name, athleteId) = DemoData.newBarcode
         repository.add(name, athleteId)
-        showApp()
+        showList()
         compose.onNodeWithText(name).assertExists()
         capture("list-synced")
     }
@@ -170,8 +184,16 @@ class SiteScreenshotTest {
     @OptIn(ExperimentalRoborazziApi::class)
     private fun capture(name: String) {
         compose.waitForIdle()
-        captureScreenRoboImage("${System.getProperty("siteScreenshotDir") ?: "build/outputs/roborazzi/site"}/$name.png")
+        val file = "${System.getProperty("siteScreenshotDir") ?: "build/outputs/roborazzi/site"}/$name.png"
+        captureScreenRoboImage(file)
+        // Roborazzi only writes the file when recording (-PsiteScreenshots), and never a blank one
+        BitmapFactory.decodeFile(file)?.let { assertFalse("$name.png is blank", isBlank(it)) }
     }
+
+    /** Whether every pixel on a coarse grid is the same colour, as in a capture of an empty window. */
+    private fun isBlank(bitmap: Bitmap) =
+        (0 until bitmap.height step 40).flatMap { y -> (0 until bitmap.width step 40).map { x -> bitmap.getPixel(x, y) } }
+            .distinct().size == 1
 
     private companion object {
         const val TIMEOUT = 5_000L

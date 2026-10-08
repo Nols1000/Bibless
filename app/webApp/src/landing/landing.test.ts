@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import html from '../../index.html?raw';
-import { initLanding, type Landing } from './landing.ts';
+import { initLanding, nextParkrun, type Landing } from './landing.ts';
 
 function activeScreen(selector: string) {
   return document.querySelector<HTMLImageElement>(`${selector} img.screen.is-active`)?.dataset.screen;
@@ -117,9 +117,62 @@ describe('landing page', () => {
     expect(document.querySelector('#beta')!.textContent).toContain('iPhone and Apple Watch');
   });
 
+  it('scans the watch and adds Me to the finish on a loop', () => {
+    load();
+    const finish = document.querySelector('.finish')!;
+    const stage = document.querySelector('.stage')!;
+    expect(document.querySelector('.step-hero h1')!.textContent).toBe('No bibs. No printouts. Just your wrist.');
+    expect(finish.classList.contains('is-scanned')).toBe(false);
+
+    vi.advanceTimersByTime(1750);
+    expect(stage.classList.contains('is-scanning')).toBe(true);
+    vi.advanceTimersByTime(1000);
+    expect(stage.classList.contains('is-scanning')).toBe(false);
+    expect(finish.classList.contains('is-scanned')).toBe(true);
+    expect(finish.querySelector('.is-me')!.textContent).toBe('P42Me24:26');
+    expect(document.querySelector('[data-finish-clock]')!.textContent).toBe('24:26');
+
+    vi.advanceTimersByTime(4500);
+    expect(finish.classList.contains('is-scanned')).toBe(false);
+    expect(document.querySelector('[data-finish-clock]')!.textContent).toBe('24:24');
+  });
+
+  it('shows the scanned finish without moving, with reduced motion', () => {
+    load(true);
+    vi.advanceTimersByTime(10_000);
+    expect(document.querySelector('.finish')!.classList.contains('is-scanned')).toBe(true);
+    expect(document.querySelector('.stage')!.classList.contains('is-scanning')).toBe(false);
+  });
+
+  it('counts down to Saturday 9am', () => {
+    vi.setSystemTime(new Date(2026, 9, 8, 18, 30)); // a Thursday
+    load();
+    expect(document.querySelector('[data-countdown]')!.textContent).toBe('Next parkrun in 1d 14h 30m');
+  });
+
   it('hides the inactive screens from assistive tech', () => {
     load();
     const hidden = [...document.querySelectorAll('.captures img')].filter((img) => img.getAttribute('aria-hidden') === 'false');
     expect(hidden.map((img) => (img as HTMLElement).dataset.screen)).toEqual(['barcode']);
+  });
+});
+
+describe('nextParkrun', () => {
+  const at = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m); // October 2026: the 10th is a Saturday
+
+  it('counts down in days, hours and minutes', () => {
+    expect(nextParkrun(at(8, 18, 30))).toBe('Next parkrun in 1d 14h 30m');
+    expect(nextParkrun(at(10, 8, 0))).toBe('Next parkrun in 1h 00m');
+    expect(nextParkrun(at(10, 8, 59))).toBe('Next parkrun in 01m');
+  });
+
+  it('is on from 9am until half past ten', () => {
+    expect(nextParkrun(at(10, 9, 0))).toBe('parkrun is on now');
+    expect(nextParkrun(at(10, 10, 29))).toBe('parkrun is on now');
+  });
+
+  it('moves on to next week once it is over', () => {
+    expect(nextParkrun(at(10, 10, 30))).toBe('Next parkrun in 6d 22h 30m');
+    expect(nextParkrun(at(11, 9, 0))).toBe('Next parkrun in 6d 0h 00m');
   });
 });

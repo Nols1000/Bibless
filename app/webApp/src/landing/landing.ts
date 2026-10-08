@@ -175,6 +175,47 @@ const SYNC_ARC = `<svg class="sync-arc" viewBox="0 0 100 125" preserveAspectRati
   <path class="pulse" d="M76 70 C 74 34, 52 26, 40 36" pathLength="100" vector-effect="non-scaling-stroke"/>
 </svg>`;
 
+/**
+ * The countdown in the hero: parkruns start at 9am on Saturdays, local time, and the finish funnel
+ * stays busy until about half past ten.
+ */
+export function nextParkrun(now: Date): string {
+  const start = new Date(now);
+  start.setHours(9, 0, 0, 0);
+  start.setDate(start.getDate() + ((6 - start.getDay() + 7) % 7));
+  const end = start.getTime() + 90 * 60_000;
+  if (now.getTime() >= start.getTime() && now.getTime() < end) return 'parkrun is on now';
+  if (now.getTime() >= end) start.setDate(start.getDate() + 7);
+  const minutes = Math.ceil((start.getTime() - now.getTime()) / 60_000);
+  const d = Math.floor(minutes / 1440);
+  const h = Math.floor((minutes % 1440) / 60);
+  const m = String(minutes % 60).padStart(2, '0');
+  return `Next parkrun in ${d ? `${d}d ` : ''}${d || h ? `${h}h ` : ''}${m}m`;
+}
+
+/**
+ * The hero's finish: the race clock runs, the volunteer's scanner frames the watch's QR code, and
+ * Me lands in the results behind Jamie and Sam. One loop is [FINISH_LOOP] ms long.
+ */
+const FINISH_LOOP = 7000;
+const FINISH_START = 24 * 60 + 24;
+const SCAN_AT = 1500;
+const SCANNED_AT = 2600;
+const FADE_AT = 6400;
+
+function formatClock(seconds: number) {
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+function buildFinish() {
+  const row = (pos: string, name: string, time: string, extra = '') =>
+    `<li class="${extra}"><span class="finish-pos">${pos}</span><span class="finish-name">${name}</span><span class="finish-time">${time}</span></li>`;
+  return el('div', 'finish', `<div class="finish-head"><span class="finish-label">Finish clock</span>` +
+    `<span class="finish-clock" data-finish-clock>${formatClock(FINISH_START)}</span></div>` +
+    `<ol class="finish-rows">${row('P40', 'Jamie (junior)', '24:05')}${row('P41', 'Sam', '24:19')}` +
+    row('P42', 'Me', formatClock(FINISH_START + Math.floor(SCANNED_AT / 1000)), 'is-me') + '</ol>');
+}
+
 export interface Landing {
   choices: Choices;
   step: string;
@@ -207,6 +248,11 @@ export function initLanding(root: HTMLElement, base = import.meta.env.BASE_URL):
   const watch = buildWatch(base);
   devices.append(phone, watch);
   devices.insertAdjacentHTML('beforeend', SYNC_ARC);
+  const finish = buildFinish();
+  finish.setAttribute('aria-hidden', 'true');
+  devices.append(finish);
+  // A viewfinder that closes in around the watch face, without ever covering the code
+  watch.querySelector('.watch-round')!.append(el('div', 'watch-scan'));
 
   const landing: Landing = {
     choices,
@@ -310,6 +356,38 @@ export function initLanding(root: HTMLElement, base = import.meta.env.BASE_URL):
   function stopCycling() {
     window.clearInterval(cycle);
   }
+
+  // The hero's finish scan, on a loop while the hero is on stage; with reduced motion, its end state
+  const clock = finish.querySelector<HTMLElement>('[data-finish-clock]')!;
+  let loopStart = Date.now();
+  function finishTick() {
+    if (landing.step !== 'hero') {
+      loopStart = Date.now();
+      return;
+    }
+    let t = Date.now() - loopStart;
+    if (t >= FINISH_LOOP) {
+      loopStart += FINISH_LOOP * Math.floor(t / FINISH_LOOP);
+      t = Date.now() - loopStart;
+    }
+    clock.textContent = formatClock(FINISH_START + Math.floor(t / 1000));
+    stage.classList.toggle('is-scanning', t >= SCAN_AT && t < SCANNED_AT);
+    finish.classList.toggle('is-scanned', t >= SCANNED_AT && t < FADE_AT);
+  }
+  if (reducedMotion) {
+    clock.textContent = formatClock(FINISH_START + Math.floor(SCANNED_AT / 1000));
+    finish.classList.add('is-scanned');
+  } else {
+    timers.push(window.setInterval(finishTick, 250));
+  }
+
+  const countdowns = [...root.querySelectorAll<HTMLElement>('[data-countdown]')];
+  function countdown() {
+    const text = nextParkrun(new Date());
+    countdowns.forEach((node) => (node.textContent = text));
+  }
+  countdown();
+  timers.push(window.setInterval(countdown, 30_000));
 
   // The step whose top has passed the reading line is the one on stage. On narrow screens the
   // stage sits on top, so the line is lower down.

@@ -2,7 +2,6 @@
 
 :root {
   --volt: #d4ff00;
-  --cyan: #00e5ff;
   --canvas: #000000;
   --surface: #121417;
   --surface-2: #1b1e22;
@@ -10,10 +9,15 @@
   --muted: #9aa0a8;
   --line: #262a30;
   --accent-text: var(--volt);
-  --link: var(--cyan);
+  /* Lines and marks that light up: volt on black, Carbon on white, like the app */
+  --signal: var(--volt);
+  --signal-glow: rgba(212, 255, 0, 0.55);
+  /* A highlighted row: volt light on black, a volt fill behind black text on white */
+  --hl-bg: rgba(212, 255, 0, 0.12);
+  --hl-ring: rgba(212, 255, 0, 0.6);
+  --hl-text: var(--volt);
   --band: #121417;
   --glow: rgba(212, 255, 0, 0.10);
-  --glow-2: rgba(0, 229, 255, 0.08);
   /* Any code the page draws itself: never tinted */
   --code-bg: #ffffff;
   --code-ink: #000000;
@@ -34,10 +38,13 @@
     --line: #d9dce1;
     /* Volt is a fill behind black text in light mode, never text on white */
     --accent-text: #0b0c0e;
-    --link: #006b78;
+    --signal: #121417;
+    --signal-glow: transparent;
+    --hl-bg: var(--volt);
+    --hl-ring: transparent;
+    --hl-text: #000000;
     --band: #2a2d32;
     --glow: rgba(212, 255, 0, 0.18);
-    --glow-2: rgba(0, 229, 255, 0.18);
     color-scheme: light;
   }
 }
@@ -50,10 +57,13 @@
   --muted: #555b64;
   --line: #d9dce1;
   --accent-text: #0b0c0e;
-  --link: #006b78;
+  --signal: #121417;
+  --signal-glow: transparent;
+  --hl-bg: var(--volt);
+  --hl-ring: transparent;
+  --hl-text: #000000;
   --band: #2a2d32;
   --glow: rgba(212, 255, 0, 0.18);
-  --glow-2: rgba(0, 229, 255, 0.18);
   color-scheme: light;
 }
 
@@ -77,8 +87,10 @@ body.landing {
 }
 
 a {
-  color: var(--link);
-  text-underline-offset: 0.18em;
+  color: var(--text);
+  text-decoration-color: var(--signal);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
 }
 
 .skip {
@@ -97,7 +109,7 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid var(--cyan);
+  outline: 2px solid var(--signal);
   outline-offset: 3px;
 }
 
@@ -204,7 +216,7 @@ a {
 }
 
 .cta-small:hover {
-  box-shadow: inset 0 0 0 2px var(--cyan);
+  background: color-mix(in srgb, var(--text) 85%, var(--canvas));
 }
 
 .cta-ghost {
@@ -214,7 +226,7 @@ a {
 }
 
 .cta-ghost:hover {
-  box-shadow: inset 0 0 0 1.5px var(--cyan);
+  box-shadow: inset 0 0 0 1.5px var(--text);
 }
 
 /* ---------- Story: steps next to a sticky stage ---------- */
@@ -246,14 +258,13 @@ a {
   place-items: center;
 }
 
-/* Soft volt and cyan light behind the devices */
+/* Soft volt light behind the devices */
 .stage::before {
   content: '';
   position: absolute;
   inset: 12% 0 8%;
   background:
-    radial-gradient(closest-side at 38% 45%, var(--glow), transparent),
-    radial-gradient(closest-side at 72% 68%, var(--glow-2), transparent);
+    radial-gradient(closest-side at 50% 50%, var(--glow), transparent);
   filter: blur(10px);
   pointer-events: none;
   transition: opacity 0.6s ease;
@@ -359,14 +370,13 @@ h2 {
   display: inline-block;
   padding: 3px 10px;
   border-radius: 999px;
-  background: var(--cyan);
-  color: #000;
+  background: var(--text);
+  color: var(--canvas);
   letter-spacing: 0.04em;
 }
 
 .link-arrow {
   font-weight: 650;
-  text-decoration: none;
 }
 
 .link-arrow::after {
@@ -433,13 +443,13 @@ h2 {
 }
 
 .segmented input:checked + span {
-  background: var(--cyan);
-  color: #000;
+  background: var(--text);
+  color: var(--canvas);
   box-shadow: none;
 }
 
 .segmented input:focus-visible + span {
-  outline: 2px solid var(--cyan);
+  outline: 2px solid var(--signal);
   outline-offset: 2px;
 }
 
@@ -451,12 +461,13 @@ h2 {
   border: 0;
   background: var(--surface);
   color: var(--text);
-  box-shadow: inset 0 0 0 1px var(--cyan);
+  box-shadow: inset 0 0 0 1.5px var(--line);
   cursor: pointer;
 }
 
 .chip-button:hover {
   background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--text);
 }
 
 .chips {
@@ -612,8 +623,8 @@ h2 {
 
 .hotspot:hover,
 .hotspot:focus-visible {
-  background: rgba(0, 229, 255, 0.12);
-  box-shadow: inset 0 0 0 2px var(--cyan);
+  background: rgba(212, 255, 0, 0.35);
+  box-shadow: inset 0 0 0 2px #121417;
 }
 
 /* Tappable in the family step, where the page says so */
@@ -628,7 +639,7 @@ h2 {
 
 @keyframes nudge {
   0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
-  50% { box-shadow: inset 0 0 0 2px var(--cyan); background: rgba(0, 229, 255, 0.10); }
+  50% { box-shadow: inset 0 0 0 2px #121417; background: rgba(212, 255, 0, 0.35); }
 }
 
 /* Brightness to full when the light theme comes back */
@@ -671,8 +682,8 @@ h2 {
   height: 0.8cqw;
   top: 15%;
   border-radius: 999px;
-  background: var(--cyan);
-  box-shadow: 0 0 4cqw 1cqw rgba(0, 229, 255, 0.55);
+  background: var(--volt);
+  box-shadow: 0 0 4cqw 1cqw rgba(212, 255, 0, 0.55);
   animation: scan 2.2s ease-in-out infinite alternate;
 }
 
@@ -766,18 +777,18 @@ h2 {
 }
 
 .sync-arc .track {
-  stroke: var(--cyan);
+  stroke: var(--signal);
   stroke-opacity: 0.35;
   stroke-width: 2;
   stroke-dasharray: 2 7;
 }
 
 .sync-arc .pulse {
-  stroke: var(--cyan);
+  stroke: var(--signal);
   stroke-width: 6;
   stroke-dasharray: 14 200;
   stroke-dashoffset: 14;
-  filter: drop-shadow(0 0 6px var(--cyan));
+  filter: drop-shadow(0 0 6px var(--signal-glow));
 }
 
 .stage[data-step='sync'] .sync-arc {
@@ -880,10 +891,10 @@ h2 {
   padding-block: 0;
   overflow: hidden;
   opacity: 0;
-  color: var(--text);
   font-weight: 650;
-  background: rgba(0, 229, 255, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(0, 229, 255, 0.55);
+  color: var(--hl-text);
+  background: var(--hl-bg);
+  box-shadow: inset 0 0 0 1px var(--hl-ring);
   transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease;
 }
 
@@ -894,7 +905,7 @@ h2 {
 }
 
 .finish-rows li.is-me .finish-pos {
-  color: var(--link);
+  color: var(--hl-text);
 }
 
 /* Corner brackets around the watch screen: the code itself is never covered or tinted */
@@ -907,16 +918,16 @@ h2 {
   width: calc(256 / 400 * 100%);
   aspect-ratio: 1;
   background:
-    linear-gradient(var(--cyan), var(--cyan)) left top / var(--arm) var(--w),
-    linear-gradient(var(--cyan), var(--cyan)) left top / var(--w) var(--arm),
-    linear-gradient(var(--cyan), var(--cyan)) right top / var(--arm) var(--w),
-    linear-gradient(var(--cyan), var(--cyan)) right top / var(--w) var(--arm),
-    linear-gradient(var(--cyan), var(--cyan)) left bottom / var(--arm) var(--w),
-    linear-gradient(var(--cyan), var(--cyan)) left bottom / var(--w) var(--arm),
-    linear-gradient(var(--cyan), var(--cyan)) right bottom / var(--arm) var(--w),
-    linear-gradient(var(--cyan), var(--cyan)) right bottom / var(--w) var(--arm);
+    linear-gradient(var(--signal), var(--signal)) left top / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) left top / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) right top / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) right top / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) left bottom / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) left bottom / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) right bottom / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) right bottom / var(--w) var(--arm);
   background-repeat: no-repeat;
-  filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.8));
+  filter: drop-shadow(0 0 6px var(--signal-glow));
   opacity: 0;
   transform: scale(1.25);
   pointer-events: none;
@@ -943,13 +954,14 @@ h2 {
   height: 8px;
   flex: none;
   border-radius: 50%;
-  background: var(--cyan);
+  background: var(--volt);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 40%, transparent);
   animation: live 2s ease-out infinite;
 }
 
 @keyframes live {
-  from { box-shadow: 0 0 0 0 rgba(0, 229, 255, 0.6); }
-  to { box-shadow: 0 0 0 9px rgba(0, 229, 255, 0); }
+  from { outline: 0 solid rgba(212, 255, 0, 0.6); outline-offset: 0; }
+  to { outline: 9px solid rgba(212, 255, 0, 0); outline-offset: 0; }
 }
 
 /* Privacy: the devices step back behind three promises */
@@ -1032,7 +1044,7 @@ h2 {
   padding: clamp(28px, 5vw, 64px);
   border-radius: 32px;
   background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--cyan) 14%, transparent), transparent 60%),
+    radial-gradient(120% 90% at 100% 0%, var(--glow), transparent 60%),
     var(--surface);
   box-shadow: inset 0 0 0 1px var(--line);
 }

@@ -169,7 +169,7 @@ function buildWatch(base: string) {
   return watch;
 }
 
-/** The cyan pulse that carries a new barcode from the watch to the phone. */
+/** The pulse that carries a new barcode from the watch to the phone. */
 const SYNC_ARC = `<svg class="sync-arc" viewBox="0 0 100 125" preserveAspectRatio="none" aria-hidden="true">
   <path class="track" d="M76 70 C 74 34, 52 26, 40 36" vector-effect="non-scaling-stroke"/>
   <path class="pulse" d="M76 70 C 74 34, 52 26, 40 36" pathLength="100" vector-effect="non-scaling-stroke"/>

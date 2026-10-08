@@ -4,13 +4,14 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-/** The Bibless palette, shared with the landing page (app/webApp/src/landing/landing.css). */
+/**
+ * The Bibless palette, shared with the landing page (app/webApp/src/landing/landing.css): Volt is
+ * the only colour, and everything else is black, white and the greys between.
+ */
 object BiblessColors {
     /** Hyper Volt, the primary accent. Only ever behind or under dark ink, never as text on white. */
     val Volt = Color(0xFFD4FF00)
 
-    /** Cyan Sprint, the secondary accent. */
-    val Cyan = Color(0xFF00E5FF)
     val Black = Color(0xFF000000)
 
     /** The dark surfaces. */
@@ -31,14 +32,14 @@ internal val BiblessDarkColors = darkColorScheme(
     primaryContainer = Color(0xFF2E3800),
     onPrimaryContainer = Color(0xFFE6FF80),
     inversePrimary = Color(0xFF4C5D00),
-    secondary = BiblessColors.Cyan,
+    secondary = Color(0xFFC8CCD2),
     onSecondary = BiblessColors.Black,
-    secondaryContainer = Color(0xFF003A42),
-    onSecondaryContainer = Color(0xFFA6F4FF),
-    tertiary = BiblessColors.Cyan,
+    secondaryContainer = Color(0xFF23262B),
+    onSecondaryContainer = BiblessColors.SoftWhite,
+    tertiary = Color(0xFFC8CCD2),
     onTertiary = BiblessColors.Black,
-    tertiaryContainer = Color(0xFF003A42),
-    onTertiaryContainer = Color(0xFFA6F4FF),
+    tertiaryContainer = Color(0xFF23262B),
+    onTertiaryContainer = BiblessColors.SoftWhite,
     background = BiblessColors.Black,
     onBackground = BiblessColors.SoftWhite,
     surface = BiblessColors.Black,
@@ -69,14 +70,14 @@ internal val BiblessLightColors = lightColorScheme(
     primaryContainer = BiblessColors.Volt,
     onPrimaryContainer = BiblessColors.Black,
     inversePrimary = BiblessColors.Volt,
-    secondary = Color(0xFF006874),
+    secondary = Color(0xFF4A4F57),
     onSecondary = BiblessColors.White,
-    secondaryContainer = BiblessColors.Cyan,
-    onSecondaryContainer = BiblessColors.Black,
-    tertiary = Color(0xFF006874),
+    secondaryContainer = Color(0xFFE3E5E9),
+    onSecondaryContainer = BiblessColors.Carbon,
+    tertiary = Color(0xFF4A4F57),
     onTertiary = BiblessColors.White,
-    tertiaryContainer = BiblessColors.Cyan,
-    onTertiaryContainer = BiblessColors.Black,
+    tertiaryContainer = Color(0xFFE3E5E9),
+    onTertiaryContainer = BiblessColors.Carbon,
     background = BiblessColors.SoftWhite,
     onBackground = BiblessColors.Carbon,
     surface = BiblessColors.SoftWhite,

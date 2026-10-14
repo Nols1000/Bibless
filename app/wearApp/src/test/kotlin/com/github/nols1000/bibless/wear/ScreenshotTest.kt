@@ -33,6 +33,7 @@ import com.github.nols1000.bibless.Bibless
 import com.github.nols1000.bibless.DemoData
 import com.github.nols1000.bibless.Device
 import com.github.nols1000.bibless.LaunchScreen
+import com.github.nols1000.bibless.SampleColors
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
@@ -60,12 +61,15 @@ class ScreenshotTest {
     @Before
     fun setUp() {
         DemoData.load(repository)
+        // In a typical user's colours, see SampleColors
+        SampleColors.replaceDeviceColors = true
         Intents.init()
     }
 
     @After
     fun tearDown() {
         Intents.release()
+        SampleColors.replaceDeviceColors = false
     }
 
     @Test

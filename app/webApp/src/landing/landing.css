@@ -534,14 +534,14 @@ h2 {
 .phone-screen {
   position: absolute;
   overflow: hidden;
-  /* The app's own canvas behind the drawn system bars (sharedUI Theme.kt) */
-  background: #f4f5f7;
+  /* The app's canvas in the screenshots' colours behind the drawn system bars (SampleColors, sharedUI Theme.kt) */
+  background: #fff8f1;
   container-type: inline-size;
   transition: background 0.45s ease;
 }
 
 .phone.is-dark .phone-screen {
-  background: #000000;
+  background: #16130b;
 }
 
 .status-bar {
@@ -554,12 +554,12 @@ h2 {
   padding: 0 7.5cqw;
   font-size: 3.5cqw;
   font-weight: 600;
-  color: #121417;
+  color: #1f1b13;
   transition: color 0.45s ease;
 }
 
 .phone.is-dark .status-bar {
-  color: #f4f5f7;
+  color: #eae1d4;
 }
 
 .status-bar .icons {

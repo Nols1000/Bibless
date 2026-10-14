@@ -150,7 +150,13 @@ fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
     }
 }
 
+/** The device's own colours, as other apps on it use, or the Bibless palette where it has none. */
 @Composable
 private fun BiblessTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) BiblessDarkColors else BiblessLightColors, content = content)
+    val dark = isSystemInDarkTheme()
+    val colorScheme = when {
+        SampleColors.replaceDeviceColors -> if (dark) SampleColors.dark else SampleColors.light
+        else -> deviceColorScheme(dark) ?: if (dark) BiblessDarkColors else BiblessLightColors
+    }
+    MaterialTheme(colorScheme = colorScheme, content = content)
 }

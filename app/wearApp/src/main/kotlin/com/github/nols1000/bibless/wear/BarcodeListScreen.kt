@@ -174,7 +174,7 @@ fun BarcodeListScreen(
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 private fun BarcodeListPreview() {
-    MaterialTheme {
+    MaterialTheme(colorScheme = SampleWearColors) {
         BarcodeListScreen(
             barcodes = listOf(Barcode("1", "Me", "A1234567", 0)),
             onOpen = {},

@@ -14,6 +14,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -40,6 +41,13 @@ class ScreenshotTest {
     @Before
     fun setUp() {
         DemoData.load(repository)
+        // In a typical user's colours, see SampleColors
+        SampleColors.replaceDeviceColors = true
+    }
+
+    @After
+    fun tearDown() {
+        SampleColors.replaceDeviceColors = false
     }
 
     @Test

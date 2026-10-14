@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.navigation.currentBackStackEntryAsState
 import androidx.wear.compose.material3.AppScaffold
@@ -17,12 +18,14 @@ import androidx.wear.compose.material3.ColorScheme
 import com.github.nols1000.bibless.BiblessColors
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.nols1000.bibless.BarcodeRepository
 import com.github.nols1000.bibless.Device
 import com.github.nols1000.bibless.OpenStartBarcode
+import com.github.nols1000.bibless.SampleColors
 import com.github.nols1000.bibless.TimerRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -41,7 +44,13 @@ fun WearApp(
     openRequests: Flow<String> = emptyFlow(),
     ambient: Ambient = Ambient(),
 ) {
-    MaterialTheme(colorScheme = BiblessWearColors) {
+    val context = LocalContext.current
+    // The watch face's colours on Wear OS 6 and later, like the system apps; the Bibless palette before
+    val colorScheme = when {
+        SampleColors.replaceDeviceColors -> SampleWearColors
+        else -> remember(context) { dynamicColorScheme(context) } ?: BiblessWearColors
+    }
+    MaterialTheme(colorScheme = colorScheme) {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
             val timerState by timer.state.collectAsStateWithLifecycle()
@@ -140,4 +149,33 @@ private val BiblessWearColors = ColorScheme().copy(
     outlineVariant = Color(0xFF2E3136),
     background = BiblessColors.Black,
     onBackground = BiblessColors.SoftWhite,
+)
+
+/**
+ * The colours of a watch with a yellow watch face, as Wear OS derives them (Material's tonal spot
+ * scheme from #FFCC00, as in [SampleColors]). Screenshots and previews show the app in them.
+ */
+internal val SampleWearColors = ColorScheme().copy(
+    primary = Color(0xFFFFE08B),
+    primaryDim = Color(0xFFE3C46D),
+    primaryContainer = Color(0xFF584400),
+    onPrimary = Color(0xFF241A00),
+    onPrimaryContainer = Color(0xFFFFE08B),
+    secondary = Color(0xFFF2E1BB),
+    secondaryDim = Color(0xFFD5C5A1),
+    secondaryContainer = Color(0xFF50462A),
+    onSecondary = Color(0xFF231B04),
+    onSecondaryContainer = Color(0xFFF2E1BB),
+    tertiary = Color(0xFFC8ECC9),
+    tertiaryDim = Color(0xFFADCFAE),
+    tertiaryContainer = Color(0xFF2F4D34),
+    onTertiary = Color(0xFF03210C),
+    onTertiaryContainer = Color(0xFFC8ECC9),
+    surfaceContainerLow = Color(0xFF1F1B13),
+    surfaceContainer = Color(0xFF231F17),
+    surfaceContainerHigh = Color(0xFF2D2A21),
+    onSurface = Color(0xFFEAE1D4),
+    onSurfaceVariant = Color(0xFFCFC6B4),
+    outline = Color(0xFF989080),
+    outlineVariant = Color(0xFF4C4639),
 )

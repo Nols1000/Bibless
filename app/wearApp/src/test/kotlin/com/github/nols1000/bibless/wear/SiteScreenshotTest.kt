@@ -32,6 +32,7 @@ import com.github.nols1000.bibless.InMemoryStore
 import com.github.nols1000.bibless.LaunchScreen
 import com.github.nols1000.bibless.RaceClock
 import com.github.nols1000.bibless.RaceDevice
+import com.github.nols1000.bibless.SampleColors
 import com.github.nols1000.bibless.TimerRepository
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
@@ -65,10 +66,17 @@ class SiteScreenshotTest {
     private val timer = TimerRepository(RaceDevice(InMemoryStore(), clock, CoroutineScope(Dispatchers.Default)))
 
     @Before
-    fun setUp() = Intents.init()
+    fun setUp() {
+        // In a typical user's colours, see SampleColors
+        SampleColors.replaceDeviceColors = true
+        Intents.init()
+    }
 
     @After
-    fun tearDown() = Intents.release()
+    fun tearDown() {
+        Intents.release()
+        SampleColors.replaceDeviceColors = false
+    }
 
     private fun showApp() = compose.setContent { WearApp(repository, timer) }
 

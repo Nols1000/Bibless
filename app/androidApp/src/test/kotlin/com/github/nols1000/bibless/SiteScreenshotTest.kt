@@ -19,7 +19,9 @@ import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureScreenRoboImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import org.junit.After
 import org.junit.Assert.assertFalse
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,6 +49,17 @@ class SiteScreenshotTest {
     private val repository = BarcodeRepository(InMemoryStore(), Device.PHONE).also(DemoData::load)
     private val timer = TimerRepository(device)
     private val scanner = ScannerRepository(device)
+
+    @Before
+    fun setUp() {
+        // In a typical user's colours, see SampleColors
+        SampleColors.replaceDeviceColors = true
+    }
+
+    @After
+    fun tearDown() {
+        SampleColors.replaceDeviceColors = false
+    }
 
     private fun showApp() = compose.setContent { App(repository, timer, scanner, device) }
 

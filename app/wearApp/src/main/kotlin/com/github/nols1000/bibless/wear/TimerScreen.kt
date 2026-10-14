@@ -227,7 +227,7 @@ private fun Ambient(session: TimerSession, elapsedMs: Long) {
 @Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
 @Composable
 private fun TimerRunningPreview() {
-    MaterialTheme {
+    MaterialTheme(colorScheme = SampleWearColors) {
         TimerScreen(
             session = TimerSession("s", 0, listOf(FinishTime("e", 1, 1_022_000))),
             elapsedMs = { 1_043_000 },

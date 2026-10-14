@@ -7,7 +7,9 @@ import androidx.wear.protolayout.DeviceParametersBuilders
 import androidx.wear.protolayout.LayoutElementBuilders.Box
 import androidx.wear.protolayout.LayoutElementBuilders.Column
 import androidx.wear.protolayout.LayoutElementBuilders.LayoutElement
+import androidx.wear.protolayout.LayoutElementBuilders.Row
 import androidx.wear.protolayout.LayoutElementBuilders.Text
+import androidx.wear.protolayout.ProtoLayoutScope
 import androidx.wear.tiles.TileBuilders.Tile
 import com.github.nols1000.bibless.BarcodeLink
 import com.github.nols1000.bibless.Bibless
@@ -15,6 +17,7 @@ import com.github.nols1000.bibless.DemoData
 import com.github.nols1000.bibless.Device
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -42,15 +45,12 @@ class BarcodeTileTest {
 
     @Test
     fun showsTheFirstBarcodeAndOpensIt() {
-        val content = content()
-        val tile = content.tile()
+        val scope = ProtoLayoutScope()
+        val tile = content(scope).tile()
 
         assertEquals(listOf("Me", "A0123456"), tile.texts())
         assertEquals(id("Me"), tile.linkedBarcodeId())
-        // The renderer only fetches the image when the versions agree
-        val resources = content.resources()
-        assertEquals(tile.resourcesVersion, resources.version)
-        assertTrue(TileContent.IMAGE_ID in resources.idToImageMapping)
+        assertTrue(TileContent.IMAGE_ID in scope.collectResources().idToImageMapping)
     }
 
     @Test
@@ -64,25 +64,25 @@ class BarcodeTileTest {
 
     @Test
     fun drawsANewImageForAnotherFormat() {
-        val qr = content().resources().version
+        val qr = content().tile().resourcesVersion
 
         repository.setDefaultFormat(Device.WATCH, BarcodeFormat.CODE128)
 
-        assertNotEquals(qr, content().resources().version)
+        assertNotEquals(qr, content().tile().resourcesVersion)
     }
 
     @Test
     fun asksForABarcodeWhenThereIsNone() {
         repository.state.value.barcodes.forEach { repository.delete(it.id) }
 
-        val content = content()
-        val tile = content.tile()
-        assertEquals(listOf("Add a barcode in Bibless"), tile.texts())
+        val scope = ProtoLayoutScope()
+        val tile = content(scope).tile()
+        assertEquals(listOf("Bibless", "Add a barcode in Bibless"), tile.texts())
         assertNull(tile.linkedBarcodeId())
-        assertTrue(content.resources().idToImageMapping.isEmpty())
+        assertFalse(scope.hasResources())
     }
 
-    private fun content() = TileContent.current(context, watch)
+    private fun content(scope: ProtoLayoutScope = ProtoLayoutScope()) = TileContent.current(context, watch, scope)
 
     private fun id(name: String) = repository.state.value.barcodes.first { it.name == name }.id
 
@@ -92,7 +92,13 @@ class BarcodeTileTest {
 
     /** The barcode the tap opens; null if it opens the app on its usual screen. */
     private fun Tile.linkedBarcodeId(): String? {
-        val action = (root() as Box).modifiers?.clickable?.onClick as ActionBuilders.LaunchAction
+        val clickable = root().descendants().mapNotNull {
+            when (it) {
+                is Box -> it.modifiers?.clickable
+                else -> null
+            }
+        }.firstOrNull { it.onClick is ActionBuilders.LaunchAction } ?: (root() as? Box)?.modifiers?.clickable
+        val action = clickable?.onClick as? ActionBuilders.LaunchAction ?: return null
         val activity = checkNotNull(action.androidActivity)
         assertEquals(MainActivity::class.java.name, activity.className)
         return (activity.keyToExtraMapping[BarcodeLink.EXTRA_BARCODE_ID] as ActionBuilders.AndroidStringExtra?)?.value
@@ -103,6 +109,7 @@ class BarcodeTileTest {
         val children = when (val element = this@descendants) {
             is Box -> element.contents
             is Column -> element.contents
+            is Row -> element.contents
             else -> emptyList()
         }
         children.forEach { yieldAll(it.descendants()) }

@@ -30,9 +30,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.github.nols1000.bibless.race.RunHint
 
-/** Formats an ISO `yyyy-MM-dd` date for people, in their locale. */
-expect fun formatRunDate(date: String): String
-
 /** Name, date and timing mode of [run], for one line of text. */
 fun describeRun(run: RunHint): String =
     listOfNotNull(run.date?.let(::formatRunDate), run.format.label()).joinToString(" · ")

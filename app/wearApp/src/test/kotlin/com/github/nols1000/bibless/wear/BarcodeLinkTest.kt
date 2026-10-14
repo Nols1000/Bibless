@@ -1,6 +1,8 @@
 package com.github.nols1000.bibless.wear
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -46,7 +48,8 @@ class BarcodeLinkTest {
     fun startsOverOnTheLinkedBarcodeWhenPagedAway() {
         ActivityScenario.launch<MainActivity>(BarcodeLink.intent(context, id("Me"))).use { scenario ->
             awaitShown("Me", "A0123456")
-            compose.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+            // The barcode pager; the format pager on each page scrolls sideways
+            compose.onNode(hasScrollAction() and isVerticallyScrollable).performTouchInput { swipeUp() }
             awaitShown("Sam", "A0246802")
 
             // MainActivity is singleTop, so the tile's link arrives as a new intent
@@ -60,6 +63,20 @@ class BarcodeLinkTest {
             compose.onNodeWithText("Barcodes").assertExists()
         }
     }
+
+    /** On round screens the labels are curved text, which TalkBack only reads out through the layout's semantics. */
+    @Test
+    fun readsOutALongNameInFull() {
+        val name = "Jamie Alexandra Fitzgerald-Smith"
+        val barcode = repository.add(name, "A0864213")
+        ActivityScenario.launch<MainActivity>(BarcodeLink.intent(context, barcode.id)).use {
+            awaitShown(name, "A0864213")
+            compose.waitUntil(TIMEOUT) { compose.onAllNodesWithText(name).fetchSemanticsNodes().isNotEmpty() }
+        }
+    }
+
+    private val isVerticallyScrollable =
+        SemanticsMatcher("scrolls vertically") { SemanticsProperties.VerticalScrollAxisRange in it.config }
 
     private fun id(name: String) = repository.state.value.barcodes.first { it.name == name }.id
 

@@ -15,6 +15,7 @@ import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.EdgeButton
+import androidx.wear.compose.material3.EdgeButtonSize
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ListHeaderDefaults
@@ -36,11 +37,16 @@ fun AddBarcodeScreen(onSave: (name: String, athleteId: String) -> Unit) {
     val idInput = rememberTextInput("Athlete ID") { athleteId = it }
 
     val listState = rememberTransformingLazyColumnState()
+    // Items shrink and morph at the top and bottom edges, so the rows fit the round screen.
     val transformationSpec = rememberTransformationSpec()
     ScreenScaffold(
         scrollState = listState,
         edgeButton = {
-            EdgeButton(onClick = { onSave(name, athleteId) }, enabled = normalized != null) {
+            EdgeButton(
+                onClick = { onSave(name, athleteId) },
+                enabled = normalized != null,
+                buttonSize = EdgeButtonSize.Medium,
+            ) {
                 Text("Save")
             }
         },

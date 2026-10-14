@@ -7,6 +7,11 @@ plugins {
 }
 
 kotlin {
+    compilerOptions {
+        // Common code carries @JsExport, so every target compiling it needs the opt-in
+        optIn.add("kotlin.js.ExperimentalJsExport")
+    }
+
     listOf(
         iosArm64(),
         iosSimulatorArm64(),
@@ -29,7 +34,8 @@ kotlin {
         generateTypeScriptDefinitions()
         compilerOptions {
             target = "es2015"
-            optIn.add("kotlin.js.ExperimentalJsExport")
+            // RunOrganiser.create is @JsStatic, so the web app calls it without the companion
+            optIn.add("kotlin.js.ExperimentalJsStatic")
         }
     }
     

@@ -14,8 +14,9 @@ import java.util.Date
 import java.util.TimeZone
 
 /** Files go to the cache's `exports` folder, shared through the app's `<package>.exports` FileProvider. */
+/** Shares exported files through the system share sheet. */
 @Composable
-actual fun rememberShareFiles(): (List<ExportFile>) -> Unit {
+fun rememberShareFiles(): (List<ExportFile>) -> Unit {
     val context = LocalContext.current
     return remember(context) {
         { files ->
@@ -36,15 +37,24 @@ actual fun rememberShareFiles(): (List<ExportFile>) -> Unit {
     }
 }
 
+/** The device name export files carry, so the organiser can tell several phones' files apart. */
 @Composable
-actual fun rememberDeviceName(): String {
+fun rememberDeviceName(): String {
     val context = LocalContext.current
     return remember(context) {
-        Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)?.takeIf { it.isNotBlank() } ?: Build.MODEL
+        // The name people gave the phone exists from Android 7.1 on
+        val named = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME)
+        } else {
+            null
+        }
+        named?.takeIf { it.isNotBlank() } ?: Build.MODEL
     }
 }
 
-actual fun formatSessionStart(millis: Long): String =
+/** Formats [millis] since the epoch as a local date and time for people. */
+fun formatSessionStart(millis: Long): String =
     DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
 
-actual fun utcOffsetMinutes(millis: Long): Int = TimeZone.getDefault().getOffset(millis) / 60_000
+/** Minutes the local time zone is ahead of UTC at [millis]. */
+fun utcOffsetMinutes(millis: Long): Int = TimeZone.getDefault().getOffset(millis) / 60_000

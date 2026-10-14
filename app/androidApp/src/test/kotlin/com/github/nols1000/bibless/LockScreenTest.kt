@@ -7,12 +7,20 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.pressBackUnconditionally
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.github.nols1000.bibless.barcode.BarcodeFormat
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -93,11 +101,33 @@ class LockScreenTest {
     }
 
     @Test
+    fun swipesToTheOtherFormatButNotToTheOtherBarcodes() {
+        repository.setDefaultFormat(Device.PHONE, BarcodeFormat.CODE128)
+        ActivityScenario.launch<LockScreenActivity>(LockScreenActivity.intent(app)).use {
+            awaitCode("Barcode for A0123456")
+            compose.onNodeWithContentDescription("Barcode for A0123456").performTouchInput { swipeLeft() }
+            awaitCode("QR code for A0123456")
+
+            compose.onNodeWithContentDescription("QR code for A0123456").performTouchInput { swipeUp() }
+            compose.waitForIdle()
+            // The others stay behind the lock
+            assertFalse(compose.onAllNodesWithText("A0246802").fetchSemanticsNodes().isNotEmpty())
+            compose.onNodeWithContentDescription("QR code for A0123456").assertExists()
+        }
+    }
+
+    @Test
     fun closesWhenThereIsNoBarcode() {
         repository.state.value.barcodes.forEach { repository.delete(it.id) }
 
         ActivityScenario.launch(LockScreenActivity::class.java).use { scenario ->
             compose.waitUntil(TIMEOUT) { scenario.isFinishing() }
+        }
+    }
+
+    private fun awaitCode(description: String) {
+        compose.waitUntil(TIMEOUT) {
+            compose.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()
         }
     }
 

@@ -5,9 +5,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 
 /**
  * The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode].
@@ -108,10 +109,11 @@ fun App(
                 )
             }
             composable("detail/{id}") { entry ->
-                val barcode = entry.savedStateHandle.get<String>("id")?.let(repository::find)
                 BarcodeDetailScreen(
-                    barcode = barcode,
+                    barcodes = state.barcodes,
+                    startId = entry.savedStateHandle.get<String>("id"),
                     format = state.format,
+                    onShown = { repository.shownBarcodeId = it.id },
                     onBack = { navController.popBackStack() },
                 )
             }
@@ -146,7 +148,17 @@ fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
             LaunchedEffect(Unit) { onClose() }
             return@BiblessTheme
         }
-        BarcodeDetailScreen(barcode = barcode, format = state.format, onBack = onClose)
+        // Just this one: the other barcodes stay behind the lock, but the other format is a swipe away.
+        // Starts over when another barcode comes first, which would otherwise read as deleted.
+        key(barcode.id) {
+            BarcodeDetailScreen(
+                barcodes = listOf(barcode),
+                startId = barcode.id,
+                format = state.format,
+                onShown = {},
+                onBack = onClose,
+            )
+        }
     }
 }
 
@@ -155,7 +167,7 @@ fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
 private fun BiblessTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val colorScheme = when {
-        SampleColors.replaceDeviceColors -> if (dark) SampleColors.dark else SampleColors.light
+        SampleColors.replaceDeviceColors -> if (dark) SamplePhoneColors.dark else SamplePhoneColors.light
         else -> deviceColorScheme(dark) ?: if (dark) BiblessDarkColors else BiblessLightColors
     }
     MaterialTheme(colorScheme = colorScheme, content = content)

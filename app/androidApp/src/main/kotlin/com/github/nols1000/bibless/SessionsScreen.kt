@@ -27,20 +27,6 @@ import androidx.compose.ui.unit.dp
 import com.github.nols1000.bibless.race.RunHint
 import com.github.nols1000.bibless.race.TimingMode
 
-/** Shares exported files through the system share sheet. */
-@Composable
-expect fun rememberShareFiles(): (List<ExportFile>) -> Unit
-
-/** The device name export files carry, so the organiser can tell several phones' files apart. */
-@Composable
-expect fun rememberDeviceName(): String
-
-/** Formats [millis] since the epoch as a local date and time for people. */
-expect fun formatSessionStart(millis: Long): String
-
-/** Minutes the local time zone is ahead of UTC at [millis]. */
-expect fun utcOffsetMinutes(millis: Long): Int
-
 /**
  * The timer and scanner sessions recorded on this phone, each shared as files for the organiser:
  * a CSV for people and a JSON bundle for the Bibless web app.

@@ -12,17 +12,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.wear.compose.navigation.currentBackStackEntryAsState
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ColorScheme
-import com.github.nols1000.bibless.BiblessColors
 import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.MotionScheme
 import androidx.wear.compose.material3.Text
 import androidx.wear.compose.material3.dynamicColorScheme
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
+import androidx.wear.compose.navigation.currentBackStackEntryAsState
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.nols1000.bibless.BarcodeRepository
+import com.github.nols1000.bibless.BiblessColors
 import com.github.nols1000.bibless.Device
 import com.github.nols1000.bibless.OpenStartBarcode
 import com.github.nols1000.bibless.SampleColors
@@ -50,7 +51,7 @@ fun WearApp(
         SampleColors.replaceDeviceColors -> SampleWearColors
         else -> remember(context) { dynamicColorScheme(context) } ?: BiblessWearColors
     }
-    MaterialTheme(colorScheme = colorScheme) {
+    MaterialTheme(colorScheme = colorScheme, motionScheme = MotionScheme.standard()) {
         AppScaffold {
             val state by repository.state.collectAsStateWithLifecycle()
             val timerState by timer.state.collectAsStateWithLifecycle()

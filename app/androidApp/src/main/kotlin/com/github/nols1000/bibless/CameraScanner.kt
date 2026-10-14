@@ -35,8 +35,12 @@ import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 
+/**
+ * A live camera view that reports every Code 128 and QR code it sees through [onCode], frame
+ * after frame; the caller decides what counts as a new scan. Asks for camera access first.
+ */
 @Composable
-actual fun CameraScanner(onCode: (String) -> Unit, modifier: Modifier) {
+fun CameraScanner(onCode: (String) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var granted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
@@ -88,8 +92,13 @@ actual fun CameraScanner(onCode: (String) -> Unit, modifier: Modifier) {
     )
 }
 
+/** Plays the sound and vibration for a scan. */
+interface ScanFeedback {
+    fun play(kind: ScanFeedbackKind)
+}
+
 @Composable
-actual fun rememberScanFeedback(): ScanFeedback {
+fun rememberScanFeedback(): ScanFeedback {
     val haptics = LocalHapticFeedback.current
     val tones = remember { runCatching { ToneGenerator(AudioManager.STREAM_NOTIFICATION, 90) }.getOrNull() }
     DisposableEffect(tones) { onDispose { tones?.release() } }

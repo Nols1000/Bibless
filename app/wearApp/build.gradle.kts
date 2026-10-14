@@ -27,6 +27,7 @@ dependencies {
     implementation(libs.wear.input)
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
+    implementation(libs.wear.protolayout.material3)
     implementation(libs.androidx.concurrent.futures)
     implementation(libs.compose.materialIconsCore)
     implementation(libs.androidx.lifecycle.runtimeCompose)
@@ -83,7 +84,9 @@ android {
     buildTypes {
         release {
             signingConfigs.findByName("release")?.let { signingConfig = it }
-            isMinifyEnabled = false
+            // Watches have little storage, and the shared modules bring more than the watch uses.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

@@ -22,12 +22,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.github.nols1000.bibless.barcode.BarcodeFormat
 
-val BarcodeFormat.label: String
-    get() = if (this == BarcodeFormat.QR) "QR code" else "Barcode"
-
-val LaunchScreen.label: String
-    get() = if (this == LaunchScreen.FIRST_BARCODE) "First barcode" else "Barcode list"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(

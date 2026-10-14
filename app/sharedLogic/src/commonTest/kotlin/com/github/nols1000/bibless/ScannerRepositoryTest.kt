@@ -1,18 +1,21 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.github.nols1000.bibless
 
 import com.github.nols1000.bibless.race.RecordAthleteEvent
 import com.github.nols1000.bibless.race.RemoveAthleteEvent
 import com.github.nols1000.bibless.race.TimingMode
 import com.github.nols1000.bibless.race.verify
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 
 class ScannerRepositoryTest {
     private val store = InMemoryStore()

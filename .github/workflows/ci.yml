@@ -1,5 +1,8 @@
 name: CI
 
+# Tests and builds every app on pull requests and on main. On main, the web job's build is also
+# deployed to GitHub Pages: the landing page (/), the organiser web app (/organise/) and the static
+# pages in app/webApp/public (e.g. the privacy policies). Releases are built by release.yml.
 on:
   pull_request:
   push:
@@ -7,7 +10,11 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main halfway through a Pages deploy
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
   android:
@@ -27,21 +34,6 @@ jobs:
           :app:androidApp:lintDebug
           :app:wearApp:lintDebug
 
-  web:
-    name: Web
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: ./gradlew :app:sharedLogic:jsTest
-      - run: npm run build:shared
-      - run: npm install
-      - run: npm run build -w webApp
-      - run: npm test -w webApp
-
   apple:
     name: iOS + watchOS
     runs-on: macos-26
@@ -58,3 +50,45 @@ jobs:
           -destination 'generic/platform=iOS Simulator'
           ARCHS=arm64
           CODE_SIGNING_ALLOWED=NO
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: ./gradlew :app:sharedLogic:jsTest
+      # The landing page's phone and watch screens, captured fresh with Robolectric
+      - name: Capture the landing page screens
+        run: ./gradlew :app:androidApp:testDebugUnitTest :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest' -PsiteScreenshots
+      - run: npm run build:shared
+      - run: npm install
+      - run: npm run build -w webApp
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+      - run: npm test -w webApp
+      - if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/webApp/dist
+
+  pages:
+    name: Deploy Pages
+    needs: web
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

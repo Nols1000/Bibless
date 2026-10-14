@@ -1,5 +1,8 @@
 name: Release
 
+# Builds the release bundles for a vX.Y.Z tag, uploads them with their store listings (texts plus
+# screenshots captured on the runner) to Play closed testing and TestFlight, then creates the
+# GitHub Release. A failed job can be re-run on its own: a bundle Play already has is skipped.
 on:
   push:
     tags: ['v*.*.*']
@@ -19,9 +22,6 @@ jobs:
       name: ${{ steps.version.outputs.name }}
       code_phone: ${{ steps.version.outputs.code_phone }}
       code_wear: ${{ steps.version.outputs.code_wear }}
-      has_keystore: ${{ steps.secrets.outputs.has_keystore }}
-      has_apple: ${{ steps.secrets.outputs.has_apple }}
-      play_upload: ${{ steps.secrets.outputs.play_upload }}
     steps:
       - id: version
         run: |
@@ -35,125 +35,53 @@ jobs:
             echo "code_phone=$base"
             echo "code_wear=$(( base + 1 ))"
           } >> "$GITHUB_OUTPUT"
-      - id: secrets
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-          # Store uploads are opt-in: set the repository variable STORE_UPLOAD=true to enable them.
-          # Until then, download the bundles from the GitHub Release and upload them manually.
-          STORE_UPLOAD: ${{ vars.STORE_UPLOAD }}
-          PLAY_SERVICE_ACCOUNT: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-        run: |
-          has_keystore=$([ -n "$ANDROID_KEYSTORE_BASE64" ] && echo true || echo false)
-          echo "has_keystore=$has_keystore" >> "$GITHUB_OUTPUT"
-          echo "has_apple=$([ -n "$ASC_KEY_ID" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          play_upload=false
-          [ "$STORE_UPLOAD" = true ] && [ -n "$PLAY_SERVICE_ACCOUNT" ] && [ "$has_keystore" = true ] && play_upload=true
-          echo "play_upload=$play_upload" >> "$GITHUB_OUTPUT"
-
-  # Starts right away: the listing needs the screenshots only once the builds are uploaded.
-  screenshots:
-    name: Screenshots
-    uses: ./.github/workflows/screenshots.yml
 
   android:
     name: Android + Wear OS
     needs: version
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-build
-      - name: Decode upload keystore
-        if: needs.version.outputs.has_keystore == 'true'
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - name: Build release bundles
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
-          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
-          # Fail early with a diagnosis (never the secret itself) if the secrets don't match the keystore.
-          # Compare the checksum with: shasum -a 256 upload.jks
-          echo "Keystore sha256: $(sha256sum "$RUNNER_TEMP/upload.jks" | cut -d' ' -f1)"
-          if ! keytool -list -keystore "$RUNNER_TEMP/upload.jks" -storepass:env ANDROID_KEYSTORE_PASSWORD \
-                -alias "$ANDROID_KEY_ALIAS" > /dev/null; then
-            trailing=no; [[ "$ANDROID_KEYSTORE_PASSWORD" =~ [[:space:]]$ ]] && trailing=yes
-            echo "::error::Keystore check failed. Password length: ${#ANDROID_KEYSTORE_PASSWORD}, trailing whitespace: $trailing, alias length: ${#ANDROID_KEY_ALIAS}"
-            exit 1
-          fi
-      - name: Build release bundles
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: >
-          ./gradlew :app:androidApp:bundleRelease :app:wearApp:bundleRelease
-          -PappVersionName=${{ needs.version.outputs.name }}
-          -PappVersionCode=${{ needs.version.outputs.code_phone }}
-          -PwearVersionCode=${{ needs.version.outputs.code_wear }}
+          ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/upload.jks" ./gradlew \
+            :app:androidApp:bundleRelease :app:wearApp:bundleRelease \
+            -PappVersionName=${{ needs.version.outputs.name }} \
+            -PappVersionCode=${{ needs.version.outputs.code_phone }} \
+            -PwearVersionCode=${{ needs.version.outputs.code_wear }}
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: |
             app/androidApp/build/outputs/bundle/release/*.aab
             app/wearApp/build/outputs/bundle/release/*.aab
-
-  # Phone and Wear OS upload in their own jobs, so one can be re-run without the other; a bundle
-  # Play already has is skipped. Google Play allows one edit at a time, so they take turns.
-  play-phone:
-    name: Google Play phone
-    needs: [version, android]
-    if: needs.version.outputs.play_upload == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # Workload Identity Federation for Google Play
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: android
-          path: app
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
-          bundler-cache: true
       - uses: google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-      - name: Upload to closed testing (PLAY_TRACK in the Fastfile)
-        run: bundle exec fastlane android upload form:phone version_code:${{ needs.version.outputs.code_phone }}
-
-  play-wear:
-    name: Google Play Wear OS
-    needs: [version, android, play-phone]
-    if: always() && needs.android.result == 'success' && needs.version.outputs.play_upload == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      id-token: write # Workload Identity Federation for Google Play
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: android
-          path: app
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.3'
-          bundler-cache: true
-      - uses: google-github-actions/auth@v3
-        with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-      - name: Upload to the Wear OS closed testing track
-        run: bundle exec fastlane android upload form:wear version_code:${{ needs.version.outputs.code_wear }}
+      - name: Upload to Play closed testing with the listing
+        run: >
+          bundle exec fastlane android release
+          version_code_phone:${{ needs.version.outputs.code_phone }}
+          version_code_wear:${{ needs.version.outputs.code_wear }}
 
   ios:
     name: iOS + watchOS
     needs: version
-    if: needs.version.outputs.has_apple == 'true'
     runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
@@ -171,7 +99,7 @@ jobs:
           chmod 600 ~/.ssh/match_deploy_key
           ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
           echo "GIT_SSH_COMMAND=ssh -i $HOME/.ssh/match_deploy_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
-      - name: Build signed IPA (uploads to TestFlight only if STORE_UPLOAD=true)
+      - name: Upload to TestFlight with the listing
         env:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -179,7 +107,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
         run: >
-          bundle exec fastlane ios ${{ vars.STORE_UPLOAD == 'true' && 'beta' || 'build_ipa' }}
+          bundle exec fastlane ios release
           version:${{ needs.version.outputs.name }}
           build_number:${{ github.run_number }}
       - uses: actions/upload-artifact@v4
@@ -187,49 +115,9 @@ jobs:
           name: ios
           path: build/ios/*.ipa
 
-  web:
-    name: Web
-    needs: version
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-build
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: npm run build:shared
-      - run: npm install
-      - run: npm run build -w webApp
-        env:
-          VITE_BASE: /${{ github.event.repository.name }}/
-      - run: cd app/webApp/dist && zip -r "$GITHUB_WORKSPACE/bibless-web-${{ needs.version.outputs.name }}.zip" .
-      - uses: actions/upload-artifact@v4
-        with:
-          name: web
-          path: bibless-web-*.zip
-
-  # The listing goes live with the builds it describes, and only once they're uploaded: Google Play
-  # allows one edit at a time, so a listing sync during an upload would discard it. A failed Wear OS
-  # upload doesn't hold it up; re-run that job on its own.
-  store-metadata:
-    name: Store listings
-    needs: [android, play-phone, play-wear, ios, screenshots]
-    if: >-
-      always() && needs.android.result == 'success' && needs.play-phone.result != 'failure'
-      && needs.ios.result != 'failure' && needs.screenshots.result == 'success'
-    permissions:
-      contents: read
-      id-token: write # Workload Identity Federation for Google Play
-    uses: ./.github/workflows/store-metadata.yml
-    with:
-      capture: false
-    secrets: inherit
-
   github-release:
     name: GitHub Release
-    needs: [android, ios, web]
-    # iOS is skipped until Apple secrets exist; still release the other targets
-    if: always() && needs.android.result == 'success' && needs.web.result == 'success' && needs.ios.result != 'failure'
+    needs: [android, ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -238,11 +126,9 @@ jobs:
         with:
           path: dist
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            dist/**/*.aab
-            dist/*.zip
-            dist/*.ipa
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          shopt -s globstar
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes \
+            dist/**/*.aab dist/**/*.ipa

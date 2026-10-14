@@ -1,6 +1,8 @@
 import XCTest
 
-/// Captures the App Store screenshots. Run through fastlane: `bundle exec fastlane ios screenshots`.
+/// Captures the App Store screenshots. Run through fastlane: `bundle exec fastlane ios screenshots`,
+/// which uploads them as they are. The names set the store order: the code in both formats, in dark
+/// mode, the list, then the launch setting.
 @MainActor
 final class ScreenshotTests: XCTestCase {
     override func setUp() {
@@ -11,8 +13,6 @@ final class ScreenshotTests: XCTestCase {
         XCUIDevice.shared.appearance = .light
     }
 
-    /// Captures the screens that tools/screenshots/frame.py builds the store screenshots from, as
-    /// listed in fastlane/screenshots/captions.json.
     func testScreenshots() {
         let app = XCUIApplication()
         setupSnapshot(app)
@@ -20,10 +20,10 @@ final class ScreenshotTests: XCTestCase {
         app.launch()
 
         XCTAssertTrue(app.staticTexts["Me"].waitForExistence(timeout: 10))
-        snapshot("list")
+        snapshot("04-list")
 
         openMe(app)
-        snapshot("barcode")
+        snapshot("01-barcode")
 
         app.navigationBars.buttons.firstMatch.tap()
         app.buttons["Settings"].tap()
@@ -32,7 +32,7 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(option.waitForExistence(timeout: 5))
         option.tap()
         XCTAssertTrue(option.isSelected)
-        snapshot("settings")
+        snapshot("05-settings")
 
         // The other iPhone format, in light and dark mode; the code stays black on white
         let barcode = app.collectionViews.buttons["Barcode"].firstMatch
@@ -40,13 +40,13 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(barcode.isSelected)
         app.buttons["Done"].tap()
         openMe(app)
-        snapshot("barcode-code128")
+        snapshot("02-barcode-code128")
 
         app.navigationBars.buttons.firstMatch.tap()
         XCUIDevice.shared.appearance = .dark
         sleep(2) // The switch reaches the app asynchronously, with nothing to wait for
         openMe(app)
-        snapshot("barcode-dark")
+        snapshot("03-barcode-dark")
     }
 
     private func openMe(_ app: XCUIApplication) {

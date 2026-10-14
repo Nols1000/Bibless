@@ -21,7 +21,14 @@ class MainActivity : ComponentActivity() {
         // Starts on the barcode asked for, the way the app would reopen on it after a restart.
         if (savedInstanceState == null) BarcodeLink.barcodeId(intent)?.let { repository.shownBarcodeId = it }
         setContent {
-            App(repository, openRequestFlow)
+            App(
+                repository,
+                Bibless.timer(this),
+                Bibless.scanner(this),
+                Bibless.raceDevice(this),
+                openRequestFlow,
+                received = Bibless.receivedSessions(this),
+            )
         }
     }
 
@@ -33,6 +40,7 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         Bibless.sync(this).start()
+        DataLayerSessions.pull(this)
     }
 
     override fun onStop() {

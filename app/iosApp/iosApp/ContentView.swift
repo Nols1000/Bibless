@@ -3,8 +3,12 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var store: BarcodeStore
+    @EnvironmentObject private var timer: TimerStore
+    @EnvironmentObject private var scanner: ScannerStore
     @State private var isAdding = false
     @State private var isShowingSettings = false
+    @State private var isShowingTimer = false
+    @State private var isShowingScanner = false
 
     @State private var path: [String] = []
     @State private var didStart = false
@@ -51,6 +55,12 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Settings", systemImage: "gearshape") { isShowingSettings = true }
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Timer", systemImage: "stopwatch") { isShowingTimer = true }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Scanner", systemImage: "qrcode.viewfinder") { isShowingScanner = true }
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button("Add Barcode", systemImage: "plus") { isAdding = true }
                 }
@@ -67,12 +77,26 @@ struct ContentView: View {
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView()
             }
+            // Full screen, so a stray swipe can't close it mid-run
+            .fullScreenCover(isPresented: $isShowingTimer) {
+                TimerView()
+            }
+            .fullScreenCover(isPresented: $isShowingScanner) {
+                ScannerView()
+            }
         }
         // Open the start barcode (last shown, first or only one) on top of the list, once per launch.
         .onAppear {
             guard !didStart else { return }
             didStart = true
-            if let id = store.startBarcodeId { path = [id] }
+            // A running timer or scanner comes first; the volunteer reopened the app mid-run
+            if timer.isRunning {
+                isShowingTimer = true
+            } else if scanner.isRunning {
+                isShowingScanner = true
+            } else if let id = store.startBarcodeId {
+                path = [id]
+            }
         }
         .onChange(of: path) { store.shownBarcodeId = path.last }
         // The widget opens its barcode on top of the list, over whatever was open.
@@ -81,6 +105,8 @@ struct ContentView: View {
             didStart = true
             isAdding = false // the sheets would cover the code
             isShowingSettings = false
+            isShowingTimer = false
+            isShowingScanner = false
             widgetOpens += 1
             path = [id]
             // Also when the path already was [id], where onChange(of: path) doesn't fire
@@ -290,6 +316,10 @@ private struct FormatPager: View {
 #Preview {
     ContentView()
         .environmentObject(BarcodeStore())
+        .environmentObject(TimerStore(device: makeRaceDevice()))
+        .environmentObject(ScannerStore(device: makeRaceDevice()))
+        .environmentObject(RunStore(device: makeRaceDevice()))
+        .environmentObject(ReceivedStore())
 }
 
 /// Turns the screen to full brightness while the view is visible and the app is active, so scanners

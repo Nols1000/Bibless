@@ -4,20 +4,10 @@ All targets except `:server` are built and released from GitHub Actions.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci-android.yml`, `ci-apple.yml`, `ci-web.yml` | PRs and pushes to `main` that touch the platform's sources or the shared build | Tests, then builds Android and Wear OS, iOS (simulator, unsigned), or web. Docs-only changes run none of them |
-| `release.yml` | Tag `vX.Y.Z` | Builds release bundles, uploads to Play closed testing and TestFlight, then updates the store listings (`store-metadata.yml`) and creates a GitHub Release. The screenshots are captured while it builds, unless a Screenshots run for the tagged commit already has them |
-| `pages.yml` | Changes to the web app on `main`, or manual run | Deploys the web app and the privacy policies to GitHub Pages |
-| `screenshots.yml` | Called by `release.yml` and `store-metadata.yml`; changes to the screenshot tests on `main` | Captures the store screenshots, one job per device, and keeps them as artifacts |
-| `store-metadata.yml` | Called by `release.yml`, or manual run | Pushes the store listings with the screenshots to Google Play and App Store Connect |
-| `certificates.yml` | Manual run | Registers the Apple bundle ids and regenerates the App Store profiles in the match repo |
+| `ci.yml` | PRs, pushes to `main`; changes only to `docs/`, Markdown files or `fastlane/` run nothing | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned). On `main` it also deploys the landing page, the web app and the privacy policies to GitHub Pages |
+| `release.yml` | Tag `vX.Y.Z` | Builds the signed bundles, captures the store screenshots, uploads the builds and listings to Play closed testing and TestFlight, then creates a GitHub Release with the `.aab` and `.ipa` files |
 
-Signing and store steps are skipped automatically while their secrets or variables are missing.
-
-Store uploads are **opt-in**. By default a release only builds the artifacts and attaches them to the GitHub Release, where you can download them and upload by hand:
-- **Android**: upload `androidApp-release.aab` and `wearApp-release.aab` in Play Console.
-- **iOS**: upload `Bibless.ipa` with Apple's [Transporter](https://apps.apple.com/app/transporter/id1450874784) app.
-
-To have CI upload to Play closed testing and TestFlight, set the repository variable `STORE_UPLOAD=true` under *Settings → Secrets and variables → Actions → Variables*.
+Store logic lives in fastlane (`fastlane/Fastfile`); the workflows only set up the toolchain and call `fastlane android release` and `fastlane ios release`. A release needs all the secrets and variables below.
 
 ## Cutting a release
 
@@ -34,14 +24,14 @@ Release notes and listing changes go live with the release that ships them, so c
 
 Never move or reuse a tag once its build has reached a store: Play rejects a `versionCode` it has already seen. Tag the next patch version instead.
 
-The phone and Wear OS bundles go to Google Play in separate jobs, one after the other. If one fails, fix the cause and use *Re-run failed jobs* on the same run: the upload skips a bundle the track already has. A failed Wear OS upload doesn't hold up the store listings or the GitHub Release. If Play has no such track, the error lists the tracks it does have.
+Each platform is one job. On Google Play, the phone bundle, the Wear OS bundle and the listing are uploaded one after another, since Play allows one edit at a time. If a job fails, fix the cause and use *Re-run failed jobs* on the same run: the upload skips a bundle the track already has. If Play has no such track, the error lists the tracks it does have.
 
 Local builds can override the version the same way: `./gradlew :app:androidApp:bundleRelease :app:wearApp:bundleRelease -PappVersionName=1.2.3 -PappVersionCode=1020300 -PwearVersionCode=1020301`. `appVersionCode` alone sets both.
 
 ## Store listings
 
 The listings are kept in the repo and managed by [fastlane](https://docs.fastlane.tools):
-- `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`. `images/featureGraphic.png` is drawn by `tools/screenshots/feature_graphic.py` (needs `pip install pillow segno`) and committed.
+- `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`. `images/featureGraphic.png` (1024x500, no transparency) is committed; edit it by hand.
 - `fastlane/metadata/ios/<locale>/`: App Store texts. Put `release_notes.txt` here.
 - `fastlane/screenshots/ios/<locale>/`: App Store screenshots for iPhone and Apple Watch, assigned to device slots by pixel size.
 
@@ -49,19 +39,21 @@ If a listing already exists in a store, pull it once before editing: `bundle exe
 
 ### Screenshots
 
-Screenshots are captured by UI tests through fastlane ([snapshot](https://docs.fastlane.tools/actions/snapshot/) and [screengrab](https://docs.fastlane.tools/actions/screengrab/)). The tests start the apps with sample barcodes from `DemoData` (`app/sharedLogic`), so no real codes appear in the stores.
+Screenshots are captured by UI tests: on iOS through fastlane [snapshot](https://docs.fastlane.tools/actions/snapshot/), on Android with [Robolectric](https://robolectric.org) and [Roborazzi](https://github.com/takahirom/roborazzi), which render the screens on the JVM. The tests start the apps with sample barcodes from `DemoData` (`app/sharedLogic`), so no real codes appear in the stores.
 
 ```sh
 # iPhone 17 Pro Max (6.9") and Apple Watch Ultra 3 simulators
 bundle exec fastlane ios screenshots
 
-# Running phone and Wear OS emulators, by their `adb devices` serials
-bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
+# A 1080x2160 phone and a large round Wear OS screen; no emulator needed
+bundle exec fastlane android screenshots
 ```
 
-The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `androidTest` sources. The Android tests replace the app's saved barcodes, so they refuse to run on a real device.
+The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `test` sources. The Android ones run with the other unit tests too, but only write images with `-PstoreScreenshots`, which the lane passes. Robolectric draws no system bars, so the Android screenshots have no status bar.
 
-The images are not committed (they are git-ignored). `screenshots.yml` captures them on CI simulators and emulators, each device in its own job, and keeps them as workflow artifacts for review. Releases start it alongside the builds and push the listing (`store-metadata.yml`) after uploading the builds, so the listing only shows what's available; a listing sync while a Play upload is open would discard the upload. Changes to the screenshot tests run `screenshots.yml` on `main` without uploading. To update a listing between releases, run `gh workflow run store-metadata.yml`, which captures the screenshots first. The local commands above are for previewing.
+The stores get the screens as captured, with no headlines or device frames; the landing page (`app/webApp/src/landing`) frames them instead. The file names set the store order (`01-barcode`, `02-barcode-code128`, …). Play phone screenshots are 1080x2160, since Google Play takes none longer than twice its width.
+
+The images are not committed (they are git-ignored). The release lanes capture them on the runner right before uploading the listing, so the listing changes together with the build it describes. Listing changes between releases go out with the next release; tag a patch version. The local commands above are for previewing.
 
 ## Secrets
 
@@ -83,17 +75,16 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
 |---|---|
 | `GCP_WIF_PROVIDER` | `projects/905727411115/locations/global/workloadIdentityPools/github/providers/github` |
 | `PLAY_SERVICE_ACCOUNT` | `fastlane@fastlane-510106.iam.gserviceaccount.com` |
-| `STORE_UPLOAD` | `true` to upload releases to the stores (see above) |
 
 ## One-time setup
 
-1. **GitHub Pages**: *Settings → Pages → Source: GitHub Actions*. The web app is served at `https://<owner>.github.io/<repo>/`.
+1. **GitHub Pages**: *Settings → Pages → Source: GitHub Actions*. The landing page is served at `https://<owner>.github.io/<repo>/`, the organiser web app at `…/<repo>/organise/`.
 2. **Android upload key**:
    `keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000`
    Keep it outside the repo and back it up. Use Play App Signing.
 3. **Google Play**:
    1. Create the app `com.github.nols1000.bibless` in Play Console.
-   2. Upload the first signed AAB by hand, since the API refuses to create the app's first release. You can download it from a release workflow run once the keystore secrets are set.
+   2. Upload the first signed AAB by hand, since the API refuses to create the app's first release. You can download it from the `android` artifact of a release workflow run; the Play upload after it fails until this is done.
    3. Add the Wear OS form factor under *Advanced settings → Form factors*.
    4. Set up closed testing (the `alpha` track, `PLAY_TRACK` in the Fastfile) with a testers list, for the phone and the Wear OS form factor.
    5. Invite the service account `fastlane@fastlane-510106.iam.gserviceaccount.com` in Play Console with release permissions.
@@ -109,7 +100,7 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
       To run the Play lanes locally, export a JSON key of the service account as `PLAY_SERVICE_ACCOUNT_JSON`, or point `GOOGLE_APPLICATION_CREDENTIALS` at a credentials file.
 4. **Apple**:
    1. Create the app for bundle id `com.github.nols1000.bibless` in App Store Connect. The watch app `com.github.nols1000.bibless.watchkitapp` and the phone widgets `com.github.nols1000.bibless.widget` are embedded in the iOS app, and the watch's Smart Stack widget `com.github.nols1000.bibless.watchkitapp.widget` in the watch app; `fastlane ios certificates` registers all identifiers.
-   2. Each app shares the app group `group.com.github.nols1000.bibless` with its widgets. App groups can't be set up through the API: create it under *Certificates, Identifiers & Profiles → Identifiers → App Groups*, enable it on all four identifiers, then run `certificates.yml` to regenerate the profiles.
+   2. Each app shares the app group `group.com.github.nols1000.bibless` with its widgets. App groups can't be set up through the API: create it under *Certificates, Identifiers & Profiles → Identifiers → App Groups*, enable it on all four identifiers, then regenerate the profiles with `bundle exec fastlane ios certificates force:true` (needs the App Store Connect key variables, `MATCH_PASSWORD` and SSH access to the match repo).
    3. Create a Team API key with the *Admin* role under *Users and Access → Integrations → App Store Connect API*. Admin is needed so Xcode can create the distribution certificate and profiles in the cloud.
    4. The app, the watch app and both widgets each have a privacy manifest (`PrivacyInfo.xcprivacy` in their folder). It declares no tracking and no collected data, and the reasons for the APIs Apple requires them for: `UserDefaults`, and file timestamps in the shared Kotlin framework. Update it when the code starts using another of Apple's [required reason APIs](https://developer.apple.com/documentation/bundleresources/describing-use-of-required-reason-api), or App Review rejects the build.
    5. Signing uses [fastlane match](https://docs.fastlane.tools/actions/match/). The Apple Distribution certificate and the App Store profiles for the app, watch app and widgets are stored encrypted in the private repo `Nols1000/bibless-certificates`. The first CI run creates them through the API key, and later runs reuse them. To use them locally, run `bundle exec fastlane ios certificates readonly:true` (needs `MATCH_PASSWORD` and SSH access to that repo). The Xcode project keeps automatic signing for local development; CI switches the targets to manual signing only on the runner.

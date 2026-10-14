@@ -1,0 +1,1217 @@
+/* Bibless landing page. Dark first: the black canvas lets the OLED watch melt into the page. */
+
+:root {
+  --volt: #d4ff00;
+  --canvas: #000000;
+  --surface: #121417;
+  --surface-2: #1b1e22;
+  --text: #f4f5f7;
+  --muted: #9aa0a8;
+  --line: #262a30;
+  --accent-text: var(--volt);
+  /* Lines and marks that light up: volt on black, Carbon on white, like the app */
+  --signal: var(--volt);
+  --signal-glow: rgba(212, 255, 0, 0.55);
+  /* A highlighted row: volt light on black, a volt fill behind black text on white */
+  --hl-bg: rgba(212, 255, 0, 0.12);
+  --hl-ring: rgba(212, 255, 0, 0.6);
+  --hl-text: var(--volt);
+  --band: #121417;
+  --glow: rgba(212, 255, 0, 0.10);
+  /* Any code the page draws itself: never tinted */
+  --code-bg: #ffffff;
+  --code-ink: #000000;
+  --stage-h: min(82svh, 780px);
+  color-scheme: dark;
+  font-family: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --canvas: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #e9ebef;
+    --text: #0b0c0e;
+    --muted: #555b64;
+    --line: #d9dce1;
+    /* Volt is a fill behind black text in light mode, never text on white */
+    --accent-text: #0b0c0e;
+    --signal: #121417;
+    --signal-glow: transparent;
+    --hl-bg: var(--volt);
+    --hl-ring: transparent;
+    --hl-text: #000000;
+    --band: #2a2d32;
+    --glow: rgba(212, 255, 0, 0.18);
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --canvas: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #e9ebef;
+  --text: #0b0c0e;
+  --muted: #555b64;
+  --line: #d9dce1;
+  --accent-text: #0b0c0e;
+  --signal: #121417;
+  --signal-glow: transparent;
+  --hl-bg: var(--volt);
+  --hl-ring: transparent;
+  --hl-text: #000000;
+  --band: #2a2d32;
+  --glow: rgba(212, 255, 0, 0.18);
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px;
+}
+
+body.landing {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--text);
+  text-decoration-color: var(--signal);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.skip {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 20;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--volt);
+  color: #000;
+}
+
+.skip:focus {
+  top: 12px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 3px;
+}
+
+/* ---------- Top bar ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px max(16px, 4vw);
+  background: color-mix(in srgb, var(--canvas) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.brand,
+.footer-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 750;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-decoration: none;
+  margin: 0;
+}
+
+/* The Bibless logo, black on Hyper Volt (the #logo symbol in index.html) */
+.brand-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.sr-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.topbar nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 28px);
+}
+
+.topbar nav a:not(.cta) {
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 550;
+  font-size: 0.95rem;
+}
+
+.topbar nav a:not(.cta):hover {
+  color: var(--text);
+}
+
+@media (max-width: 560px) {
+  .topbar nav a:not(.cta) {
+    display: none;
+  }
+}
+
+/* ---------- Buttons ---------- */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 22px;
+  border-radius: 999px;
+  background: var(--volt);
+  color: #000;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 8px 30px -8px rgba(212, 255, 0, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 34px -8px rgba(212, 255, 0, 0.75);
+}
+
+.cta svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* The top bar's button is neutral, so the page's volt button is the one in view */
+.cta-small {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  background: var(--text);
+  color: var(--canvas);
+  box-shadow: none;
+}
+
+.cta-small:hover {
+  background: color-mix(in srgb, var(--text) 85%, var(--canvas));
+}
+
+.cta-ghost {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+.cta-ghost:hover {
+  box-shadow: inset 0 0 0 1.5px var(--text);
+}
+
+/* ---------- Story: steps next to a sticky stage ---------- */
+
+.story {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  grid-template-areas: 'steps stage';
+  gap: 0 4vw;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 max(16px, 4vw);
+}
+
+.stage-col {
+  grid-area: stage;
+}
+
+.steps {
+  grid-area: steps;
+  padding-bottom: 18svh;
+}
+
+.stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+}
+
+/* Soft volt light behind the devices */
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: 12% 0 8%;
+  background:
+    radial-gradient(closest-side at 50% 50%, var(--glow), transparent);
+  filter: blur(10px);
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.step {
+  min-height: 92svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 10svh 0;
+  max-width: 560px;
+  opacity: 0.35;
+  transition: opacity 0.5s ease;
+}
+
+.step.is-active,
+.landing:not(.is-ready) .step {
+  opacity: 1;
+}
+
+.step-hero {
+  min-height: calc(100svh - 64px);
+  padding-top: 6svh;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h1,
+h2 {
+  margin: 0 0 18px;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  font-weight: 780;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5.4vw, 4.6rem);
+}
+
+h2 {
+  font-size: clamp(1.9rem, 3.4vw, 3rem);
+}
+
+.volt {
+  color: var(--accent-text);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* In light mode the volt words get a marker stroke instead of volt text */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .volt {
+    background: linear-gradient(transparent 58%, var(--volt) 58% 92%, transparent 92%);
+  }
+}
+
+:root[data-theme='light'] .volt {
+  background: linear-gradient(transparent 58%, var(--volt) 58% 92%, transparent 92%);
+}
+
+.step p {
+  font-size: 1.08rem;
+  color: var(--muted);
+  margin: 0 0 16px;
+  text-wrap: pretty;
+}
+
+.step p strong {
+  color: var(--text);
+}
+
+.step .lead {
+  font-size: clamp(1.1rem, 1.6vw, 1.3rem);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0 20px;
+}
+
+.fine {
+  font-size: 0.85rem !important;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--canvas);
+  letter-spacing: 0.04em;
+}
+
+.link-arrow {
+  font-weight: 650;
+}
+
+.link-arrow::after {
+  content: ' →';
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.link-arrow:hover::after {
+  transform: translateX(4px);
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 22px;
+  margin-top: 10px;
+}
+
+.segmented {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.segmented legend {
+  float: left;
+  margin-right: 10px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.segmented label {
+  position: relative;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.segmented span {
+  display: inline-block;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.segmented input:checked + span {
+  background: var(--text);
+  color: var(--canvas);
+  box-shadow: none;
+}
+
+.segmented input:focus-visible + span {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.chip-button {
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  cursor: pointer;
+}
+
+.chip-button:hover {
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1.5px var(--text);
+}
+
+.chips {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.chips li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-weight: 550;
+}
+
+.chip-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+/* ---------- Devices ---------- */
+
+.devices {
+  position: relative;
+  height: var(--stage-h);
+  aspect-ratio: 0.8;
+  max-width: 100%;
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+}
+
+.phone {
+  position: absolute;
+  left: 2%;
+  top: 0;
+  height: 100%;
+  aspect-ratio: var(--phone-aspect);
+  filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.45));
+}
+
+.phone-screen {
+  position: absolute;
+  overflow: hidden;
+  /* The app's canvas in the screenshots' colours behind the drawn system bars (SampleColors, sharedUI Theme.kt) */
+  background: #fff8f1;
+  container-type: inline-size;
+  transition: background 0.45s ease;
+}
+
+.phone.is-dark .phone-screen {
+  background: #16130b;
+}
+
+.status-bar {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3.9%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 7.5cqw;
+  font-size: 3.5cqw;
+  font-weight: 600;
+  color: #1f1b13;
+  transition: color 0.45s ease;
+}
+
+.phone.is-dark .status-bar {
+  color: #eae1d4;
+}
+
+.status-bar .icons {
+  display: flex;
+  gap: 1.2cqw;
+}
+
+.status-bar svg {
+  width: 3.6cqw;
+  height: 3.6cqw;
+  fill: currentColor;
+}
+
+.captures {
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(0.985);
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.screen.is-active {
+  opacity: 1;
+  transform: none;
+}
+
+.gesture-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 1.1%;
+  width: 34%;
+  height: 1.1cqw;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: #121417;
+  opacity: 0.85;
+}
+
+.phone.is-dark .gesture-bar {
+  background: #f4f5f7;
+}
+
+.hotspot {
+  position: absolute;
+  display: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 3cqw;
+}
+
+.hotspot:hover,
+.hotspot:focus-visible {
+  background: rgba(212, 255, 0, 0.35);
+  box-shadow: inset 0 0 0 2px #121417;
+}
+
+/* Tappable in the family step, where the page says so */
+.stage[data-step='family'] .phone[data-screen='list'] .hotspot[data-on='list'],
+.stage[data-step='family'] .phone[data-screen='barcode'] .hotspot[data-on='barcode'] {
+  display: block;
+}
+
+.stage[data-step='family'] .phone[data-screen='list'] .hotspot[data-on='list'] {
+  animation: nudge 2.4s ease-in-out infinite;
+}
+
+@keyframes nudge {
+  0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+  50% { box-shadow: inset 0 0 0 2px #121417; background: rgba(212, 255, 0, 0.35); }
+}
+
+/* Brightness to full when the light theme comes back */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.phone.is-flashing .flash {
+  animation: flash 0.9s ease-out;
+}
+
+@keyframes flash {
+  0% { opacity: 0; }
+  25% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+/* A scan line sweeping the scanner's camera area */
+.camera-scan {
+  position: absolute;
+  display: none;
+  overflow: hidden;
+  border-radius: 3cqw;
+  pointer-events: none;
+}
+
+.phone[data-screen='scanner'] .camera-scan {
+  display: block;
+}
+
+.camera-scan::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  height: 0.8cqw;
+  top: 15%;
+  border-radius: 999px;
+  background: var(--volt);
+  box-shadow: 0 0 4cqw 1cqw rgba(212, 255, 0, 0.55);
+  animation: scan 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes scan {
+  to { top: 85%; }
+}
+
+/* The watch: 400 x 540 in frame units, the round watch in the top 400 */
+.watch {
+  position: absolute;
+  right: 0;
+  bottom: -6%;
+  width: 62%;
+  aspect-ratio: 400 / 540;
+  color: var(--band);
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.5));
+}
+
+.watch-round,
+.watch-scroll {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* The bezel's opening is a circle of radius 108 around (200, 200); the screen tucks under it */
+.watch-screen {
+  position: absolute;
+  left: calc(90 / 400 * 100%);
+  top: calc(90 / 540 * 100%);
+  width: calc(220 / 400 * 100%);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #000;
+}
+
+.watch-scroll {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.watch.is-scroll .watch-round {
+  opacity: 0;
+}
+
+.watch.is-scroll .watch-scroll {
+  opacity: 1;
+}
+
+.watch-strip {
+  position: absolute;
+  left: 26%;
+  top: calc(104 / 540 * 100%);
+  width: 48%;
+  height: calc(430 / 540 * 100%);
+  border-radius: 50% / 22.33%;
+  overflow: hidden;
+  background: #000;
+  -webkit-mask: linear-gradient(#000 78%, transparent);
+  mask: linear-gradient(#000 78%, transparent);
+}
+
+.watch-strip .screen {
+  object-fit: cover;
+  object-position: top;
+  transform: translateY(18%);
+  transition: opacity 0.4s ease, transform 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) 0.1s;
+}
+
+.watch.is-scroll .watch-strip .screen {
+  opacity: 1;
+  transform: none;
+}
+
+/* The sync pulse from the watch to the phone */
+.sync-arc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.sync-arc path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.sync-arc .track {
+  stroke: var(--signal);
+  stroke-opacity: 0.35;
+  stroke-width: 2;
+  stroke-dasharray: 2 7;
+}
+
+.sync-arc .pulse {
+  stroke: var(--signal);
+  stroke-width: 6;
+  stroke-dasharray: 14 200;
+  stroke-dashoffset: 14;
+  filter: drop-shadow(0 0 6px var(--signal-glow));
+}
+
+.stage[data-step='sync'] .sync-arc {
+  opacity: 1;
+}
+
+.stage[data-step='sync'].is-syncing .sync-arc .pulse {
+  animation: pulse 1.4s cubic-bezier(0.5, 0, 0.3, 1) forwards;
+}
+
+@keyframes pulse {
+  from { stroke-dashoffset: 14; }
+  to { stroke-dashoffset: -100; }
+}
+
+/* Hero: the finish clock next to the phone, and the volunteer's scanner sweeping the watch */
+.devices {
+  container-type: inline-size;
+}
+
+.finish {
+  position: absolute;
+  left: -6%;
+  bottom: 8%;
+  width: 52%;
+  padding: 3.2cqw 3.4cqw 2.6cqw;
+  border: 1px solid var(--line);
+  border-radius: 3.6cqw;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.7);
+  font-size: clamp(9px, 2.5cqw, 15px);
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+  pointer-events: none;
+}
+
+.stage[data-step='hero'] .finish {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.5s;
+}
+
+.finish-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: 0.9em;
+}
+
+.finish-label {
+  font-size: 0.8em;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.finish-clock {
+  font-size: 2.7em;
+  font-weight: 780;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+}
+
+.finish-rows {
+  display: grid;
+  gap: 0.35em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finish-rows li {
+  display: grid;
+  grid-template-columns: 2.8em minmax(0, 1fr) auto;
+  gap: 0.8em;
+  padding: 0.45em 0.7em;
+  border-radius: 0.7em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.finish-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.finish-pos {
+  font-weight: 700;
+}
+
+.finish-rows li.is-me {
+  max-height: 0;
+  padding-block: 0;
+  overflow: hidden;
+  opacity: 0;
+  font-weight: 650;
+  color: var(--hl-text);
+  background: var(--hl-bg);
+  box-shadow: inset 0 0 0 1px var(--hl-ring);
+  transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease;
+}
+
+.finish.is-scanned li.is-me {
+  max-height: 3em;
+  padding-block: 0.45em;
+  opacity: 1;
+}
+
+.finish-rows li.is-me .finish-pos {
+  color: var(--hl-text);
+}
+
+/* Corner brackets around the watch screen: the code itself is never covered or tinted */
+.watch-scan {
+  --arm: 16%;
+  --w: 3px;
+  position: absolute;
+  left: calc(72 / 400 * 100%);
+  top: calc(72 / 540 * 100%);
+  width: calc(256 / 400 * 100%);
+  aspect-ratio: 1;
+  background:
+    linear-gradient(var(--signal), var(--signal)) left top / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) left top / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) right top / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) right top / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) left bottom / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) left bottom / var(--w) var(--arm),
+    linear-gradient(var(--signal), var(--signal)) right bottom / var(--arm) var(--w),
+    linear-gradient(var(--signal), var(--signal)) right bottom / var(--w) var(--arm);
+  background-repeat: no-repeat;
+  filter: drop-shadow(0 0 6px var(--signal-glow));
+  opacity: 0;
+  transform: scale(1.25);
+  pointer-events: none;
+}
+
+.stage.is-scanning .watch-scan {
+  animation: viewfinder 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes viewfinder {
+  0% { opacity: 0; transform: scale(1.25); }
+  45% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.98); }
+}
+
+/* The countdown to Saturday's parkrun, with a live dot */
+.countdown {
+  font-variant-numeric: tabular-nums;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--volt);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 40%, transparent);
+  animation: live 2s ease-out infinite;
+}
+
+@keyframes live {
+  from { outline: 0 solid rgba(212, 255, 0, 0.6); outline-offset: 0; }
+  to { outline: 9px solid rgba(212, 255, 0, 0); outline-offset: 0; }
+}
+
+/* Privacy: the devices step back behind three promises */
+.privacy-chips {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.5s ease, transform 0.6s ease;
+  pointer-events: none;
+}
+
+.privacy-chips li {
+  padding: 12px 26px;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--canvas);
+  font-weight: 780;
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  letter-spacing: -0.02em;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.6);
+}
+
+.privacy-chips li:nth-child(2) {
+  transform: rotate(-3deg);
+}
+
+.privacy-chips li:nth-child(3) {
+  transform: rotate(2deg);
+}
+
+.devices {
+  transition: opacity 0.5s ease, filter 0.5s ease, transform 0.6s ease;
+}
+
+.stage[data-step='privacy'] .devices {
+  opacity: 0.25;
+  filter: blur(2px) saturate(0.6);
+  transform: scale(0.96);
+}
+
+.stage[data-step='privacy'] .privacy-chips {
+  opacity: 1;
+  transform: none;
+}
+
+/* Arrival */
+.landing.is-ready .phone {
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.landing.is-ready .watch {
+  animation: rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.15s both;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Beta ---------- */
+
+.beta {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 max(16px, 4vw) 12svh;
+}
+
+.beta-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(28px, 5vw, 64px);
+  border-radius: 32px;
+  background:
+    radial-gradient(120% 90% at 100% 0%, var(--glow), transparent 60%),
+    var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.beta-card > p {
+  max-width: 640px;
+  color: var(--muted);
+  font-size: 1.08rem;
+}
+
+.beta-steps {
+  list-style: none;
+  margin: 24px 0 8px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.beta-steps li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.beta-n {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 780;
+}
+
+.badge-muted {
+  background: var(--surface-2);
+  color: var(--text);
+  margin-right: 6px;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 40px max(16px, 4vw) 56px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+}
+
+.footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.footer nav a {
+  color: var(--muted);
+}
+
+.footer .fine {
+  margin: 0;
+}
+
+/* ---------- Narrow screens: the stage sits on top, the text scrolls under it ---------- */
+
+@media (max-width: 799px) {
+  :root {
+    --stage-h: min(38svh, 420px);
+  }
+
+  .story {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'stage' 'steps';
+  }
+
+  .stage-col {
+    position: sticky;
+    top: 52px;
+    z-index: 2;
+    margin: 0 calc(-1 * max(16px, 4vw));
+    background: var(--canvas);
+  }
+
+  /* Tighter shadows, so they end inside the stage instead of under the fade */
+  .phone {
+    filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.3));
+  }
+
+  .watch {
+    filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+  }
+
+  /* Text scrolls away under a short fade below the devices, never behind them */
+  .stage-col::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: linear-gradient(var(--canvas), transparent);
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    height: calc(var(--stage-h) + 28px);
+    padding: 8px 0 20px;
+  }
+
+  .step {
+    min-height: 62svh;
+    padding: 4svh 0 10svh;
+    max-width: none;
+  }
+
+  .step-hero {
+    min-height: auto;
+    padding-top: 2svh;
+  }
+
+  .step p {
+    font-size: 1rem;
+  }
+
+  /* The small stage only has room for the clock and the runner just scanned, below the code */
+  .finish {
+    left: -2%;
+    bottom: -4%;
+    width: 50%;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .finish-head {
+    margin-bottom: 4px;
+  }
+
+  .finish-label,
+  .finish-rows li:not(.is-me) {
+    display: none;
+  }
+
+  .finish-clock {
+    font-size: 2.2em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .camera-scan::after {
+    top: 50%;
+  }
+}

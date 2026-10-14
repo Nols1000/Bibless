@@ -4,16 +4,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
 import androidx.wear.compose.material3.MaterialTheme
 import androidx.wear.compose.material3.RadioButton
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.SurfaceTransformation
 import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.TextDefaults
 import androidx.wear.compose.material3.lazy.rememberTransformationSpec
 import androidx.wear.compose.material3.lazy.transformedHeight
 import com.github.nols1000.bibless.LaunchScreen
@@ -38,7 +43,11 @@ fun SettingsScreen(
             // First, since skipping the list is what matters most on the wrist
             item {
                 ListHeader(
-                    modifier = Modifier.transformedHeight(this, transformationSpec),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ListHeaderDefaults.minimumTopListContentPadding,
+                            ListHeaderDefaults.minimumBottomListContentPadding,
+                        ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) { Text("Open on launch") }
             }
@@ -46,7 +55,9 @@ fun SettingsScreen(
                 RadioButton(
                     selected = screen == openOnLaunch,
                     onSelect = { onOpenOnLaunchChange(screen) },
-                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
+                        .fillMaxWidth(),
                     transformation = SurfaceTransformation(transformationSpec),
                     label = { Text(screen.label) },
                 )
@@ -54,14 +65,26 @@ fun SettingsScreen(
             item {
                 Text(
                     "Long-press a barcode in the list to move it to the top.",
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            TextDefaults.minimumTopListContentPadding,
+                            TextDefaults.minimumBottomListContentPadding,
+                        )
+                        .graphicsLayer { with(transformationSpec) { applyContentTransformation(scrollProgress) } }
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
                     style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             item {
                 ListHeader(
-                    modifier = Modifier.transformedHeight(this, transformationSpec),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(
+                            ListHeaderDefaults.minimumTopListContentPadding,
+                            ListHeaderDefaults.minimumBottomListContentPadding,
+                        ),
                     transformation = SurfaceTransformation(transformationSpec),
                 ) { Text("Default format") }
             }
@@ -69,7 +92,9 @@ fun SettingsScreen(
                 RadioButton(
                     selected = option == format,
                     onSelect = { onFormatChange(option) },
-                    modifier = Modifier.fillMaxWidth().transformedHeight(this, transformationSpec),
+                    modifier = Modifier.transformedHeight(this, transformationSpec)
+                        .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding)
+                        .fillMaxWidth(),
                     transformation = SurfaceTransformation(transformationSpec),
                     label = { Text(option.label) },
                 )

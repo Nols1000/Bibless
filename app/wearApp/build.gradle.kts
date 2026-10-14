@@ -5,6 +5,11 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+val storeScreenshots = providers.gradleProperty("storeScreenshots").isPresent
+val siteScreenshots = providers.gradleProperty("siteScreenshots").isPresent
+val screenshotDir = rootProject.file("fastlane/metadata/android/en-US/images/wearScreenshots").path
+val siteScreenshotDir = rootProject.file("app/webApp/public/screens/watch").path
+
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
@@ -17,6 +22,8 @@ dependencies {
     implementation(libs.wear.compose.foundation)
     implementation(libs.wear.compose.material3)
     implementation(libs.wear.compose.navigation)
+    // AmbientLifecycleObserver, so the timer stays on screen with the wrist down
+    implementation(libs.wear)
     implementation(libs.wear.input)
     implementation(libs.wear.tiles)
     implementation(libs.wear.protolayout)
@@ -28,15 +35,19 @@ dependencies {
     implementation(libs.wear.toolingPreview)
     implementation(libs.compose.uiToolingPreview)
     debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.compose.uiTest.manifest)
 
-    // Store screenshots via fastlane screengrab (ScreenshotTest)
-    androidTestImplementation(libs.fastlane.screengrab)
-    androidTestImplementation(libs.androidx.testExt.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.rules)
-    androidTestImplementation(libs.androidx.uiautomator)
+    // UI tests run on the JVM with Robolectric; Roborazzi takes the store screenshots (ScreenshotTest)
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.testExt.junit)
+    testImplementation(libs.androidx.test.rules)
+    testImplementation(libs.compose.uiTest.junit4)
     // Answers the system text input with the demo entry
-    androidTestImplementation(libs.androidx.espresso.intents)
+    testImplementation(libs.androidx.espresso.intents)
 }
 
 android {
@@ -53,7 +64,6 @@ android {
         versionCode = (providers.gradleProperty("wearVersionCode").orNull ?: providers.gradleProperty("appVersionCode").orNull)
             ?.toInt() ?: 2
         versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         // Release signing is configured via env vars in CI; without them release builds stay unsigned.
@@ -89,5 +99,27 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            all { test ->
+                test.systemProperty("robolectric.graphicsMode", "NATIVE")
+                // Robolectric reaches into FileDescriptor through the JDK's internals
+                test.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+                // -PstoreScreenshots: ScreenshotTest writes the Play screenshots (fastlane android screenshots)
+                if (storeScreenshots) {
+                    test.systemProperty("roborazzi.test.record", "true")
+                    test.systemProperty("screenshotDir", screenshotDir)
+                    test.outputs.upToDateWhen { false }
+                }
+                // -PsiteScreenshots: SiteScreenshotTest writes the landing page's screens
+                if (siteScreenshots) {
+                    test.systemProperty("roborazzi.test.record", "true")
+                    test.systemProperty("siteScreenshotDir", siteScreenshotDir)
+                    test.outputs.upToDateWhen { false }
+                }
+            }
+        }
     }
 }

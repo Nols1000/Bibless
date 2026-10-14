@@ -19,6 +19,7 @@ kotlin {
         watchosDeviceArm64(),
         watchosSimulatorArm64()
     ).forEach { appleTarget ->
+        appleTarget.compilations.getByName("main").cinterops.create("sysctl")
         appleTarget.binaries.framework {
             baseName = "SharedLogic"
             isStatic = true
@@ -33,6 +34,8 @@ kotlin {
         generateTypeScriptDefinitions()
         compilerOptions {
             target = "es2015"
+            // RunOrganiser.create is @JsStatic, so the web app calls it without the companion
+            optIn.add("kotlin.js.ExperimentalJsStatic")
         }
     }
     
@@ -60,6 +63,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
         androidMain.dependencies {
             implementation(libs.playServices.wearable)

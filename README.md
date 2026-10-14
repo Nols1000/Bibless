@@ -53,9 +53,9 @@ Bibless is a Kotlin Multiplatform project.
 | [app/wearApp](./app/wearApp) | Wear OS app (Compose for Wear OS) and tile. It shares the phone app's `applicationId` |
 | [app/iosApp](./app/iosApp) | Xcode project: the SwiftUI iPhone app, the [watchOS app](./app/iosApp/watchApp) embedded as its companion, and their widgets |
 | [app/sharedLogic](./app/sharedLogic) | Logic shared by all apps (exported to Swift as the `SharedLogic` framework and to JS) |
-| [app/sharedUI](./app/sharedUI) | Compose code the Android phone and watch apps share: barcode rendering, full brightness, opening the start barcode. No Material dependency |
+| [app/sharedUI](./app/sharedUI) | Compose code the Android phone and watch apps share: barcode rendering, the format pager, full brightness, opening the start barcode and the Bibless palette. No Material dependency |
 | [core](./core) | Code shared by every target, including the server |
-| [app/webApp](./app/webApp) | React web app on [GitHub Pages](https://nols1000.github.io/Bibless/). For now it hosts the privacy policies |
+| [app/webApp](./app/webApp) | React web app on [GitHub Pages](https://nols1000.github.io/Bibless/): the landing page, the organiser and the privacy policies |
 | [server](./server) | Ktor server, a placeholder for now |
 
 Plans for organising timed community runs with Bibless are in [docs/community-runs.md](./docs/community-runs.md).
@@ -76,8 +76,11 @@ same tasks as these commands:
     -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
   ```
 - **watchOS app**: open [app/iosApp](./app/iosApp) in Xcode and run the `watchApp` scheme
-- **Web app**:
+- **Web app** (the landing page at `/`, the organiser at `/organise/`): capture the phone and watch screens the
+  landing page shows (git-ignored), then build and run it:
   ```shell
+  ./gradlew -PsiteScreenshots :app:androidApp:testDebugUnitTest --tests '*.SiteScreenshotTest' \
+    :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest'
   npm run build:shared
   npm install
   npm run start
@@ -92,7 +95,7 @@ These are the checks CI runs:
 
 | Target | Command |
 |---|---|
-| Android and Wear OS | `./gradlew :app:sharedUI:testAndroidHostTest :app:sharedLogic:testAndroidHostTest` |
+| Android and Wear OS | `./gradlew :app:sharedUI:testAndroidHostTest :app:sharedLogic:testAndroidHostTest :app:androidApp:testDebugUnitTest :app:wearApp:testDebugUnitTest` |
 | Android lint | `./gradlew :app:androidApp:lintDebug :app:wearApp:lintDebug` |
 | iOS and watchOS | `./gradlew :app:sharedLogic:iosSimulatorArm64Test :app:sharedLogic:watchosSimulatorArm64Test` |
 | Web | `./gradlew :app:sharedLogic:jsTest` |
@@ -101,10 +104,9 @@ These are the checks CI runs:
 ### UI tests
 
 The UI tests cover paging between barcodes, the widgets and tiles, the lock screen, links into the app and swiping
-barcodes away. They run on an emulator, a simulator or a device:
+barcodes away. The Android and Wear OS ones run on the JVM with [Robolectric](https://robolectric.org), as part of
+the unit tests above; the Apple ones on a simulator:
 
-- **Android**: `./gradlew :app:androidApp:connectedDebugAndroidTest` with a phone emulator running
-- **Wear OS**: `./gradlew :app:wearApp:connectedDebugAndroidTest` with a Wear OS emulator running
 - **iOS**: `xcodebuild test -project app/iosApp/iosApp.xcodeproj -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'`
 - **watchOS**: `xcodebuild test -project app/iosApp/iosApp.xcodeproj -scheme watchApp -destination 'platform=watchOS Simulator,name=Apple Watch Ultra 3 (49mm)'`
 

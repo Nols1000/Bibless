@@ -1,8 +1,12 @@
 import SharedLogic
 import SwiftUI
 
+/// The route of the timer in the navigation path, beside barcode IDs.
+private let timerRoute = "#timer"
+
 struct ContentView: View {
     @EnvironmentObject private var store: BarcodeStore
+    @EnvironmentObject private var timer: TimerStore
     @State private var isAdding = false
 
     @State private var path: [String] = []
@@ -38,6 +42,16 @@ struct ContentView: View {
                         }
                     }
                 }
+                NavigationLink(value: timerRoute) {
+                    VStack(alignment: .leading) {
+                        Label("Timer", systemImage: "stopwatch")
+                        if timer.isRunning {
+                            Text("Recording")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
                 Button {
                     isAdding = true
                 } label: {
@@ -51,10 +65,14 @@ struct ContentView: View {
             }
             .navigationTitle("Barcodes")
             .navigationDestination(for: String.self) { id in
-                BarcodeDetailView(id: id)
-                    // The path keeps the barcode a pager was opened on, not the one paged to, so
-                    // the widget's barcode can already be in it; start over on it all the same.
-                    .id("\(id)#\(widgetOpens)")
+                if id == timerRoute {
+                    TimerView()
+                } else {
+                    BarcodeDetailView(id: id)
+                        // The path keeps the barcode a pager was opened on, not the one paged to, so
+                        // the widget's barcode can already be in it; start over on it all the same.
+                        .id("\(id)#\(widgetOpens)")
+                }
             }
             .sheet(isPresented: $isAdding) {
                 NavigationStack {
@@ -62,13 +80,18 @@ struct ContentView: View {
                 }
             }
         }
-        // Open the start barcode (last shown, first or only one) on top of the list, once per launch.
+        // Open the start barcode (last shown, first or only one) on top of the list, once per launch;
+        // the timer instead while it runs.
         .onAppear {
             guard !didStart else { return }
             didStart = true
-            if let id = store.startBarcodeId { path = [id] }
+            if timer.isRunning {
+                path = [timerRoute]
+            } else if let id = store.startBarcodeId {
+                path = [id]
+            }
         }
-        .onChange(of: path) { store.shownBarcodeId = path.last }
+        .onChange(of: path) { store.shownBarcodeId = path.last.flatMap { $0 == timerRoute ? nil : $0 } }
         // Tapping the Smart Stack widget opens its barcode, from which the others are a swipe away.
         .onOpenURL { url in
             guard let id = WidgetBarcode.id(from: url), store.barcode(id: id) != nil else { return }
@@ -283,4 +306,5 @@ private struct BarcodePage: View {
 #Preview {
     ContentView()
         .environmentObject(BarcodeStore())
+        .environmentObject(TimerStore(device: makeRaceDevice()))
 }

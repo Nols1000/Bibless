@@ -2,24 +2,46 @@ package com.github.nols1000.bibless
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 
-/** The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode]. */
+/**
+ * The phone app. [openRequests] are barcodes to open from outside the app, see [OpenStartBarcode].
+ * While [timer] or [scanner] runs, the app starts on it.
+ */
 @Composable
-fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow()) {
+fun App(
+    repository: BarcodeRepository,
+    timer: TimerRepository,
+    scanner: ScannerRepository,
+    device: RaceDevice,
+    openRequests: Flow<String> = emptyFlow(),
+    shareFiles: ((List<ExportFile>) -> Unit)? = null,
+    /** On the phone, the timer sessions its watch sent; they are shared like the phone's own. */
+    received: ReceivedSessions? = null,
+) {
     BiblessTheme {
         val state by repository.state.collectAsStateWithLifecycle()
+        val timerState by timer.state.collectAsStateWithLifecycle()
+        val scannerState by scanner.state.collectAsStateWithLifecycle()
+        val joinedRun by device.joinedRun.collectAsStateWithLifecycle()
+        val exporter = remember(timer, scanner, received) { SessionExporter(timer, scanner, received) }
+        val receivedCount by remember(received) { received?.received ?: MutableStateFlow(0) }.collectAsStateWithLifecycle()
+        val share = shareFiles ?: rememberShareFiles()
+        val deviceName = rememberDeviceName()
+        val scope = rememberCoroutineScope()
         val navController = rememberNavController()
 
         NavHost(navController, startDestination = "list") {
@@ -31,6 +53,59 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
                     onDelete = { repository.delete(it.id) },
                     onReorder = { order -> repository.setOrder(order.map { it.id }) },
                     onSettings = { navController.navigate("settings") },
+                    onTimer = { navController.navigate("timer") },
+                    onScanner = { navController.navigate("scanner") },
+                )
+            }
+            composable("timer") {
+                TimerScreen(
+                    session = timerState.session,
+                    joinedRun = joinedRun,
+                    onJoin = { navController.navigate("join") },
+                    onLeave = device::leave,
+                    onSessions = { navController.navigate("sessions") },
+                    elapsedMs = timer::elapsedMs,
+                    onStart = timer::start,
+                    onFinish = { timer.tap() },
+                    onUndo = timer::undo,
+                    onStop = timer::stop,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("scanner") {
+                ScannerScreen(
+                    session = scannerState.session,
+                    joinedRun = joinedRun,
+                    onJoin = { navController.navigate("join") },
+                    onLeave = device::leave,
+                    onSessions = { navController.navigate("sessions") },
+                    onStart = scanner::start,
+                    onScan = scanner::scan,
+                    onEnter = scanner::enter,
+                    onUnknown = scanner::addUnknown,
+                    onUndo = scanner::undo,
+                    onStop = scanner::stop,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("sessions") {
+                val sessions = remember(timerState, scannerState, receivedCount) { exporter.sessions() }
+                SessionsScreen(
+                    sessions = sessions,
+                    joinedRun = joinedRun,
+                    onShare = { session ->
+                        scope.launch {
+                            exporter.export(session.kind, session.id, deviceName, utcOffsetMinutes(session.startedAt))?.let(share)
+                        }
+                    },
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            composable("join") {
+                JoinRunScreen(
+                    onCode = device::join,
+                    onJoined = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() },
                 )
             }
             composable("detail/{id}") { entry ->
@@ -52,7 +127,11 @@ fun App(repository: BarcodeRepository, openRequests: Flow<String> = emptyFlow())
                 )
             }
         }
-        OpenStartBarcode(navController, repository, openRequests)
+        OpenStartBarcode(navController, repository, openRequests, startRoute = when {
+            timerState.session != null -> "timer"
+            scannerState.session != null -> "scanner"
+            else -> null
+        })
     }
 }
 
@@ -83,7 +162,13 @@ fun FirstBarcodeApp(repository: BarcodeRepository, onClose: () -> Unit) {
     }
 }
 
+/** The device's own colours, as other apps on it use, or the Bibless palette where it has none. */
 @Composable
 private fun BiblessTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme(), content = content)
+    val dark = isSystemInDarkTheme()
+    val colorScheme = when {
+        SampleColors.replaceDeviceColors -> if (dark) SamplePhoneColors.dark else SamplePhoneColors.light
+        else -> deviceColorScheme(dark) ?: if (dark) BiblessDarkColors else BiblessLightColors
+    }
+    MaterialTheme(colorScheme = colorScheme, content = content)
 }

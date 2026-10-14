@@ -61,6 +61,8 @@ fun BarcodeListScreen(
     onDelete: (Barcode) -> Unit,
     onReorder: (List<Barcode>) -> Unit,
     onSettings: () -> Unit,
+    onTimer: () -> Unit,
+    onScanner: () -> Unit,
 ) {
     var adding by remember { mutableStateOf(false) }
 
@@ -69,6 +71,12 @@ fun BarcodeListScreen(
             TopAppBar(
                 title = { Text("Barcodes") },
                 actions = {
+                    IconButton(onClick = onTimer) {
+                        Icon(TimerIcon, contentDescription = "Timer")
+                    }
+                    IconButton(onClick = onScanner) {
+                        Icon(ScannerIcon, contentDescription = "Scanner")
+                    }
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Filled.Settings, contentDescription = "Settings")
                     }

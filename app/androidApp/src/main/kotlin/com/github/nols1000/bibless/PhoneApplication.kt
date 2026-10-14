@@ -1,7 +1,9 @@
 package com.github.nols1000.bibless
 
 import android.app.Application
+import android.util.Log
 import androidx.glance.appwidget.updateAll
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -9,7 +11,14 @@ import kotlinx.coroutines.launch
 
 /** Keeps the widget, the Quick Settings tile and the shortcuts in step with the list, whether it changed in the app or came from the watch. */
 class PhoneApplication : Application() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    /**
+     * Keeping them in step is housekeeping, so a failure only logs: the shortcut manager throws, for
+     * one, while the phone is still locked after a restart.
+     */
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.Default +
+            CoroutineExceptionHandler { _, e -> Log.w(TAG, "Couldn't update the widget, tile or shortcuts", e) },
+    )
     /** One publish at a time, in the order the changes came. */
     private val shortcuts = Dispatchers.Default.limitedParallelism(1)
 
@@ -28,5 +37,9 @@ class PhoneApplication : Application() {
             }
             shown = now
         }
+    }
+
+    private companion object {
+        const val TAG = "PhoneApplication"
     }
 }

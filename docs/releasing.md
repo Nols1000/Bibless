@@ -4,7 +4,7 @@ All targets except `:server` are built and released from GitHub Actions.
 
 | Workflow | Trigger | What it does |
 |---|---|---|
-| `ci.yml` | PRs, pushes to `main` | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned). On `main` it also deploys the landing page, the web app and the privacy policies to GitHub Pages |
+| `ci.yml` | PRs, pushes to `main`; changes only to `docs/`, Markdown files or `fastlane/` run nothing | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned). On `main` it also deploys the landing page, the web app and the privacy policies to GitHub Pages |
 | `release.yml` | Tag `vX.Y.Z` | Builds the signed bundles, captures the store screenshots, uploads the builds and listings to Play closed testing and TestFlight, then creates a GitHub Release with the `.aab` and `.ipa` files |
 
 Store logic lives in fastlane (`fastlane/Fastfile`); the workflows only set up the toolchain and call `fastlane android release` and `fastlane ios release`. A release needs all the secrets and variables below.

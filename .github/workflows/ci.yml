@@ -3,10 +3,16 @@ name: CI
 # Tests and builds every app on pull requests and on main. On main, the web job's build is also
 # deployed to GitHub Pages: the landing page (/), the organiser web app (/organise/) and the static
 # pages in app/webApp/public (e.g. the privacy policies). Releases are built by release.yml.
+# Changes to docs and store listings alone run nothing.
 on:
   pull_request:
+    paths-ignore: &docs
+      - 'docs/**'
+      - '*.md'
+      - 'fastlane/**'
   push:
     branches: [main]
+    paths-ignore: *docs
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,8 +26,9 @@ jobs:
   android:
     name: Android + Wear OS
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - run: >
           ./gradlew
@@ -37,8 +44,9 @@ jobs:
   apple:
     name: iOS + watchOS
     runs-on: macos-26
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
       - run: ./gradlew :app:sharedLogic:iosSimulatorArm64Test :app:sharedLogic:watchosSimulatorArm64Test
       - name: Build iOS app (simulator, unsigned)
@@ -54,10 +62,11 @@ jobs:
   web:
     name: Web
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup-build
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
       - run: ./gradlew :app:sharedLogic:jsTest
@@ -80,6 +89,7 @@ jobs:
     needs: web
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     concurrency:
       group: pages
       cancel-in-progress: false

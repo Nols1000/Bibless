@@ -75,9 +75,13 @@ jobs:
         with:
           node-version: 22
       - run: ./gradlew :app:sharedLogic:jsTest
-      # The landing page's phone and watch screens, captured fresh with Robolectric
+      # The landing page's phone and watch screens, captured fresh with Robolectric. --tests filters
+      # only the task before it, so each test task gets its own.
       - name: Capture the landing page screens
-        run: ./gradlew :app:androidApp:testDebugUnitTest :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest' -PsiteScreenshots
+        run: >
+          ./gradlew -PsiteScreenshots
+          :app:androidApp:testDebugUnitTest --tests '*.SiteScreenshotTest'
+          :app:wearApp:testDebugUnitTest --tests '*.SiteScreenshotTest'
       - run: npm run build:shared
       - run: npm install
       - run: npm run build -w webApp

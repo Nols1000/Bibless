@@ -113,19 +113,17 @@ the unit tests above; the Apple ones on a simulator:
 ### Store screenshots
 
 The store screenshots are captured by the `ScreenshotTest`/`ScreenshotTests` UI tests with
-[fastlane](https://fastlane.tools), using demo data. The headlines from
-[fastlane/screenshots/captions.json](./fastlane/screenshots/captions.json) are drawn on with Pillow. You need Ruby
-with Bundler and Python 3:
+[fastlane](https://fastlane.tools), using demo data. You need Ruby with Bundler:
 
 ```shell
 bundle install
-pip install -r tools/screenshots/requirements.txt
 
-# Running emulators, by their `adb devices` serials; leave out the ones you don't need
-bundle exec fastlane android screenshots phone:emulator-5554 wear:emulator-5556
+# A phone and a Wear OS screen, rendered with Robolectric; no emulator needed
+bundle exec fastlane android screenshots
 # iPhone and Apple Watch simulators
 bundle exec fastlane ios screenshots
 ```
 
-The Android screenshots go to `fastlane/metadata/android/en-US/images` and the Apple ones to `fastlane/screenshots/ios`.
-Neither is committed. The [Screenshots workflow](./.github/workflows/screenshots.yml) captures them on CI as artifacts.
+The Android screenshots go to `fastlane/metadata/android/en-US/images` and the Apple ones to `fastlane/metadata/ios/en-US`,
+next to the listing texts. Neither is committed; the [Release workflow](./.github/workflows/release.yml) captures them on CI
+before uploading the listings. See [docs/releasing.md](./docs/releasing.md#screenshots) for the details.

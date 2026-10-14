@@ -38,8 +38,7 @@ Local builds can override the version the same way: `./gradlew :app:androidApp:b
 
 The listings are kept in the repo and managed by [fastlane](https://docs.fastlane.tools):
 - `fastlane/metadata/android/<locale>/`: Play texts, `changelogs/<versionCode>.txt` (falls back to `default.txt`), and `images/phoneScreenshots` and `images/wearScreenshots`. `images/featureGraphic.png` (1024x500, no transparency) is committed; edit it by hand.
-- `fastlane/metadata/ios/<locale>/`: App Store texts. Put `release_notes.txt` here.
-- `fastlane/screenshots/ios/<locale>/`: App Store screenshots for iPhone and Apple Watch, assigned to device slots by pixel size.
+- `fastlane/metadata/ios/<locale>/`: App Store texts (put `release_notes.txt` here) and the screenshots for iPhone and Apple Watch. deliver wants these directly in the locale folder, not in an `images` folder as on Play, and assigns each to a device slot by its pixel size: 1320x2868 or 1290x2796 portrait for the required iPhone 6.9" slot, 422x514 (Ultra) or 416x496 (Series 10/11) for the Apple Watch one, required since the app includes a watch app. Bibless is iPhone-only, so it needs no iPad screenshots.
 
 If a listing already exists in a store, pull it once before editing: `bundle exec fastlane supply init` and `bundle exec fastlane deliver download_metadata`.
 
@@ -57,9 +56,9 @@ bundle exec fastlane android screenshots
 
 The tests are `app/iosApp/iosAppUITests`, `app/iosApp/watchAppUITests` and `ScreenshotTest` in the Android apps' `test` sources. The Android ones run with the other unit tests too, but only write images with `-PstoreScreenshots`, which the lane passes. Robolectric draws no system bars, so the Android screenshots have no status bar.
 
-The stores get the screens as captured, with no headlines or device frames; the landing page (`app/webApp/src/landing`) frames them instead. The file names set the store order (`01-barcode`, `02-barcode-code128`, …). Play phone screenshots are 1080x2160, since Google Play takes none longer than twice its width.
+The stores get the screens as captured, with no headlines or device frames; the landing page (`app/webApp/src/landing`) frames them instead. The file names set the store order: `01-barcode`, `02-barcode-code128`, `03-barcode-dark`, `04-list`, `05-settings` on the phones, `01-qr`, `02-barcode`, `03-list`, `04-add`, `05-settings` on the watches. Play phone screenshots are 1080x2160, since Google Play takes none longer than twice its width.
 
-The images are not committed (they are git-ignored). The release lanes capture them on the runner right before uploading the listing, so the listing changes together with the build it describes. Listing changes between releases go out with the next release; tag a patch version. The local commands above are for previewing.
+The images are not committed (they are git-ignored). The release lanes capture them on the runner right before uploading the listing, so the listing changes together with the build it describes. The App Store ones are only captured when `app/iosApp`, `app/sharedLogic` or `core` changed since the previous release tag; otherwise the listing keeps the screenshots it has. Listing changes between releases go out with the next release; tag a patch version. The local commands above are for previewing.
 
 ## Secrets
 

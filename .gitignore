@@ -22,7 +22,7 @@ fastlane/README.md
 fastlane/test_output
 fastlane/**/screenshots.html
 # Store screenshots are captured by the release lanes, not committed
-fastlane/screenshots/ios/*/
+fastlane/metadata/ios/*/*.png
 fastlane/metadata/android/*/images/*Screenshots/
 *.ipa
 *.dSYM.zip

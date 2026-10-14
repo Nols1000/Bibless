@@ -1,5 +1,5 @@
 # Store uploads and listing management for Bibless.
-# Listings live in fastlane/metadata/{android,ios} and fastlane/screenshots/ios.
+# Listings live in fastlane/metadata/{android,ios}, the screenshots included.
 
 ANDROID_AABS = [
   "app/androidApp/build/outputs/bundle/release/androidApp-release.aab",
@@ -238,7 +238,8 @@ platform :ios do
     common = {
       project: XCODE_PROJECT,
       languages: ["en-US"],
-      output_directory: "fastlane/screenshots/ios",
+      # Next to the texts; deliver takes only the images from there, snapshot clears only those
+      output_directory: "fastlane/metadata/ios",
       skip_open_summary: true,
       stop_after_first_error: true
     }
@@ -256,7 +257,7 @@ platform :ios do
   lane :metadata do |options|
     upload_to_app_store(
       metadata_path: "fastlane/metadata/ios",
-      screenshots_path: "fastlane/screenshots/ios",
+      screenshots_path: "fastlane/metadata/ios",
       skip_screenshots: !options.fetch(:screenshots, true),
       skip_binary_upload: true,
       overwrite_screenshots: true,

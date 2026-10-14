@@ -6,10 +6,12 @@ ANDROID_AABS = [
   "app/wearApp/build/outputs/bundle/release/wearApp-release.aab",
 ].map { |p| File.expand_path("../#{p}", __dir__) }
 
-# Play track releases go to: closed testing ("alpha"; the Wear OS bundle to "wear:alpha", which exists
-# once closed testing is set up for the Wear OS form factor in Play Console).
-# The listing sync attaches to the newest release on the same track.
-PLAY_TRACK = "alpha"
+# Play track releases are uploaded to internal testing ("internal"; the Wear OS bundle to "wear:internal")
+# and promoted from there to closed testing ("alpha"; "wear:alpha") by the promote lane. The Wear OS
+# tracks exist once the testing tracks are set up for the Wear OS form factor in Play Console.
+# The listing sync attaches to the newest release on the upload track.
+PLAY_UPLOAD_TRACK = "internal"
+PLAY_PROMOTE_TRACK = "alpha"
 
 # The version codes on a Play track. Fails with the names of the tracks Google Play has if there is
 # no such track: form factor tracks only exist once they are set up in Play Console.
@@ -46,9 +48,9 @@ platform :android do
   lane :upload do |options|
     phone_aab, wear_aab = ANDROID_AABS
     aab, track = case options[:form]
-                 when "phone" then [phone_aab, options[:track] || PLAY_TRACK]
+                 when "phone" then [phone_aab, options[:track] || PLAY_UPLOAD_TRACK]
                  # Wear OS bundles go to the Wear OS form factor tracks (Advanced settings → Form factors)
-                 when "wear" then [wear_aab, "wear:#{options[:track] || PLAY_TRACK}"]
+                 when "wear" then [wear_aab, "wear:#{options[:track] || PLAY_UPLOAD_TRACK}"]
                  else UI.user_error!("Pass form:phone or form:wear")
                  end
     version_code = Integer(options[:version_code] || UI.user_error!("Pass version_code:<the bundle's code>"))
@@ -69,7 +71,7 @@ platform :android do
     )
   end
 
-  desc "Release both bundles to the Play track, then the listing with fresh screenshots: " \
+  desc "Release both bundles to the Play upload track, then the listing with fresh screenshots: " \
        "version_code_phone:<code> version_code_wear:<code>. The Play edits run one after another, " \
        "since Google Play allows one at a time"
   lane :release do |options|
@@ -79,10 +81,42 @@ platform :android do
     metadata
   end
 
+  desc "Promote both bundles from internal testing to closed testing: " \
+       "version_code_phone:<code> version_code_wear:<code>. Skips a bundle closed testing already has, " \
+       "so a failed promotion can be re-run"
+  lane :promote do |options|
+    # One after the other, since Google Play allows one edit at a time
+    {
+      "" => options.fetch(:version_code_phone),
+      "wear:" => options.fetch(:version_code_wear),
+    }.each do |form_prefix, code|
+      source = "#{form_prefix}#{PLAY_UPLOAD_TRACK}"
+      target = "#{form_prefix}#{PLAY_PROMOTE_TRACK}"
+      version_code = Integer(code)
+
+      if play_track_version_codes(target).include?(version_code)
+        UI.success("#{target} already has #{version_code}, skipping the promotion")
+        next
+      end
+      upload_to_play_store(
+        track: source,
+        track_promote_to: target,
+        track_promote_release_status: "completed",
+        version_code: version_code,
+        skip_upload_aab: true,
+        skip_upload_apk: true,
+        skip_upload_metadata: true,
+        skip_upload_changelogs: true,
+        skip_upload_images: true,
+        skip_upload_screenshots: true
+      )
+    end
+  end
+
   desc "Sync the Play store listing (texts, images) without uploading a binary"
   lane :metadata do
     # supply attaches the listing to an existing release; production stays empty until the first public release
-    track = PLAY_TRACK
+    track = PLAY_UPLOAD_TRACK
     upload_to_play_store(
       metadata_path: "fastlane/metadata/android",
       track: track,

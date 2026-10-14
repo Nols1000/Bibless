@@ -1,8 +1,9 @@
 name: Release
 
 # Builds the release bundles for a vX.Y.Z tag, uploads them with their store listings (texts plus
-# screenshots captured on the runner) to Play closed testing and TestFlight, then creates the
-# GitHub Release. A failed job can be re-run on its own: a bundle Play already has is skipped.
+# screenshots captured on the runner) to Play internal testing and TestFlight, then creates the
+# GitHub Release. Once a reviewer approves the play-alpha environment, the Play bundles are promoted
+# to closed testing. A failed job can be re-run on its own: a bundle a Play track already has is skipped.
 on:
   push:
     tags: ['v*.*.*']
@@ -75,9 +76,35 @@ jobs:
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
-      - name: Upload to Play closed testing with the listing
+      - name: Upload to Play internal testing with the listing
         run: >
           bundle exec fastlane android release
+          version_code_phone:${{ needs.version.outputs.code_phone }}
+          version_code_wear:${{ needs.version.outputs.code_wear }}
+
+  promote-android:
+    name: Promote to Play closed testing
+    needs: [version, android]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Waits for a required reviewer of the environment to approve the deployment
+    environment: play-alpha
+    permissions:
+      contents: read
+      id-token: write # Workload Identity Federation for Google Play
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+          bundler-cache: true
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.PLAY_SERVICE_ACCOUNT }}
+      - name: Promote the bundles from internal to closed testing
+        run: >
+          bundle exec fastlane android promote
           version_code_phone:${{ needs.version.outputs.code_phone }}
           version_code_wear:${{ needs.version.outputs.code_wear }}
 

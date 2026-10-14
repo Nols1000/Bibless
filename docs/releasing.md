@@ -5,9 +5,9 @@ All targets except `:server` are built and released from GitHub Actions.
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | PRs, pushes to `main`; changes only to `docs/`, Markdown files or `fastlane/` run nothing | Tests, then builds Android, Wear OS, web and iOS (simulator, unsigned). On `main` it also deploys the landing page, the web app and the privacy policies to GitHub Pages |
-| `release.yml` | Tag `vX.Y.Z` | Builds the signed bundles, captures the store screenshots, uploads the builds and listings to Play closed testing and TestFlight, then creates a GitHub Release with the `.aab` and `.ipa` files |
+| `release.yml` | Tag `vX.Y.Z` | Builds the signed bundles, captures the store screenshots, uploads the builds and listings to Play internal testing and TestFlight, then creates a GitHub Release with the `.aab` and `.ipa` files. Once the `play-alpha` environment is approved, it promotes the Play builds to closed testing |
 
-Store logic lives in fastlane (`fastlane/Fastfile`); the workflows only set up the toolchain and call `fastlane android release` and `fastlane ios release`. A release needs all the secrets and variables below.
+Store logic lives in fastlane (`fastlane/Fastfile`); the workflows only set up the toolchain and call `fastlane android release`, `fastlane android promote` and `fastlane ios release`. A release needs all the secrets and variables below.
 
 ## Cutting a release
 
@@ -25,6 +25,12 @@ Release notes and listing changes go live with the release that ships them, so c
 Never move or reuse a tag once its build has reached a store: Play rejects a `versionCode` it has already seen. Tag the next patch version instead.
 
 Each platform is one job. On Google Play, the phone bundle, the Wear OS bundle and the listing are uploaded one after another, since Play allows one edit at a time. If a job fails, fix the cause and use *Re-run failed jobs* on the same run: the upload skips a bundle the track already has. If Play has no such track, the error lists the tracks it does have.
+
+### Promoting to closed testing
+
+The Play builds land on internal testing (`internal` and `wear:internal`, `PLAY_UPLOAD_TRACK` in the Fastfile). After you check them there, open the release run and choose *Review deployments → play-alpha → Approve deployment*. The *Promote to Play closed testing* job then moves both builds to closed testing (`alpha` and `wear:alpha`, `PLAY_PROMOTE_TRACK`). To leave a build on internal testing, reject the deployment or let it wait.
+
+GitHub drops a pending approval after 30 days. To promote a build after that, re-run the *Promote to Play closed testing* job, which asks for approval again. The promotion skips a bundle closed testing already has, so it can be re-run safely. Locally: `bundle exec fastlane android promote version_code_phone:1020300 version_code_wear:1020301`.
 
 Local builds can override the version the same way: `./gradlew :app:androidApp:bundleRelease :app:wearApp:bundleRelease -PappVersionName=1.2.3 -PappVersionCode=1020300 -PwearVersionCode=1020301`. `appVersionCode` alone sets both.
 
@@ -86,7 +92,7 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
    1. Create the app `com.github.nols1000.bibless` in Play Console.
    2. Upload the first signed AAB by hand, since the API refuses to create the app's first release. You can download it from the `android` artifact of a release workflow run; the Play upload after it fails until this is done.
    3. Add the Wear OS form factor under *Advanced settings → Form factors*.
-   4. Set up closed testing (the `alpha` track, `PLAY_TRACK` in the Fastfile) with a testers list, for the phone and the Wear OS form factor.
+   4. Set up internal testing and closed testing (the `internal` and `alpha` tracks, `PLAY_UPLOAD_TRACK` and `PLAY_PROMOTE_TRACK` in the Fastfile), each with a testers list, for the phone and the Wear OS form factor.
    5. Invite the service account `fastlane@fastlane-510106.iam.gserviceaccount.com` in Play Console with release permissions.
    6. Let this repository's workflows impersonate it through the `github` workload identity pool. The pool's provider must map `attribute.repository=assertion.repository`:
       ```sh
@@ -98,6 +104,14 @@ Google Play needs no secret: CI signs in through [Workload Identity Federation](
       gh variable set PLAY_SERVICE_ACCOUNT --body fastlane@fastlane-510106.iam.gserviceaccount.com
       ```
       To run the Play lanes locally, export a JSON key of the service account as `PLAY_SERVICE_ACCOUNT_JSON`, or point `GOOGLE_APPLICATION_CREDENTIALS` at a credentials file.
+   7. Create the `play-alpha` environment that gates the promotion to closed testing. Give it a required reviewer and limit it to release tags:
+      ```sh
+      gh api -X PUT repos/Nols1000/Bibless/environments/play-alpha --input - <<'JSON'
+      {"reviewers": [{"type": "User", "id": <your GitHub user id, from `gh api user --jq .id`>}],
+       "deployment_branch_policy": {"protected_branches": false, "custom_branch_policies": true}}
+      JSON
+      gh api -X POST repos/Nols1000/Bibless/environments/play-alpha/deployment-branch-policies -f name='v*.*.*' -f type=tag
+      ```
 4. **Apple**:
    1. Create the app for bundle id `com.github.nols1000.bibless` in App Store Connect. The watch app `com.github.nols1000.bibless.watchkitapp` and the phone widgets `com.github.nols1000.bibless.widget` are embedded in the iOS app, and the watch's Smart Stack widget `com.github.nols1000.bibless.watchkitapp.widget` in the watch app; `fastlane ios certificates` registers all identifiers.
    2. Each app shares the app group `group.com.github.nols1000.bibless` with its widgets. App groups can't be set up through the API: create it under *Certificates, Identifiers & Profiles → Identifiers → App Groups*, enable it on all four identifiers, then regenerate the profiles with `bundle exec fastlane ios certificates force:true` (needs the App Store Connect key variables, `MATCH_PASSWORD` and SSH access to the match repo).

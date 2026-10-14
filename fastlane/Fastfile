@@ -62,11 +62,21 @@ platform :android do
       aab: aab,
       metadata_path: "fastlane/metadata/android",
       release_status: options[:release_status] || "completed",
-      # The listing and its screenshots are synced by the metadata lane (store-metadata.yml)
+      # The listing and its screenshots are synced by the metadata lane, after both bundles
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
     )
+  end
+
+  desc "Release both bundles to the Play track, then the listing with fresh screenshots: " \
+       "version_code_phone:<code> version_code_wear:<code>. The Play edits run one after another, " \
+       "since Google Play allows one at a time"
+  lane :release do |options|
+    screenshots
+    upload(form: "phone", version_code: options.fetch(:version_code_phone))
+    upload(form: "wear", version_code: options.fetch(:version_code_wear))
+    metadata
   end
 
   desc "Sync the Play store listing (texts, images) without uploading a binary"
@@ -110,9 +120,17 @@ platform :ios do
     upload_to_testflight(skip_waiting_for_build_processing: true)
   end
 
+  desc "Build and upload to TestFlight, then sync the listing with fresh screenshots: " \
+       "version:<x.y.z> build_number:<n>"
+  lane :release do |options|
+    screenshots
+    beta(options)
+    metadata
+  end
+
   # Each app shares the app group group.com.github.nols1000.bibless with its widget (see the
   # entitlements in app/iosApp/Configuration). App groups can't be set up through the API: create
-  # the group in the Developer Portal, enable it on all four ids, then run the Certificates workflow.
+  # the group in the Developer Portal, enable it on all four ids, then run the certificates lane with force:true.
   desc "Register the app, watch app and widget bundle ids in the Developer Portal if missing"
   lane :register_app_ids do
     {
@@ -130,7 +148,7 @@ platform :ios do
 
   desc "Fetch (or on first run create) the App Store certificate and profiles via match. " \
        "force:true regenerates the profiles, e.g. after changing an app id's capabilities " \
-       "(run it from the Certificates workflow)"
+       "(bundle exec fastlane ios certificates force:true)"
   lane :certificates do |options|
     setup_ci # temporary keychain on CI runners; does nothing locally
     register_app_ids unless options[:readonly]

@@ -21,12 +21,12 @@ fastlane/report.xml
 fastlane/README.md
 fastlane/test_output
 fastlane/**/screenshots.html
-# Store screenshots are generated in CI (store-metadata.yml), not committed
+# Store screenshots are captured by the release lanes, not committed
 fastlane/screenshots/ios/*/
 fastlane/metadata/android/*/images/*Screenshots/
 *.ipa
 *.dSYM.zip
 vendor/bundle
 app/webApp/dist/
-# The landing page's screens are captured in CI (pages.yml), not committed
+# The landing page's screens are captured in CI (ci.yml), not committed
 app/webApp/public/screens/

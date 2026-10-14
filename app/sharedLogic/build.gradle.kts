@@ -67,6 +67,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.playServices.wearable)
+            implementation(libs.androidx.fragment)
         }
         jsMain.dependencies {
             implementation(libs.wrappers.browser)

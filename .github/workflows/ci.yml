@@ -40,6 +40,11 @@ jobs:
           :app:wearApp:assembleDebug
           :app:androidApp:lintDebug
           :app:wearApp:lintDebug
+      - if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: android-test-reports
+          path: app/*/build/reports/tests/
 
   apple:
     name: iOS + watchOS

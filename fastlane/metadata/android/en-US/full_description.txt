@@ -1,12 +1,32 @@
-Forgot your printed barcode again? Bibless keeps your parkrun barcode on your phone and your Wear OS watch, so you can get scanned at the finish without carrying anything.
+Bibless helps runners and volunteers at community runs. Keep your athlete barcode ready on your Android phone and Wear OS watch, time finishers and scan barcodes at the finish line.
 
-Bibless is an independent app and is not affiliated with or endorsed by parkrun.
+YOUR BARCODE, READY TO SCAN
 
-• Add your athlete ID once (for example A1234567) and your barcode is ready to scan
-• Opens straight to your barcode at full brightness, and keeps the screen on until you're scanned
-• Get to it even faster: a home screen widget, a Quick Settings tile that works on the lock screen, and app shortcuts
-• Show it on your Wear OS watch – leave your phone at home on run day. It's also a tile, one swipe from the watch face
-• Save barcodes for the whole family, put them in your order and swipe between them on your watch
-• Choose between QR code and classic barcode, separately for phone and watch
-• Add barcodes on your phone or directly on your watch – they sync automatically
-• No account, no ads, no tracking: your data stays on your devices
+• Add your athlete ID once and show it as a QR code or classic barcode
+• Save barcodes for the whole family, arrange them in your order and switch between them
+• Add barcodes on your phone or watch and keep them in sync
+• Open straight to your barcode at full brightness, with the screen kept on while you show it
+• Get to your barcode quickly with a home screen widget, a Quick Settings tile that works on the lock screen, and app shortcuts
+
+HELP AT THE FINISH LINE
+
+• Time a run on your phone or watch: start the clock, then tap for each finisher
+• Undo the last recorded finish if you tap by mistake
+• Use your phone's camera to scan athlete barcodes and numbered finish tokens, or enter codes by hand
+• Pair each athlete with a finish token, or record athletes in finish order without tokens
+• Record finishers who have no barcode, with an optional name
+• Scan the organiser's run QR code to join a run before recording, or record without joining
+
+SHARE YOUR RECORDED SESSIONS
+
+• Keep timer and scanner sessions saved on your phone
+• Transfer stopped watch timer sessions to your paired phone
+• Export sessions as CSV and JSON files and share them with the organiser
+
+Organisers use the separate Bibless web app to set up community runs, print finish tokens and combine volunteer sessions into results.
+
+NO ACCOUNT, NO ADS, NO TRACKING
+
+Your barcodes and recorded sessions are stored on your devices. You choose when to export a session and who to share it with. Barcode display, timing and scanning work offline.
+
+Supports parkrun athlete barcodes. Bibless is an independent app and is not affiliated with or endorsed by parkrun.

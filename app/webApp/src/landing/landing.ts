@@ -1,4 +1,4 @@
-import { PHONE, phoneFrame, watchFrame } from './frames.ts';
+import { PHONE, watchFrame } from './frames.ts';
 
 /** Phone screens, as captured by SiteScreenshotTest in app/androidApp (1080x2400). */
 export const PHONE_SCREENS = {
@@ -101,13 +101,11 @@ function screenImage(src: string, alt: string, width: number, height: number, na
 function buildPhone(base: string, onHotspot: (action: string) => void) {
   const p = PHONE;
   const phone = el('div', 'phone');
-  phone.style.setProperty('--phone-aspect', `${p.viewWidth} / ${p.bodyHeight}`);
+  phone.style.setProperty('--phone-aspect', `${p.width} / ${p.screenHeight}`);
+  // The bare screen, without a drawn phone around it
   const screen = el('div', 'phone-screen');
   Object.assign(screen.style, {
-    left: pct(p.inset / p.viewWidth),
-    top: pct(p.inset / p.bodyHeight),
-    width: pct(p.width / p.viewWidth),
-    height: pct(p.screenHeight / p.bodyHeight),
+    inset: '0',
     borderRadius: `${pct(p.screenRadius / p.width)} / ${pct(p.screenRadius / p.screenHeight)}`,
   });
   screen.append(
@@ -145,7 +143,6 @@ function buildPhone(base: string, onHotspot: (action: string) => void) {
     }
   }
   phone.append(screen);
-  phone.insertAdjacentHTML('beforeend', phoneFrame());
   return phone;
 }
 

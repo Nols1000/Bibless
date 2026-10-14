@@ -527,10 +527,6 @@ h2 {
   filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.45));
 }
 
-.phone .frame {
-  height: 100%;
-}
-
 .phone-screen {
   position: absolute;
   overflow: hidden;

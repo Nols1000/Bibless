@@ -9,6 +9,7 @@ let organiser: FakeOrganiser;
 
 beforeEach(() => {
   organiser = new FakeOrganiser();
+  go('#/runs');
 });
 
 function go(hash: string) {
@@ -121,7 +122,7 @@ describe('run page', () => {
     await userEvent.click(remove);
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining('Riverside 5k'));
     expect(organiser.runs).toEqual([]);
-    expect(window.location.hash).toBe('#/');
+    expect(window.location.hash).toBe('#/runs');
   });
 
   it('says when a run is not stored here', async () => {
@@ -133,11 +134,43 @@ describe('run page', () => {
 
 describe('routes', () => {
   it('parses hashes', () => {
-    expect(parseRoute('')).toEqual({ page: 'runs' });
+    expect(parseRoute('')).toEqual({ page: 'home' });
+    expect(parseRoute('#/')).toEqual({ page: 'home' });
+    expect(parseRoute('#/runs')).toEqual({ page: 'runs' });
     expect(parseRoute('#/new')).toEqual({ page: 'new' });
     expect(parseRoute('#/runs/a%20b')).toEqual({ page: 'run', id: 'a b' });
     expect(parseRoute('#/runs/a%20b/results')).toEqual({ page: 'results', id: 'a b' });
     expect(parseRoute('#/runs/a/tokens')).toEqual({ page: 'tokens', id: 'a' });
-    expect(parseRoute('#/unknown')).toEqual({ page: 'runs' });
+    expect(parseRoute('#/unknown')).toEqual({ page: 'home' });
+    expect(parseRoute('#/runs/%ZZ')).toEqual({ page: 'home' });
+    expect(parseRoute('#features')).toEqual({ page: 'home', section: 'features' });
+    expect(parseRoute('#runs')).toEqual({ page: 'home', section: 'runs' });
+    expect(parseRoute('#beta')).toEqual({ page: 'home', section: 'beta' });
+    expect(parseRoute('#top')).toEqual({ page: 'home', section: 'top' });
+  });
+});
+
+describe('loading runs', () => {
+  it('lets the organiser retry a failed run sheet load', async () => {
+    const run = await organiser.createRun('Riverside 5k', null, 'TOKENS');
+    vi.spyOn(organiser, 'getRun').mockRejectedValueOnce(new Error('Storage unavailable'));
+    go(`#/runs/${run.id}`);
+    render(<App organiser={organiser} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t load');
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    expect(await screen.findByRole('heading', { name: 'Riverside 5k' })).toBeInTheDocument();
+  });
+
+  it('ignores a run sheet response after navigating away', async () => {
+    const run = await organiser.createRun('Riverside 5k', null, 'TOKENS');
+    let resolve: (value: typeof run) => void = () => {};
+    vi.spyOn(organiser, 'getRun').mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+    go(`#/runs/${run.id}`);
+    render(<App organiser={organiser} />);
+    go('#/runs/elsewhere');
+    await screen.findByRole('heading', { name: 'Run not found' });
+    await act(async () => resolve(run));
+    expect(screen.getByRole('heading', { name: 'Run not found' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: run.name })).not.toBeInTheDocument();
   });
 });

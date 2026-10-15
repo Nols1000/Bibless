@@ -1,45 +1,33 @@
-import { useEffect, useState } from 'react';
-import { formatDate, modeName, type Organiser, type Run } from './organiser.ts';
+import { useCallback } from 'react';
+import { Icon } from '../Icon.tsx';
+import { useLoad } from '../useLoad.ts';
+import { PageLoad } from './PageState.tsx';
+import { RunCards } from './RunCards.tsx';
+import type { Organiser } from './organiser.ts';
 
 export function RunList({ organiser }: { organiser: Organiser }) {
-  const [runs, setRuns] = useState<Run[] | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    organiser.listRuns().then((list) => active && setRuns(list));
-    return () => {
-      active = false;
-    };
-  }, [organiser]);
+  const load = useCallback(() => organiser.listRuns(), [organiser]);
+  const { state, retry } = useLoad(load);
 
   return (
-    <section>
-      <div className="row">
-        <h1>Your runs</h1>
-        <a href="#/new" className="button primary">New run</a>
+    <section aria-labelledby="runs-heading">
+      <div className="row page-heading">
+        <div><p className="eyebrow">Community runs</p><h1 id="runs-heading">Your runs</h1><p>A starting line. A finish time. A community.</p></div>
+        <a href="#/new" className="button primary"><Icon name="plus" />New run</a>
       </div>
-      {runs === null ? null : runs.length === 0 ? (
+      {state.status !== 'ready' ? <PageLoad error={state.status === 'error'} retry={retry} label="Loading your runs…" /> : state.data.length === 0 ? (
         <div className="empty">
+          <h2>Your next run starts here.</h2>
           <p>
             Organise a free, timed community run. Create a run here, then print its run sheet:
             your timekeepers and scanners join by scanning the QR code with the Bibless app.
           </p>
-          <p className="muted">Runs are kept in this browser. No account needed.</p>
+          <a className="text-link" href="#/new">Create your first run<Icon name="arrow" /></a>
         </div>
       ) : (
-        <ul className="run-list">
-          {runs.map((run) => (
-            <li key={run.id}>
-              <a href={`#/runs/${encodeURIComponent(run.id)}`}>
-                <span className="run-name">{run.name}</span>
-                <span className="muted">
-                  {[run.date ? formatDate(run.date) : null, modeName(run.format)].filter(Boolean).join(' · ')}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <RunCards runs={state.data} />
       )}
+      <p className="storage-note">Runs are kept in this browser. No account needed.</p>
     </section>
   );
 }

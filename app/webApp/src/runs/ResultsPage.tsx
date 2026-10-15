@@ -1,4 +1,7 @@
-import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
+import { useLoad } from '../useLoad.ts';
+import { RunNav } from './RunNav.tsx';
+import { MissingRun, PageLoad } from './PageState.tsx';
 import {
   parseElapsed,
   type Finisher,
@@ -15,33 +18,14 @@ type Editing = { kind: 'row'; position: number } | { kind: 'finisher'; eventId: 
 
 /** Combines the volunteers' sessions into results, shows what to check, and lets the organiser fix it. */
 export function ResultsPage({ organiser, id }: { organiser: Organiser; id: string }) {
-  const [review, setReview] = useState<Review | 'missing' | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const [editing, setEditing] = useState<Editing>(null);
 
-  const reload = useCallback(async () => {
-    const loaded = await organiser.getReview(id);
-    setReview(loaded ?? 'missing');
-  }, [organiser, id]);
-
-  useEffect(() => {
-    let active = true;
-    organiser.getReview(id).then((loaded) => active && setReview(loaded ?? 'missing'));
-    return () => {
-      active = false;
-    };
-  }, [organiser, id]);
-
-  if (review === null) return null;
-  if (review === 'missing') {
-    return (
-      <section>
-        <h1>Run not found</h1>
-        <p>This run isn't stored in this browser.</p>
-        <a href="#/" className="button">All runs</a>
-      </section>
-    );
-  }
+  const load = useCallback(() => organiser.getReview(id), [organiser, id]);
+  const { state, retry, reload } = useLoad(load);
+  if (state.status !== 'ready') return <PageLoad error={state.status === 'error'} retry={retry} label="Loading your results…" />;
+  if (!state.data) return <MissingRun />;
+  const review = state.data;
 
   const { run } = review;
   const tokens = run.format === 'TOKENS';
@@ -108,16 +92,22 @@ export function ResultsPage({ organiser, id }: { organiser: Organiser; id: strin
 
   return (
     <section className="results-page">
-      <div className="row">
-        <a href={`#/runs/${encodeURIComponent(id)}`}>← {review.run.name}</a>
+      <RunNav run={run} page="results" />
+      <div className="row page-heading">
+        <div><h1>Results</h1><p>Bring the finish times and scans together.</p></div>
         <button type="button" className="button primary" onClick={downloadCsv} disabled={review.rows.length === 0}>
           Download CSV
         </button>
       </div>
-      <h1>Results</h1>
       {notice && (
         <p role={notice.error ? 'alert' : 'status'} className={notice.error ? 'error' : 'muted'}>{notice.text}</p>
       )}
+
+      <dl className="review-summary">
+        <div><dt>Finish positions</dt><dd>{review.rows.length}</dd></div>
+        <div><dt>Included sessions</dt><dd>{review.sessions.filter((session) => session.included).length}</dd></div>
+        <div><dt>To check</dt><dd>{review.issues.length}</dd></div>
+      </dl>
 
       <section className="panel" aria-labelledby="sessions-heading">
         <div className="row">
@@ -151,7 +141,7 @@ export function ResultsPage({ organiser, id }: { organiser: Organiser; id: strin
       </section>
 
       {review.issues.length > 0 && (
-        <section className="panel" aria-labelledby="issues-heading">
+        <section className="panel issues-panel" aria-labelledby="issues-heading">
           <h2 id="issues-heading">To check</h2>
           <ul className="issues">
             {review.issues.map((issue, index) => (
@@ -190,29 +180,31 @@ export function ResultsPage({ organiser, id }: { organiser: Organiser; id: strin
         </section>
       )}
 
-      <table className="results">
-        <thead>
-          <tr>
-            <th scope="col">Pos</th>
-            <th scope="col">Time</th>
-            <th scope="col">Athlete</th>
-            <th scope="col"><span className="visually-hidden">Fix</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {review.rows.map((row) => (
-            <ResultRow
-              key={row.position}
-              row={row}
-              flagged={flagged.has(row.position)}
-              editing={editing?.kind === 'row' && editing.position === row.position}
-              onEdit={() => setEditing({ kind: 'row', position: row.position })}
-            >
-              <RowEditor organiser={organiser} id={id} row={row} tokens={tokens} change={change} onClose={() => setEditing(null)} />
-            </ResultRow>
-          ))}
-        </tbody>
-      </table>
+      <div className="table-wrap" tabIndex={0} role="region" aria-label="Finish results">
+        <table className="results">
+          <thead>
+            <tr>
+              <th scope="col">Pos</th>
+              <th scope="col">Time</th>
+              <th scope="col">Athlete</th>
+              <th scope="col"><span className="visually-hidden">Fix</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {review.rows.map((row) => (
+              <ResultRow
+                key={row.position}
+                row={row}
+                flagged={flagged.has(row.position)}
+                editing={editing?.kind === 'row' && editing.position === row.position}
+                onEdit={() => setEditing({ kind: 'row', position: row.position })}
+              >
+                <RowEditor organiser={organiser} id={id} row={row} tokens={tokens} change={change} onClose={() => setEditing(null)} />
+              </ResultRow>
+            ))}
+          </tbody>
+        </table>
+      </div>
       {review.rows.length === 0 && <p className="muted">No results yet.</p>}
 
       <div className="additions">

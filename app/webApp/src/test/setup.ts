@@ -1,6 +1,11 @@
 import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
+
+beforeEach(() => {
+  vi.spyOn(window, 'scrollTo').mockImplementation(() => {});
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 afterEach(() => {
   cleanup();

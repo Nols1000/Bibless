@@ -52,6 +52,8 @@
 </g>
 </g>
 <defs>
+<circle id="screen-shape" cx="200" cy="200" r="110"/>
+<clipPath id="screen-clip"><use href="#screen-shape"/></clipPath>
 <filter id="filter0_f_64023_35054" x="256.088" y="-3.37264" width="47.9118" height="423.078" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
 <feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>

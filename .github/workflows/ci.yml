@@ -1,7 +1,7 @@
 name: CI
 
 # Tests and builds every app on pull requests and on main. On main, the web job's build is also
-# deployed to GitHub Pages: the landing page (/), the organiser web app (/organise/) and the static
+# deployed to GitHub Pages: the shared web app (/), the legacy organiser redirect (/organise/) and the static
 # pages in app/webApp/public (e.g. the privacy policies). Releases are built by release.yml.
 # Changes to docs and store listings alone run nothing.
 on:

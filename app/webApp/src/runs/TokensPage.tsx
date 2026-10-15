@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { Organiser, Run, Token } from './organiser.ts';
+import { useCallback, useMemo, useState } from 'react';
+import { useLoad } from '../useLoad.ts';
+import { RunNav } from './RunNav.tsx';
+import { MissingRun, PageLoad } from './PageState.tsx';
+import type { Organiser, Token } from './organiser.ts';
 
 /** The most tokens one print shows, so the page stays quick to lay out. */
 const MAX_PRINT = 1000;
@@ -10,39 +13,25 @@ type Paper = 'A4' | 'letter';
 
 /** Prints a range of numbered finish tokens as cut-out cards. */
 export function TokensPage({ organiser, id }: { organiser: Organiser; id: string }) {
-  const [run, setRun] = useState<Run | 'missing' | null>(null);
   const [from, setFrom] = useState('1');
   const [to, setTo] = useState('100');
   const [paper, setPaper] = useState<Paper>('A4');
 
-  useEffect(() => {
-    let active = true;
-    organiser.getRun(id).then((loaded) => active && setRun(loaded ?? 'missing'));
-    return () => {
-      active = false;
-    };
-  }, [organiser, id]);
+  const load = useCallback(() => organiser.getRun(id), [organiser, id]);
+  const { state, retry } = useLoad(load);
 
   const range = parseRange(from, to);
   const [first, last] = typeof range === 'string' ? [0, -1] : [range.from, range.to];
-  const tokens = useMemo(() => (first > 0 ? organiser.tokens(first, last) : []), [organiser, first, last]);
+  const isTokenRun = state.status === 'ready' && state.data?.format === 'TOKENS';
+  const tokens = useMemo(() => (isTokenRun && first > 0 ? organiser.tokens(first, last) : []), [organiser, isTokenRun, first, last]);
 
-  if (run === null) return null;
-  if (run === 'missing') {
-    return (
-      <section>
-        <h1>Run not found</h1>
-        <p>This run isn't stored in this browser.</p>
-        <a href="#/" className="button">All runs</a>
-      </section>
-    );
-  }
-
-  const back = <a href={`#/runs/${encodeURIComponent(id)}`}>← {run.name}</a>;
+  if (state.status !== 'ready') return <PageLoad error={state.status === 'error'} retry={retry} label="Loading your finish tokens…" />;
+  if (!state.data) return <MissingRun />;
+  const run = state.data;
   if (run.format !== 'TOKENS') {
     return (
       <section>
-        {back}
+        <RunNav run={run} page="tokens" />
         <h1>Finish tokens</h1>
         <p>This run is timed in scan order, so it needs no tokens.</p>
       </section>
@@ -52,14 +41,14 @@ export function TokensPage({ organiser, id }: { organiser: Organiser; id: string
   return (
     <section>
       <style>{`@page { size: ${paper}; margin: 10mm; }`}</style>
-      <div className="row no-print">
-        {back}
+      <RunNav run={run} page="tokens" />
+      <div className="row page-heading no-print">
+        <div><h1>Finish tokens</h1><p>Numbered, scannable and ready for your finish funnel.</p></div>
         <button type="button" className="button primary" disabled={tokens.length === 0} onClick={() => window.print()}>
           Print tokens
         </button>
       </div>
       <div className="no-print">
-        <h1>Finish tokens</h1>
         <p className="muted">
           Hand one out to each finisher in order. Scanners scan it with the finisher's barcode. Cut along the dashed
           lines; laminated tokens last for many runs.

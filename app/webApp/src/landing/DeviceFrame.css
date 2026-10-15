@@ -1,0 +1,11 @@
+.device-frame {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--band, #25292d);
+  overflow: visible;
+}
+
+.device-frame image {
+  pointer-events: none;
+}

@@ -35,8 +35,9 @@ export function RunForm({ organiser }: { organiser: Organiser }) {
   }
 
   return (
-    <section>
-      <h1>New run</h1>
+    <section className="form-page">
+      <div className="page-heading"><p className="eyebrow">Community runs</p><h1>New run</h1>
+        <p>Give your run a name and choose how volunteers record the finish.</p></div>
       <form onSubmit={submit} noValidate>
         <label className="field">
           <span>Name</span>
@@ -71,7 +72,7 @@ export function RunForm({ organiser }: { organiser: Organiser }) {
         </fieldset>
         {error && <p role="alert" className="error">{error}</p>}
         <div className="row">
-          <a href="#/" className="button">Cancel</a>
+          <a href="#/runs" className="button">Cancel</a>
           <button type="submit" className="button primary" disabled={saving}>Create run</button>
         </div>
       </form>

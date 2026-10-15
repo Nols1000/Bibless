@@ -24,13 +24,13 @@ describe('finish tokens', () => {
     const scanOrder = await organiser.createRun('Park 2k', null, 'SCAN_ORDER');
     go(`#/runs/${tokens.id}`);
     const { unmount } = render(<App organiser={organiser} />);
-    expect(await screen.findByRole('link', { name: 'Print tokens' })).toHaveAttribute('href', `#/runs/${tokens.id}/tokens`);
+    expect(await screen.findByRole('link', { name: 'Finish tokens' })).toHaveAttribute('href', `#/runs/${tokens.id}/tokens`);
     unmount();
 
     go(`#/runs/${scanOrder.id}`);
     render(<App organiser={organiser} />);
     await screen.findByRole('link', { name: 'Results' });
-    expect(screen.queryByRole('link', { name: 'Print tokens' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Finish tokens' })).not.toBeInTheDocument();
   });
 
   it('prints cards with the number and barcode for the chosen range', async () => {

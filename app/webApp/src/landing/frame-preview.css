@@ -1,0 +1,101 @@
+.frame-gallery {
+  padding-block: 48px;
+}
+
+.frame-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.frame-card {
+  min-width: 0;
+  padding: 20px 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.frame-card h2 {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.frame-style-picker {
+  margin-bottom: 16px;
+}
+
+.frame-style-picker small {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.frame-stage {
+  display: grid;
+  place-items: center;
+  height: 460px;
+  padding: 12px 0;
+  border-radius: 12px;
+  background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface) 0% 50%) 50% / 20px 20px;
+}
+
+.frame-stage .device-frame {
+  width: auto;
+  height: auto;
+  max-width: min(100%, 208px);
+  max-height: 100%;
+  filter: drop-shadow(0 12px 14px rgba(0, 0, 0, .2));
+}
+
+.frame-stage .device-frame[data-device^="watchos"] {
+  max-width: min(100%, 270px);
+}
+
+.frame-stage .device-frame[data-landscape="true"] {
+  max-width: 100%;
+}
+
+.frame-stage .device-frame[data-variant="google/pixel_10_pro_fold/default"] {
+  max-width: 100%;
+}
+
+.frame-stage .device-frame[data-official="true"] {
+  filter: none;
+}
+
+.frame-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 20px;
+}
+
+.frame-actions .button {
+  position: relative;
+}
+
+.frame-actions .text-link {
+  justify-content: center;
+  width: 100%;
+  font-size: .8rem;
+}
+
+.frame-credit {
+  margin-top: 24px;
+  font-size: .8rem;
+}
+
+@media (max-width: 900px) {
+  .frame-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .frame-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

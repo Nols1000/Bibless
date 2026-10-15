@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 export type Route =
+  | { page: 'home'; section?: 'top' | 'features' | 'runs' | 'beta' }
   | { page: 'runs' }
   | { page: 'new' }
   | { page: 'run'; id: string }
@@ -10,10 +11,21 @@ export type Route =
 /** Routes live in the URL hash, so the app works from any path on GitHub Pages. */
 export function parseRoute(hash: string): Route {
   const path = hash.replace(/^#/, '');
+  if (path === '/runs') return { page: 'runs' };
   if (path === '/new') return { page: 'new' };
   const run = path.match(/^\/runs\/([^/]+)(?:\/(results|tokens))?$/);
-  if (run) return { page: (run[2] as 'results' | 'tokens' | undefined) ?? 'run', id: decodeURIComponent(run[1]) };
-  return { page: 'runs' };
+  if (run) {
+    try {
+      return { page: (run[2] as 'results' | 'tokens' | undefined) ?? 'run', id: decodeURIComponent(run[1]) };
+    } catch {
+      return { page: 'home' };
+    }
+  }
+  if (path === 'apple') return { page: 'home', section: 'top' };
+  if (path === 'top' || path === 'features' || path === 'runs' || path === 'beta') {
+    return { page: 'home', section: path };
+  }
+  return { page: 'home' };
 }
 
 export function navigate(path: string) {

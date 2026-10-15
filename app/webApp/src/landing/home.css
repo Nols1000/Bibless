@@ -1,0 +1,518 @@
+.home-content {
+  padding-bottom: 64px;
+}
+
+.home-content h2 {
+  font-size: clamp(1.7rem, 3vw, 2.2rem);
+  font-weight: 720;
+}
+
+.home-hero {
+  padding-block: 64px 72px;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 780px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.hero-copy .eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.hero-copy h1 {
+  font-size: clamp(2.9rem, 5.7vw, 4.7rem);
+  line-height: 1.03;
+  font-weight: 780;
+  letter-spacing: -.06em;
+  margin-bottom: 24px;
+}
+
+.hero-lead {
+  max-width: 640px;
+  margin-inline: auto;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 1.06rem;
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.hero-actions .button {
+  padding: 14px 18px;
+}
+
+.privacy-points {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 20px;
+  margin-top: 26px;
+  font-size: .74rem;
+  color: var(--muted);
+}
+
+.privacy-points span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.privacy-points svg {
+  width: 14px;
+  height: 14px;
+  color: var(--signal);
+}
+
+/* The SVG frames place and clip the real app captures in their own screen coordinates. */
+
+.hero-devices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+  gap: 40px;
+  max-width: 1040px;
+  margin: 48px auto 0;
+}
+
+.device-preview {
+  position: relative;
+  width: 100%;
+  max-width: 490px;
+  min-height: 510px;
+  margin: 0 auto;
+  isolation: isolate;
+}
+
+.device-preview::before,
+.apple-devices::before {
+  content: '';
+  position: absolute;
+  inset: -10% 0 0;
+  background: radial-gradient(ellipse at center, var(--glow), transparent 65%);
+  z-index: -1;
+}
+
+.preview-orbit {
+  position: absolute;
+  width: 92%;
+  aspect-ratio: 1;
+  top: 8%;
+  left: 4%;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+
+.preview-orbit::after {
+  content: '';
+  position: absolute;
+  inset: 12%;
+  border: 1px dashed var(--border);
+  border-radius: 50%;
+}
+
+.phone-preview {
+  position: absolute;
+  width: 42%;
+  top: 0;
+  left: 15%;
+  filter: drop-shadow(0 22px 30px rgba(0, 0, 0, .35));
+  transform: rotate(-7deg);
+}
+
+.watch-preview {
+  position: absolute;
+  width: 58%;
+  right: 5%;
+  bottom: 10%;
+  aspect-ratio: 1;
+  color: var(--band);
+  filter: drop-shadow(0 20px 30px rgba(0, 0, 0, .35));
+  transform: rotate(9deg);
+}
+
+.apple-devices {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1 / 1.06;
+  margin-inline: auto;
+}
+
+.apple-device {
+  position: absolute;
+  margin: 0;
+  width: 34%;
+  top: 35%;
+}
+
+.apple-device-art {
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, .2));
+}
+
+.apple-series-preview {
+  left: 6%;
+  z-index: 1;
+}
+
+.apple-series-preview .apple-device-art {
+  transform: rotate(-11deg);
+}
+
+.apple-phone-preview {
+  width: 40%;
+  top: 3%;
+  left: 30%;
+  z-index: 2;
+}
+
+.apple-phone-preview .apple-device-art {
+  transform: rotate(-4deg);
+}
+
+.apple-ultra-preview {
+  right: 6%;
+  z-index: 3;
+}
+
+.apple-ultra-preview .apple-device-art {
+  transform: rotate(11deg);
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.product-card {
+  padding: 34px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.product-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.product-label .eyebrow {
+  margin: 0;
+}
+
+.icon-tile {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  background: var(--surface-2);
+  color: var(--signal);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.icon-tile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.product-card > p {
+  font-size: .9rem;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 380px;
+  margin-bottom: 24px;
+}
+
+.product-card > .text-link {
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.feature-points,
+.run-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 26px;
+  display: grid;
+  gap: 22px;
+}
+
+.feature-points li,
+.run-steps li {
+  display: flex;
+  gap: 14px;
+}
+
+.feature-points svg {
+  width: 20px;
+  height: 20px;
+  color: var(--muted);
+  flex: none;
+  margin-top: 3px;
+}
+
+.feature-points strong,
+.run-steps strong {
+  display: block;
+  font-size: .87rem;
+  font-weight: 600;
+}
+
+.feature-points span,
+.run-steps p {
+  display: block;
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.6;
+}
+
+.run-steps li > span {
+  color: var(--signal);
+  font-size: .76rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+
+.home-recent {
+  padding-block: 56px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.section-heading .eyebrow {
+  margin-bottom: 10px;
+}
+
+.section-heading h2 {
+  margin: 0;
+}
+
+.recent-runs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.recent-runs a {
+  min-height: 170px;
+}
+
+.storage-note {
+  margin: 16px 0 0;
+  font-size: .75rem;
+}
+
+.first-run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 28px;
+  margin-top: 24px;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+}
+
+.empty-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--signal);
+}
+
+.empty-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.first-run > div:nth-child(2) {
+  flex: 1 1 240px;
+}
+
+.first-run h3 {
+  margin-bottom: 6px;
+}
+
+.first-run p {
+  margin: 0;
+  font-size: .85rem;
+  color: var(--muted);
+  max-width: 430px;
+}
+
+.beta-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  padding: 38px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: linear-gradient(110deg, var(--surface), var(--surface-2));
+}
+
+.beta-copy > p:not(.eyebrow) {
+  max-width: 370px;
+  color: var(--muted);
+  font-size: .87rem;
+}
+
+.beta-steps {
+  list-style: none;
+  display: grid;
+  align-content: center;
+  gap: 22px;
+  margin: 0;
+  padding: 0;
+}
+
+.beta-steps li {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-number {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  font-size: .76rem;
+  background: var(--surface);
+}
+
+.beta-steps a {
+  color: var(--text);
+  font-size: .9rem;
+  font-weight: 600;
+}
+
+.beta-steps p {
+  font-size: .81rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-copy .volt,
+  .beta-copy .volt {
+    background: linear-gradient(transparent 65%, var(--volt) 65% 94%, transparent 94%);
+  }
+}
+
+@media (max-width: 900px) {
+  .home-hero {
+    padding-block: 48px 56px;
+  }
+
+  .device-preview {
+    min-height: 0;
+    aspect-ratio: 1 / 1.04;
+  }
+
+  .phone-preview {
+    top: 7%;
+  }
+
+  .hero-devices {
+    gap: 24px;
+  }
+
+  .product-card {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-hero {
+    padding-top: 36px;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2.8rem, 9vw, 4rem);
+  }
+
+  .hero-lead {
+    margin-inline: auto;
+    font-size: 1rem;
+  }
+
+  .phone-preview {
+    top: 0;
+  }
+
+  .hero-devices {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    margin-top: 40px;
+  }
+
+  .device-preview,
+  .apple-devices {
+    width: min(100%, 400px);
+  }
+
+  .product-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recent-runs {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .beta-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 28px;
+  }
+
+  .home-recent {
+    padding-block: 40px;
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-actions {
+    flex-direction: column;
+  }
+
+  .hero-actions .button {
+    width: 100%;
+  }
+
+  .product-card {
+    padding: 24px;
+  }
+}

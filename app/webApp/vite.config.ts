@@ -11,7 +11,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // The landing page at the root, the organiser at organise/
+    // One app at the root, plus a redirect for existing organiser links.
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, 'index.html'),

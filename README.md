@@ -76,7 +76,7 @@ same tasks as these commands:
     -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO
   ```
 - **watchOS app**: open [app/iosApp](./app/iosApp) in Xcode and run the `watchApp` scheme
-- **Web app** (the landing page at `/`, the organiser at `/organise/`): capture the phone and watch screens the
+- **Web app** (Home at `/`, run management at `/#/runs`; `/organise/` redirects existing links): capture the phone and watch screens the
   landing page shows (git-ignored), then build and run it:
   ```shell
   ./gradlew -PsiteScreenshots :app:androidApp:testDebugUnitTest --tests '*.SiteScreenshotTest' \
